@@ -13,6 +13,8 @@ from backend.algorithm.scheduler.scheduler import TaskScheduler
 from backend.algorithm.scheduler.task import Task, TaskPriority
 from backend.algorithm.simulator.device_manager import DeviceManager
 from backend.algorithm.simulator.site_manager import SiteManager, Site
+from backend.algorithm.simulator.point_cloud_gen import PointCloudGenerator
+from backend.algorithm.simulator.laser_scan_gen import LaserScanGenerator
 
 
 class Runtime:
@@ -30,6 +32,11 @@ class Runtime:
         self._last_log_index = 0
         # joint state cache: device_id -> latest joint data dict
         self._joint_cache: dict[str, dict[str, Any]] = {}
+        # synthetic sensor generators
+        self._pc_gen = PointCloudGenerator()
+        self._scan_gen = LaserScanGenerator()
+        self._detections: dict[str, list] = {}
+        self._nav_paths: dict[str, dict[str, Any]] = {}
         self._seed_tasks()
 
     def _seed_tasks(self) -> None:
@@ -82,6 +89,11 @@ class Runtime:
                 self.log(record["trace_id"], task_id, "task", "completed")
         for task in self.scheduler.get_next_batch():
             self._start_task(task.task_id)
+        # Generate synthetic sensor data for each device
+        boxes = self._get_scene_boxes()
+        for device_id, device in self.devices.devices.items():
+            pc_data = self._pc_gen.generate(device.position, 0.0, boxes)
+            self._detections[device_id] = pc_data.get("ground_truth", [])
 
     def _start_task(self, task_id: str) -> None:
         record = self.tasks[task_id]
@@ -276,6 +288,32 @@ class Runtime:
     def fail_task(self, task_id: str, reason: str) -> None:
         """Mark task as failed from any non-terminal state."""
         self._transition(task_id, "failed", reason)
+
+    # --- synthetic sensor data ------------------------------------------------
+
+    def _get_scene_boxes(self) -> list[dict[str, Any]]:
+        """Convert warehouse sites to box list for point cloud generation."""
+        boxes: list[dict[str, Any]] = []
+        for site in self.sites.list():
+            if site["kind"] == "warehouse":
+                boxes.append({
+                    "id": site["id"],
+                    "position": site["position"],
+                    "size": [site["width"], site["depth"], site["height"]],
+                })
+        return boxes
+
+    def get_detections(self, device_id: str) -> list:
+        """Retrieve latest detection data for a device."""
+        return self._detections.get(device_id, [])
+
+    def get_nav_path(self, device_id: str) -> dict[str, Any]:
+        """Retrieve latest navigation path for a device."""
+        return self._nav_paths.get(device_id, {})
+
+    def update_nav_path(self, device_id: str, path: dict[str, Any]) -> None:
+        """Store a navigation path for SSE consumers."""
+        self._nav_paths[device_id] = path
 
 
 runtime = Runtime()

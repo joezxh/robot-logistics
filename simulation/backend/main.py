@@ -431,6 +431,40 @@ async def device_joints_sse(device_id: str):
     )
 
 
+@app.get("/api/devices/{device_id}/detections")
+async def device_detections_sse(device_id: str):
+    """SSE stream of perception detections for a device."""
+
+    async def event_stream():
+        while True:
+            data = runtime.get_detections(device_id)
+            yield f"data: {json.dumps(data)}\n\n"
+            await asyncio.sleep(0.1)  # 10Hz
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.get("/api/devices/{device_id}/nav_path")
+async def device_nav_path_sse(device_id: str):
+    """SSE stream of navigation path for a device."""
+
+    async def event_stream():
+        while True:
+            data = runtime.get_nav_path(device_id)
+            yield f"data: {json.dumps(data)}\n\n"
+            await asyncio.sleep(1.0)  # 1Hz
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @app.get("/metrics", dependencies=[])
 async def metrics_endpoint():
     """Prometheus text exposition format."""
