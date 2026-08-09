@@ -328,8 +328,8 @@ class RobotStateMsg:
             joint=JointStateMsg.from_dict(data.get("joint") or {}),
             err=TrackingErrorMsg.from_dict(data.get("err") or {}),
             ctrl=ControllerStateMsg.from_dict(data.get("ctrl") or {}),
-            base=BaseStateMsg.from_dict(data["base"]) if "base" in data else None,
-            hug=HugStateMsg.from_dict(data["hug"]) if "hug" in data else None,
+            base=BaseStateMsg.from_dict(data["base"]) if data.get("base") else None,
+            hug=HugStateMsg.from_dict(data["hug"]) if data.get("hug") else None,
             iso_ts=str(data.get("iso_ts", "")),
             degraded=bool(data.get("degraded", False)),
         )
