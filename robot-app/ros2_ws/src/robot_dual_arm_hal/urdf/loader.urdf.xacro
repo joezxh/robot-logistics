@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<!--
+  loader.urdf.xacro
+  Whole-robot composition: base + left arm + right arm.
+  TF tree: base_link -> torso_mount -> left_arm_base / right_arm_base
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="loading_robot">
+  <xacro:include filename="$(find robot_base_hal)/urdf/base.urdf.xacro"/>
+  <xacro:include filename="$(find robot_dual_arm_hal)/urdf/dual_arm.ros2_control.xacro"/>
+
+  <xacro:macro name="arm_chain" params="arm_id parent *origin">
+    <link name="${arm_id}_arm_base"/>
+    <joint name="${arm_id}_arm_mount" type="fixed">
+      <xacro:insert_block name="origin"/>
+      <parent link="${parent}"/><child link="${arm_id}_arm_base"/>
+    </joint>
+    <link name="${arm_id}_shoulder_link">
+      <visual><geometry><cylinder radius="0.06" length="0.15"/></geometry></visual>
+      <collision><geometry><cylinder radius="0.06" length="0.15"/></geometry></collision>
+      <inertial><mass value="5.0"/><inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0.01"/></inertial>
+    </link>
+    <joint name="${arm_id}_shoulder_pan" type="revolute">
+      <parent link="${arm_id}_arm_base"/><child link="${arm_id}_shoulder_link"/>
+      <origin xyz="0 0 0.05"/><axis xyz="0 0 1"/><limit lower="-3.14" upper="3.14" velocity="3.15" effort="100"/>
+    </joint>
+    <link name="${arm_id}_upper_arm_link">
+      <visual><geometry><cylinder radius="0.05" length="0.3"/></geometry></visual>
+      <collision><geometry><cylinder radius="0.05" length="0.3"/></geometry></collision>
+      <inertial><mass value="8.0"/><inertia ixx="0.05" ixy="0" ixz="0" iyy="0.05" iyz="0" izz="0.01"/></inertial>
+    </link>
+    <joint name="${arm_id}_shoulder_lift" type="revolute">
+      <parent link="${arm_id}_shoulder_link"/><child link="${arm_id}_upper_arm_link"/>
+      <origin xyz="0 0 0.15"/><axis xyz="0 1 0"/><limit lower="-3.14" upper="3.14" velocity="3.15" effort="100"/>
+    </joint>
+    <link name="${arm_id}_forearm_link">
+      <visual><geometry><cylinder radius="0.04" length="0.25"/></geometry></visual>
+      <collision><geometry><cylinder radius="0.04" length="0.25"/></geometry></collision>
+      <inertial><mass value="5.0"/><inertia ixx="0.03" ixy="0" ixz="0" iyy="0.03" iyz="0" izz="0.005"/></inertial>
+    </link>
+    <joint name="${arm_id}_elbow" type="revolute">
+      <parent link="${arm_id}_upper_arm_link"/><child link="${arm_id}_forearm_link"/>
+      <origin xyz="0 0 0.3"/><axis xyz="0 1 0"/><limit lower="-3.14" upper="3.14" velocity="3.15" effort="100"/>
+    </joint>
+    <link name="${arm_id}_wrist_1_link">
+      <visual><geometry><cylinder radius="0.035" length="0.1"/></geometry></visual>
+      <collision><geometry><cylinder radius="0.035" length="0.1"/></geometry></collision>
+      <inertial><mass value="2.0"/><inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.002"/></inertial>
+    </link>
+    <joint name="${arm_id}_wrist_1" type="revolute">
+      <parent link="${arm_id}_forearm_link"/><child link="${arm_id}_wrist_1_link"/>
+      <origin xyz="0 0 0.25"/><axis xyz="0 1 0"/><limit lower="-3.14" upper="3.14" velocity="6.28" effort="50"/>
+    </joint>
+    <link name="${arm_id}_wrist_2_link">
+      <visual><geometry><cylinder radius="0.03" length="0.08"/></geometry></visual>
+      <collision><geometry><cylinder radius="0.03" length="0.08"/></geometry></collision>
+      <inertial><mass value="1.5"/><inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.001"/></inertial>
+    </link>
+    <joint name="${arm_id}_wrist_2" type="revolute">
+      <parent link="${arm_id}_wrist_1_link"/><child link="${arm_id}_wrist_2_link"/>
+      <origin xyz="0 0 0.1"/><axis xyz="0 0 1"/><limit lower="-3.14" upper="3.14" velocity="6.28" effort="50"/>
+    </joint>
+    <link name="${arm_id}_wrist_3_link">
+      <visual><geometry><cylinder radius="0.025" length="0.06"/></geometry></visual>
+      <collision><geometry><cylinder radius="0.025" length="0.06"/></geometry></collision>
+      <inertial><mass value="1.0"/><inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.0005"/></inertial>
+    </link>
+    <joint name="${arm_id}_wrist_3" type="revolute">
+      <parent link="${arm_id}_wrist_2_link"/><child link="${arm_id}_wrist_3_link"/>
+      <origin xyz="0 0 0.08"/><axis xyz="0 1 0"/><limit lower="-3.14" upper="3.14" velocity="6.28" effort="50"/>
+    </joint>
+    <link name="${arm_id}_tcp_frame"/>
+    <joint name="${arm_id}_tcp_joint" type="fixed">
+      <parent link="${arm_id}_wrist_3_link"/><child link="${arm_id}_tcp_frame"/>
+      <origin xyz="0 0 0.05"/>
+    </joint>
+    <link name="${arm_id}_paddle_link">
+      <visual><geometry><box size="0.15 0.02 0.1"/></geometry></visual>
+      <collision><geometry><box size="0.15 0.02 0.1"/></geometry></collision>
+      <inertial><mass value="0.5"/><inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.0005"/></inertial>
+    </link>
+    <joint name="${arm_id}_paddle" type="prismatic">
+      <parent link="${arm_id}_tcp_frame"/><child link="${arm_id}_paddle_link"/>
+      <axis xyz="0 1 0"/><limit lower="0" upper="0.15" velocity="0.5" effort="50"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:arm_chain arm_id="left" parent="torso_mount">
+    <origin xyz="0 0.2 0.1" rpy="0 0 1.5708"/>
+  </xacro:arm_chain>
+  <xacro:arm_chain arm_id="right" parent="torso_mount">
+    <origin xyz="0 -0.2 0.1" rpy="0 0 -1.5708"/>
+  </xacro:arm_chain>
+
+  <xacro:dual_arm_ros2_control arm_id="left" use_fake_hardware="true" use_gazebo="false"/>
+  <xacro:dual_arm_ros2_control arm_id="right" use_fake_hardware="true" use_gazebo="false"/>
+</robot>

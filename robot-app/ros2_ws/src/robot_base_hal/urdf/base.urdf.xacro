@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="robot_base">
+  <xacro:include filename="$(find robot_base_hal)/urdf/base.ros2_control.xacro"/>
+  <link name="base_link">
+    <visual><geometry><box size="0.8 0.6 0.3"/></geometry><origin xyz="0 0 0.15"/></visual>
+    <collision><geometry><box size="0.8 0.6 0.3"/></geometry><origin xyz="0 0 0.15"/></collision>
+    <inertial><mass value="100.0"/><inertia ixx="5" ixy="0" ixz="0" iyy="5" iyz="0" izz="5"/></inertial>
+  </link>
+  <link name="left_wheel_link">
+    <visual><geometry><cylinder radius="0.1" length="0.05"/></geometry></visual>
+    <collision><geometry><cylinder radius="0.1" length="0.05"/></geometry></collision>
+    <inertial><mass value="2.0"/><inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/></inertial>
+  </link>
+  <joint name="left_wheel" type="continuous">
+    <parent link="base_link"/><child link="left_wheel_link"/>
+    <origin xyz="0 0.3 0.1" rpy="-1.5708 0 0"/><axis xyz="0 0 1"/>
+  </joint>
+  <link name="right_wheel_link">
+    <visual><geometry><cylinder radius="0.1" length="0.05"/></geometry></visual>
+    <collision><geometry><cylinder radius="0.1" length="0.05"/></geometry></collision>
+    <inertial><mass value="2.0"/><inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/></inertial>
+  </link>
+  <joint name="right_wheel" type="continuous">
+    <parent link="base_link"/><child link="right_wheel_link"/>
+    <origin xyz="0 -0.3 0.1" rpy="-1.5708 0 0"/><axis xyz="0 0 1"/>
+  </joint>
+  <link name="caster_link">
+    <visual><geometry><sphere radius="0.05"/></geometry></visual>
+    <collision><geometry><sphere radius="0.05"/></geometry></collision>
+    <inertial><mass value="0.5"/><inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/></inertial>
+  </link>
+  <joint name="caster_joint" type="fixed">
+    <parent link="base_link"/><child link="caster_link"/>
+    <origin xyz="-0.3 0 0.05"/>
+  </joint>
+  <link name="torso_mount"/>
+  <joint name="torso_mount_joint" type="fixed">
+    <parent link="base_link"/><child link="torso_mount"/>
+    <origin xyz="0 0 0.3"/>
+  </joint>
+  <xacro:base_ros2_control name="base" use_fake_hardware="true" use_gazebo="false"/>
+</robot>

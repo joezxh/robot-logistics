@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="base_ros2_control" params="name use_fake_hardware:=true use_gazebo:=false">
+    <ros2_control name="${name}" type="system">
+      <xacro:if value="${use_gazebo}">
+        <hardware><plugin>gz_ros2_control/GzSystem</plugin></hardware>
+      </xacro:if>
+      <xacro:unless value="${use_gazebo}">
+        <hardware>
+          <plugin>mock_components/GenericSystem</plugin>
+          <param name="mock_sensor_commands">true</param>
+        </hardware>
+      </xacro:unless>
+      <joint name="left_wheel">
+        <command_interface name="velocity"><param name="min">-10.0</param><param name="max">10.0</param></command_interface>
+        <state_interface name="position"/><state_interface name="velocity"/>
+      </joint>
+      <joint name="right_wheel">
+        <command_interface name="velocity"><param name="min">-10.0</param><param name="max">10.0</param></command_interface>
+        <state_interface name="position"/><state_interface name="velocity"/>
+      </joint>
+    </ros2_control>
+  </xacro:macro>
+</robot>

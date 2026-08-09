@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="dual_arm_ros2_control" params="arm_id use_fake_hardware:=true use_gazebo:=false">
+    <ros2_control name="${arm_id}_arm" type="system">
+      <xacro:if value="${use_gazebo}">
+        <hardware><plugin>gz_ros2_control/GzSystem</plugin></hardware>
+      </xacro:if>
+      <xacro:unless value="${use_gazebo}">
+        <hardware>
+          <plugin>mock_components/GenericSystem</plugin>
+          <param name="mock_sensor_commands">true</param>
+        </hardware>
+      </xacro:unless>
+      <joint name="${arm_id}_shoulder_pan">
+        <command_interface name="position"><param name="min">-3.14</param><param name="max">3.14</param></command_interface>
+        <command_interface name="velocity"><param name="min">-3.15</param><param name="max">3.15</param></command_interface>
+        <state_interface name="position"/><state_interface name="velocity"/>
+      </joint>
+      <joint name="${arm_id}_shoulder_lift">
+        <command_interface name="position"><param name="min">-3.14</param><param name="max">3.14</param></command_interface>
+        <command_interface name="velocity"><param name="min">-3.15</param><param name="max">3.15</param></command_interface>
+        <state_interface name="position"/><state_interface name="velocity"/>
+      </joint>
+      <joint name="${arm_id}_elbow">
+        <command_interface name="position"><param name="min">-3.14</param><param name="max">3.14</param></command_interface>
+        <command_interface name="velocity"><param name="min">-3.15</param><param name="max">3.15</param></command_interface>
+        <state_interface name="position"/><state_interface name="velocity"/>
+      </joint>
+      <joint name="${arm_id}_wrist_1">
+        <command_interface name="position"><param name="min">-3.14</param><param name="max">3.14</param></command_interface>
+        <command_interface name="velocity"><param name="min">-6.28</param><param name="max">6.28</param></command_interface>
+        <state_interface name="position"/><state_interface name="velocity"/>
+      </joint>
+      <joint name="${arm_id}_wrist_2">
+        <command_interface name="position"><param name="min">-3.14</param><param name="max">3.14</param></command_interface>
+        <command_interface name="velocity"><param name="min">-6.28</param><param name="max">6.28</param></command_interface>
+        <state_interface name="position"/><state_interface name="velocity"/>
+      </joint>
+      <joint name="${arm_id}_wrist_3">
+        <command_interface name="position"><param name="min">-3.14</param><param name="max">3.14</param></command_interface>
+        <command_interface name="velocity"><param name="min">-6.28</param><param name="max">6.28</param></command_interface>
+        <state_interface name="position"/><state_interface name="velocity"/>
+      </joint>
+      <joint name="${arm_id}_paddle">
+        <command_interface name="position"><param name="min">0.0</param><param name="max">0.15</param></command_interface>
+        <state_interface name="position"/>
+      </joint>
+    </ros2_control>
+  </xacro:macro>
+</robot>
