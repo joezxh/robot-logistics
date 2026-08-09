@@ -1,0 +1,77 @@
+<h2>设计第 5 节：实现优先级、依赖、验收</h2>
+<p class="subtitle">M0–M1 起步 · 闭环 ≥ 90% · 验证脚本与代码同存并在 CI 内预验证。</p>
+
+<div class="mockup">
+  <div class="mockup-header">A. 里程碑路线（依赖顺序）</div>
+  <div class="mockup-body" style="padding:14px">
+    <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;font-size:12px;text-align:center">
+      <div style="padding:12px;border:2px solid #34d399;border-radius:10px;background:rgba(16,185,129,.12)"><strong>M0</strong><br>骨架</div>
+      <div style="padding:12px;border:2px solid #34d399;border-radius:10px;background:rgba(16,185,129,.12)"><strong>M1</strong><br>机器人 / 仿真</div>
+      <div style="padding:12px;border:1px solid #60a5fa;border-radius:10px;background:rgba(59,130,246,.10)"><strong>M2</strong><br>感知</div>
+      <div style="padding:12px;border:1px solid #60a5fa;border-radius:10px;background:rgba(59,130,246,.10)"><strong>M3</strong><br>决策闭环</div>
+      <div style="padding:12px;border:1px solid #60a5fa;border-radius:10px;background:rgba(59,130,246,.10)"><strong>M4</strong><br>Web Gateway</div>
+      <div style="padding:12px;border:1px solid #f59e0b;border-radius:10px;background:rgba(245,158,11,.12)"><strong>M5</strong><br>演示验收</div>
+    </div>
+    <p style="margin:8px 0 0">路径：URDF/SRDF → MoveIt 配置 → `ros2_control` → 相机 (arm_hal 已通) → 决策 → Gateway → Web → 验收。</p>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:18px">
+  <div class="mockup-header">B. 验收口径</div>
+  <div class="mockup-body" style="padding:14px">
+    <table style="width:100%;font-size:13px;border-collapse:collapse">
+      <thead><tr style="text-align:left;border-bottom:1px solid #334155"><th>里程碑</th><th>验收脚本</th><th>通过条件</th></tr></thead>
+      <tbody>
+        <tr><td>M0</td><td>verify_m0.sh</td><td>空世界 + 核心话题</td></tr>
+        <tr><td>M1</td><td>verify_m1.sh</td><td>home → target → home（关节轨迹误差 ≤ ε）</td></tr>
+        <tr><td>M2</td><td>verify_m2.sh</td><td>rosbag2 播放 → 检测与人工标注差 ≤ 阈值</td></tr>
+        <tr><td>M3</td><td>verify_m3.sh</td><td>PickPlace 闭环 + Gazebo 回放</td></tr>
+        <tr><td>M4</td><td>verify_m4.sh</td><td>FastAPI → Gateway → 设备 + UI 阶段</td></tr>
+        <tr><td>M5</td><td>verify_m5.sh</td><td>一键全链路 + 录像 + 验收单</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="split" style="margin-top:18px">
+  <div class="mockup">
+    <div class="mockup-header">C. 度量阈值</div>
+    <div class="mockup-body" style="padding:14px">
+      <ul style="margin:0">
+        <li>闭环成功率 <strong>≥ 90%</strong>（10 次 ≥ 9 次，CI 中自动跑 10 次）</li>
+        <li>动作最长周期 <strong>≤ 90 s</strong></li>
+        <li>急停 → 停机响应 <strong>≤ 200 ms</strong></li>
+        <li>WS 重连后 UI <strong>≤ 2 s</strong> 对齐</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">D. 风险与回退</div>
+    <div class="mockup-body" style="padding:14px">
+      <ul style="margin:0">
+        <li>URDF/SRDF 与 MoveIt 不一致 → quick-disable collision</li>
+        <li>感知误报 → 联立采样门控关闭感知</li>
+        <li>`ros2_control` 差异 → <code>arm_hal</code> 双实现</li>
+        <li>WS 失联 → UI “最近已知状态”快照</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:18px">
+  <div class="mockup-header">E. CI 集成</div>
+  <div class="mockup-body" style="padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px">
+    · 每里程碑 PR 必需通过 verify_*.sh
+    · 闭环验证在 nightly 跑 10 次闭环，超过 20% 失败则回滚
+    · rosbag2 + 验收单同步归档到 artifacts/
+  </div>
+</div>
+
+<div style="margin-top:18px;padding:14px;border-left:4px solid #34d399;background:rgba(16,185,129,.10);border-radius:8px">
+  <strong>最后汇总前需确认：</strong>
+  <ol style="margin-bottom:0">
+    <li>里程碑顺序与验收口径是否完整？</li>
+    <li>CI 上夜间跑是否需要包含 M5 全链路（默认：包含，记录耗时）？</li>
+  </ol>
+</div>

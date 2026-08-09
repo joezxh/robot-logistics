@@ -1,0 +1,78 @@
+# Local development stack: MQTT broker + standalone RCS + simulation backend.
+#
+#   docker compose -f deploy/docker-compose.yml up --build
+#
+# All build contexts are the repository root, because every image needs the
+# shared/ contract package alongside its own subproject.
+#
+#   Simulation backend  http://localhost:8000
+#   RCS (standalone)    http://localhost:8100
+#   MQTT broker         localhost:1883  (websockets on 9001)
+#
+# Note this runs RCS in STANDALONE mode (RCS_EMBEDDED=0 on the backend). The
+# default for a plain `uvicorn backend.main:app` run is embedded mode, which
+# needs neither this stack nor a broker.
+
+name: robot-logic
+
+services:
+  broker:
+    image: eclipse-mosquitto:2
+    container_name: robot-logic-broker
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ../deploy/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    healthcheck:
+      # mosquitto_sub ships in the image; a successful subscribe proves the
+      # listener is actually accepting connections, not merely that the process
+      # started.
+      test: ["CMD-SHELL", "mosquitto_sub -t '$$SYS/#' -C 1 -W 3 -h localhost || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  rcs:
+    build:
+      context: ..
+      dockerfile: rcs/Dockerfile
+    container_name: robot-logic-rcs
+    ports:
+      - "8100:8100"
+    environment:
+      RCS_HOST: "0.0.0.0"
+      RCS_PORT: "8100"
+      RCS_LOG_LEVEL: "INFO"
+      # MQTT adapter is opt-in; this stack exists to exercise it.
+      RCS_MQTT_ENABLED: "true"
+      RCS_MQTT_HOST: "broker"
+      RCS_MQTT_PORT: "1883"
+      RCS_MQTT_CLIENT_ID: "rcs-adapter"
+      RCS_MQTT_STATE_PUBLISH_HZ: "10.0"
+    depends_on:
+      broker:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8100/health')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build:
+      context: ..
+      dockerfile: simulation/backend/Dockerfile
+    container_name: robot-logic-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Standalone RCS: the backend must NOT also mount the router, or two
+      # control loops would drive the same devices.
+      RCS_EMBEDDED: "0"
+      RCS_SERVICE_URL: "http://rcs:8100"
+    depends_on:
+      rcs:
+        condition: service_started

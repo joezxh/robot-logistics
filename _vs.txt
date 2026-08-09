@@ -1,0 +1,27 @@
+[verify_split] python: /mnt/c/Program Files/Python311/python.exe
+
+=== Subproject test suites ===
+  [PASS] rcs tests
+  [PASS] simulation tests
+  [PASS] gateway tests
+  [PASS] vla tests
+
+=== Dependency direction ===
+  [PASS] rcs does not import the simulation backend
+  [PASS] shared/ depends on neither service
+
+=== Wire contract ===
+  [PASS] RCS and robot-app agree on the wire contract
+
+=== RCS dual mode ===
+  [PASS] RCS starts in both standalone and embedded mode
+
+=== End-to-end MQTT ===
+  [SKIP] MQTT round trip - --no-mqtt
+
+================================
+ passed:  8
+ failed:  0
+ skipped: 1
+================================
+[verify_split] wrote docs/superpowers/specs/verify_artifacts/split-20260807-175952.json

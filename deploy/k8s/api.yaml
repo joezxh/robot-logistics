@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: robot-logic
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot-logic-api
+  namespace: robot-logic
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: robot-logic-api }
+  template:
+    metadata:
+      labels: { app: robot-logic-api }
+    spec:
+      containers:
+        - name: api
+          image: registry.example.com/robot-logic-api:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 8000 }]
+          env:
+            - { name: API_AUTH_ENABLED, value: "1" }
+            - { name: API_API_KEYS, valueFrom: { secretKeyRef: { name: api-keys, key: list } } }
+            - { name: RATE_LIMIT_MAX, value: "300" }
+            # Talk to RCS as a standalone service rather than embedding it.
+            - { name: RCS_EMBEDDED, value: "0" }
+            - { name: RCS_SERVICE_URL, value: "http://robot-logic-rcs.robot-logic.svc:8100" }
+          readinessProbe:
+            httpGet: { path: /api/status, port: 8000 }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /, port: 8000 }
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: robot-logic-api
+  namespace: robot-logic
+spec:
+  selector: { app: robot-logic-api }
+  ports:
+    - port: 80
+      targetPort: 8000

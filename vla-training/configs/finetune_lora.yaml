@@ -1,0 +1,61 @@
+# LoRA fine-tuning of an open VLA base model.
+#
+# Full fine-tuning of a 7B VLA needs ~80GB of VRAM; LoRA brings it to a single
+# 24GB card by training only low-rank adapters on the attention projections.
+# The base weights stay frozen, so the model keeps its pretrained visual and
+# language grounding instead of catastrophically forgetting it on a small
+# robot-specific dataset.
+
+model:
+  # Hugging Face identifier of the base checkpoint. Nothing is downloaded by
+  # this repository -- fetch it explicitly before training.
+  base_model: openvla/openvla-7b
+  # Loading in 4-bit (QLoRA) roughly halves VRAM again at a small quality cost.
+  load_in_4bit: false
+  trust_remote_code: true
+
+lora:
+  enabled: true
+  # rank 32 is the usual sweet spot for robot fine-tuning: rank 8 underfits
+  # multi-task data, rank 64 rarely pays for its extra memory.
+  r: 32
+  alpha: 64          # conventionally 2x r
+  dropout: 0.05
+  bias: none
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+  # Keep the action head fully trainable: it is randomly initialised for our
+  # action space, so a low-rank update cannot learn it.
+  modules_to_save:
+    - action_head
+
+training:
+  epochs: 10
+  # Per-device batch. Raise gradient_accumulation_steps rather than this value
+  # when VRAM-bound -- the effective batch is batch_size x accumulation x devices.
+  batch_size: 8
+  gradient_accumulation_steps: 4
+  learning_rate: 2.0e-4      # LoRA tolerates ~10x the full-finetune LR
+  weight_decay: 0.01
+  warmup_ratio: 0.03
+  lr_scheduler: cosine
+  max_grad_norm: 1.0
+  gradient_checkpointing: true
+
+checkpointing:
+  save_every_n_steps: 500
+  # Retain only the best few by validation loss; VLA checkpoints are large.
+  keep_last_n: 3
+  metric_for_best: val_action_mse
+  greater_is_better: false
+
+evaluation:
+  eval_every_n_steps: 500
+  # Success rate requires closed-loop rollouts against the simulator and is
+  # therefore run separately via scripts/, not inside the training loop.
+  metrics:
+    - action_mse
+    - action_l1

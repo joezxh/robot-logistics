@@ -1,0 +1,10 @@
+# Enforce LF for shell / launch / python in Phase 5 to avoid bash CRLF parse errors on Windows.
+*.sh         text eol=lf
+*.launch.py  text eol=lf
+*.launch     text eol=lf
+*.py         text eol=lf
+*.yaml       text eol=lf
+*.yml        text eol=lf
+*.md         text eol=lf
+*.html       text eol=lf
+package.xml  text eol=lf

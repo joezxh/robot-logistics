@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://robot-logic/contracts/alert.schema.json",
+  "title": "RCS Alert",
+  "description": "Uplink fault event published to rcs/{device_id}/alert. Corresponds one-to-one with the events on rcs.events.EventBus.",
+  "type": "object",
+  "required": ["event", "device_id", "iso_ts"],
+  "additionalProperties": false,
+  "properties": {
+    "event": {
+      "type": "string",
+      "enum": ["hal_read_timeout", "hal_write_failure", "controller_halted"]
+    },
+    "device_id": { "type": "string" },
+    "error": {
+      "type": ["string", "null"],
+      "description": "Error detail. May be null for controller_halted."
+    },
+    "iso_ts": {
+      "type": "string",
+      "description": "UTC timestamp, format YYYY-MM-DDTHH:MM:SSZ."
+    }
+  }
+}

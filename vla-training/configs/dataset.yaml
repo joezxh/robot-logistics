@@ -1,0 +1,53 @@
+# Dataset definition: where trajectories come from and how they are shaped.
+#
+# The action space must match what robot_decision will actually execute, and
+# what rcs.registry declares for the device -- a mismatch here produces a model
+# that trains cleanly and then commands nonsense on the real arm.
+
+dataset:
+  name: loading_robot_v1
+
+  # Where trajectories were captured. Both sources are supported and can be
+  # mixed; `source` is recorded per-episode so runs stay auditable.
+  sources:
+    - type: simulation      # Gazebo / the simulation subproject
+      weight: 1.0
+    - type: real            # teleoperated real-robot sessions
+      weight: 1.0
+
+  # Held-out fraction, split by episode (never by frame -- splitting mid-episode
+  # leaks near-identical frames across the boundary and inflates the score).
+  val_split: 0.1
+  split_by: episode
+
+observation:
+  images:
+    # Camera streams fed to the vision encoder.
+    - name: wrist_cam
+      resolution: [224, 224]
+    - name: overhead_cam
+      resolution: [224, 224]
+  # Include proprioception alongside pixels.
+  include_joint_state: true
+  # Number of past frames stacked into one observation.
+  history_length: 1
+
+action:
+  # 6 arm joints + 1 gripper. Must equal the arm's DOF in rcs.registry.
+  dim: 7
+  # joint_position | joint_velocity | ee_delta_pose
+  space: joint_position
+  # How many future steps the model predicts per forward pass. Chunking reduces
+  # compounding error versus single-step prediction.
+  chunk_size: 8
+  # Normalisation statistics are computed during data preparation and written
+  # to processed_data_dir/stats.json; they must be reused verbatim at inference.
+  normalization: mean_std
+
+instruction:
+  # Natural-language task prompt paired with each episode.
+  max_length: 64
+  templates:
+    - "pick up the {object} and place it on the {target}"
+    - "unload the {object} from the container"
+    - "move the {object} to the {target}"

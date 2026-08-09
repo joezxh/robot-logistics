@@ -1,0 +1,58 @@
+<h2>M0 完成 · ROS2 骨架就位</h2>
+<p class="subtitle">7 个包骨架 + empty_world launch + LF 校验脚本 + WSL 指引。</p>
+
+<div class="mockup">
+  <div class="mockup-header">A. 落盘清单</div>
+  <div class="mockup-body" style="padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px">
+    ros2_ws/src/robot_msgs
+    ros2_ws/src/robot_bringup        # launch/empty_world.launch.py
+    ros2_ws/src/robot_moveit_config
+    ros2_ws/src/robot_arm_hal
+    ros2_ws/src/robot_perception
+    ros2_ws/src/robot_decision
+    ros2_ws/src/robot_gateway
+    ros2_ws/README.md
+    scripts/verify_m0.sh             # 静态校验 + WSL live
+    scripts/generate_m0_packages.py  # 包生成脚本
+    scripts/_lf.py                   # LF 归一化工具
+    .gitattributes                   # *.sh / *.launch.py 强制 LF
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:18px">
+  <div class="mockup-header">B. 本地验证结果</div>
+  <div class="mockup-body" style="padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px">
+    [M0] workspace = /mnt/d/projects/robot-logic/ros2_ws
+    [M0] distro    = humble
+    [M0] static checks: package.xml + setup.py + python files
+    static checks OK (7 packages, all files parse)
+    [SKIP] ros2 not on PATH (likely Windows dev box).
+           To run the live part, install ROS2 humble in WSL and re-run.
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:18px">
+  <div class="mockup-header">C. 下一步 M1 关键路径</div>
+  <div class="mockup-body" style="padding:14px">
+    <ol style="margin:0">
+      <li>WSL Ubuntu 安装 <code>ros-humble-desktop</code> + <code>ros-humble-moveit</code></li>
+      <li><code>ros2_ws/src/robot_moveit_config/</code> 添加 SRDF + controllers.yaml + ompl_planning.yaml</li>
+      <li><code>robot_arm_hal/</code> 实现 <code>arm_hal_gazebo</code> + ros2_control controllers.yaml</li>
+      <li><code>verify_m1.sh</code> 校验 home → target → home 关节轨迹</li>
+    </ol>
+  </div>
+</div>
+
+<div style="margin-top:18px;padding:14px;border-left:4px solid #34d399;background:rgba(16,185,129,.10);border-radius:8px">
+  <strong>WSL 安装 ROS2 Humble（参考命令）：</strong>
+  <pre style="margin-top:8px;padding:10px;background:#0f172a;color:#e2e8f0;border-radius:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;overflow:auto">
+sudo apt update &amp;&amp; sudo apt install -y software-properties-common
+sudo add-apt-repository universe
+sudo apt update &amp;&amp; sudo apt install -y curl
+sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+  -o /usr/share/keyrings/ros-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release &amp;&amp; echo $UBUNTU_CODENAME) main" \
+  | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+sudo apt update &amp;&amp; sudo apt install -y ros-humble-desktop
+  </pre>
+</div>

@@ -1,0 +1,108 @@
+<h2>设计第 3 节：安全、故障模型与可恢复策略</h2>
+<p class="subtitle">本地 HMI 胜出 · 保守感知恢复 · 安全限速 · 阶段状态机兼容多机调度。</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">A. 任务级安全边界</div>
+    <div class="mockup-body" style="padding:14px">
+      <ul style="margin:0">
+        <li>所有指令幂等（带 <code>task_id</code>），网络恢复后可恢复或主动取消</li>
+        <li>限位、碰撞、速度、加速度在 <code>ros2_control</code> 内保证</li>
+        <li>急停事件全局广播（RV+TL），任一节点收到立刻停机</li>
+        <li>本地 HMI 严格胜出，网关只能发出“清零请求”，复位须本地确认</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">B. arm_state_mode</div>
+    <div class="mockup-body" style="padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px">
+      idle → planning → moving<br>
+      moving ⇄ halted ⇄ fault<br>
+      any → e_stop （仅本地可清除）<br>
+      fault → recovered （仅本地可清除）
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:18px">
+  <div class="mockup-header">C. PickPlace 阶段状态机</div>
+  <div class="mockup-body" style="padding:14px">
+    <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;font-size:12px;text-align:center">
+      <div style="padding:8px;border:1px solid #60a5fa;border-radius:8px">1. perceive</div>
+      <div style="padding:8px;border:1px solid #60a5fa;border-radius:8px">2. grasp_plan</div>
+      <div style="padding:8px;border:1px solid #34d399;border-radius:8px">3. approach</div>
+      <div style="padding:8px;border:1px solid #34d399;border-radius:8px">4. pre_grasp</div>
+      <div style="padding:8px;border:1px solid #34d399;border-radius:8px">5. grasp</div>
+      <div style="padding:8px;border:1px solid #34d399;border-radius:8px">6. lift</div>
+      <div style="padding:8px;border:1px solid #f59e0b;border-radius:8px">7. transit</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;font-size:12px;text-align:center;margin-top:6px">
+      <div style="padding:8px;border:1px solid #f59e0b;border-radius:8px">8. place_plan</div>
+      <div style="padding:8px;border:1px solid #f59e0b;border-radius:8px">9. place</div>
+      <div style="padding:8px;border:1px solid #f59e0b;border-radius:8px">10. retreat</div>
+      <div style="padding:8px;border:1px solid #22d3ee;border-radius:8px">11. done</div>
+    </div>
+    <p style="margin:8px 0 0">每阶段包含 <strong>pre_check</strong> / <strong>execute</strong> / <strong>post_check</strong>；任何阶段失败都会进入 <strong>recover_safe_home</strong>，开启后续错误处理。</p>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:18px">
+  <div class="mockup-header">D. 故障分类与默认策略</div>
+  <div class="mockup-body" style="padding:14px">
+    <table style="width:100%;font-size:13px;border-collapse:collapse">
+      <thead><tr style="text-align:left;border-bottom:1px solid #334155"><th>类别</th><th>默认策略</th><th>网关语义</th></tr></thead>
+      <tbody>
+        <tr><td>通信超时</td><td>进入 halted，动作 cancel</td><td>TIMEOUT，可重试</td></tr>
+        <tr><td>关节跟踪误差</td><td>立即停止，上报 fault</td><td>FAULT，需本地确认</td></tr>
+        <tr><td>规划失败</td><td>单次重试 → 备选抓取 → 失败</td><td>NO_FEASIBLE_PLAN</td></tr>
+        <tr><td>夹具未响应</td><td>阶段重试 + 释放/再夹</td><td>GRIPPER_RECOVERED</td></tr>
+        <tr><td>感知失效</td><td>退待机，请求 REOBSERVE</td><td>REOBSERVE_REQUIRED</td></tr>
+        <tr><td>急停</td><td>物理停机，上报 e_stop</td><td>ESTOP_ACK</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="split" style="margin-top:18px">
+  <div class="mockup">
+    <div class="mockup-header">E. 限速与降速</div>
+    <div class="mockup-body" style="padding:14px">
+      <ul style="margin:0">
+        <li><strong>默认全速</strong>：1.0 m/s TCP</li>
+        <li><strong>安全位置</strong>：0.2 m/s</li>
+        <li>距障碍 &lt; 0.25 m：减速到 0.2 m/s</li>
+        <li>距障碍 &gt; 0.5 m：恢复 1.0 m/s</li>
+        <li>进入 <code>fault</code> / <code>e_stop</code>：需本地 HMI 复位后才能恢复</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">F. 恢复策略</div>
+    <div class="mockup-body" style="padding:14px">
+      <ul style="margin:0">
+        <li><strong>自动恢复</strong>：通信超时、感知失效、规划失败（单次）</li>
+        <li><strong>半自动恢复</strong>：夹具、跟踪误差——需 HMI 一键恢复</li>
+        <li><strong>人工恢复</strong>：<code>e_stop</code>、碰撞事件——仅本地复位</li>
+        <li>任何自动恢复前必须回到 <code>home_safe</code> 才允许重试</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:18px">
+  <div class="mockup-header">G. Gateway 与调度抽象（多机预留）</div>
+  <div class="mockup-body" style="padding:14px">
+    <p>阶段状态机只负责单个设备内部阶段推进；多设备调度由 Gateway 决策器面负责。它接收高层“任务计划”，生成各设备子任务 Action，同一时间只可能有一个全局“BUSY”动作。设备间同步通过 <code>/scene/free_areas</code> 间接联系，避免设备间点对点耦合。</p>
+  </div>
+</div>
+
+<div style="margin-top:18px;padding:14px;border-left:4px solid #34d399;background:rgba(16,185,129,.10);border-radius:8px">
+  <strong>仅保留等待你确认：</strong>
+  <ol style="margin-bottom:0">
+    <li>PickPlace 阶段顺序是否完整？（包含 perceive 与 done）</li>
+    <li>家用补 0.25 m/0.5 m 限速阈值是否足够？</li>
+    <li>多机器人调度抽象是否只出 <code>PickPlace / Navigate / Pause / Resume</code> 这四种 Action？</li>
+  </ol>
+</div>

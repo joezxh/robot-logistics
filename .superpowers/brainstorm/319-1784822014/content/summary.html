@@ -1,0 +1,68 @@
+<h2>5 节汇总 · Phase 5 设计结论</h2>
+<p class="subtitle">本地 HMI 胜出 · Gateway 只接任务级 Action · 阶段 11 状态机 · 边缘视角嵌入 · M0–M5 一步一验。</p>
+
+<section>
+  <h3>第 1 节：集成边界</h3>
+  <ul>
+    <li>Gateway 仅下发任务级 Action，不覆盖 ros2_control</li>
+    <li>Gazebo 与真实硬件共享 <code>arm_hal</code> 抽象，启动参数按设备 ID 选择</li>
+    <li>Web 实时状态：事件触发拉取 + 周期心跳</li>
+  </ul>
+</section>
+
+<section>
+  <h3>第 2 节：ROS2 接口契约</h3>
+  <ul>
+    <li>包：robot_msgs / robot_bringup / robot_moveit_config / robot_gateway / robot_decision / robot_perception / robot_arm_hal</li>
+    <li>Action：PickPlace；MoveIt MoveGroup + ExecuteTrajectory</li>
+    <li>Topic：camera/* · /perception/* · /robot/state · /estop · /planning_scene_motion</li>
+    <li>TF：world → map → robot_base → arm_base → link1..6 → gripper_frame</li>
+    <li>QoS：BE 实时 / RV+TL 状态 / RV 关键指令</li>
+  </ul>
+</section>
+
+<section>
+  <h3>第 3 节：安全与恢复</h3>
+  <ul>
+    <li>本地 HMI 严格胜出急停；仅本地可清除 <code>e_stop</code></li>
+    <li>arm_state_mode 7 态，感知恢复采用联立采样保守策略</li>
+    <li>PickPlace 11 阶段，每阶段 pre_check/execute/post_check</li>
+    <li>限速：1.0 m/s 全速，0.2 m/s 安全位置；0.25 m/0.5 m 限速阈值</li>
+    <li>顶层调度抽象：PickPlace / Navigate / Pause / Resume（四 Action）</li>
+  </ul>
+</section>
+
+<section>
+  <h3>第 4 节：Web 交互与边缘视角</h3>
+  <ul>
+    <li>页面骨架：Dashboard · TaskQueue · Alerts · LogViewer，沿用现有工程</li>
+    <li>边缘视角：Gazebo 视频 + 点云 + 检测叠加，上限 10 Hz，自动降级</li>
+    <li>权限：observer / operator / supervisor / local_hmi（仅本地清急停）</li>
+    <li>PickPlace 下发：二段确认（勾选约束 + 一键）</li>
+    <li>WS 通道：/ws/devices · /ws/edge/{id} · /ws/alerts · /ws/logs</li>
+    <li>supervisor 独占面板：PG/SQL 状态（只读）、手动 override（带审计日志）</li>
+  </ul>
+</section>
+
+<section>
+  <h3>第 5 节：里程碑与验收</h3>
+  <ul>
+    <li>M0–M5 顺次交付：骨架 → 机器人/仿真 → 感知 → 决策闭环 → Web Gateway → 演示验收</li>
+    <li>每里程碑 1 个 verify_*.sh，进入 CI，验证脚本与代码同存</li>
+    <li>度量：闭环 ≥ 90%、动作 ≤ 90 s、急停响应 ≤ 200 ms、WS 重连 ≤ 2 s 对齐</li>
+    <li>CI nightly 跑全链路，仅记录耗时与产出，不阻断 PR</li>
+    <li>风险：URDF/SRDF 不一致、感知误报、ros2_control 差异，均有回退开关</li>
+  </ul>
+</section>
+
+<div class="risk-list">
+  <h3>下一步可执行项</h3>
+  <ol>
+    <li>M0：`scripts/verify_m0.sh` + robot_bringup/empty.launch.py</li>
+    <li>M1：URDF/SRDF + MoveIt + ros2_control + arm_hal_gazebo</li>
+    <li>M2：相机 + 检测 + PlanningScene 同步；rosbag2 进入 repo</li>
+    <li>M3：状态机 + PickPlace 闭环；故障注入测试覆盖通信超时/感知失效</li>
+    <li>M4：FastAPI → Gateway → 边缘视角联通；supervisor 面板</li>
+    <li>M5：一键全链 + 录像 + 验收单，进入 CI</li>
+  </ol>
+</div>

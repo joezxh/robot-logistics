@@ -1,0 +1,49 @@
+# Shared copies for the project.
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+
+# Frontend
+node_modules/
+dist/
+.vite/
+*.local
+
+# Data
+data/*.db
+
+# ROS2 / colcon build artifacts
+build/
+install/
+log/
+simulation/ros2_ws/build/
+simulation/ros2_ws/install/
+simulation/ros2_ws/log/
+robot-app/ros2_ws/build/
+robot-app/ros2_ws/install/
+robot-app/ros2_ws/log/
+
+# Legacy pre-split layout (superseded by simulation/ and robot-app/)
+ros2_ws/
+
+# VLA training artifacts
+vla-training/outputs/
+vla-training/checkpoints/
+vla-training/data/
+
+# Service logs
+*_uvicorn.log
+*_vite.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

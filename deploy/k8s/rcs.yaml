@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot-logic-rcs
+  namespace: robot-logic
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: robot-logic-rcs }
+  template:
+    metadata:
+      labels: { app: robot-logic-rcs }
+    spec:
+      containers:
+        - name: rcs
+          image: registry.example.com/robot-logic-rcs:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 8100 }]
+          env:
+            - { name: RCS_HOST, value: "0.0.0.0" }
+            - { name: RCS_PORT, value: "8100" }
+            - { name: RCS_MQTT_ENABLED, value: "true" }
+            - { name: RCS_MQTT_HOST, value: "robot-logic-broker.robot-logic.svc" }
+            - { name: RCS_MQTT_PORT, value: "1883" }
+            - { name: RCS_MQTT_STATE_PUBLISH_HZ, value: "10.0" }
+          readinessProbe:
+            httpGet: { path: /health, port: 8100 }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 8100 }
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 200m, memory: 256Mi }
+            limits:   { cpu: 1000m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: robot-logic-rcs
+  namespace: robot-logic
+spec:
+  selector: { app: robot-logic-rcs }
+  ports:
+    - port: 80
+      targetPort: 8100

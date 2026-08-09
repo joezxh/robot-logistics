@@ -1,0 +1,62 @@
+<h2>选择 ROS2 与现有平台的集成边界</h2>
+<p class="subtitle">三种路线都能完成 Gazebo 中的 6 轴机械臂抓放闭环；差别在于 ROS2 与现有 FastAPI / Vue 系统如何解耦。点击一张方案卡进行选择。</p>
+
+<div class="cards" style="grid-template-columns:repeat(3,minmax(260px,1fr));align-items:stretch">
+  <div class="card" data-choice="sidecar" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:18px;min-height:250px">
+      <div style="display:grid;gap:10px;text-align:center;font-size:13px">
+        <div style="padding:10px;border:1px solid #60a5fa;border-radius:9px;background:rgba(59,130,246,.12)">Vue + Three.js<br><small>控制台 / 边缘视角</small></div>
+        <div style="color:#60a5fa">↕ WebSocket / REST</div>
+        <div style="padding:10px;border:1px solid #a78bfa;border-radius:9px;background:rgba(139,92,246,.12)">FastAPI<br><small>任务、告警、鉴权、历史</small></div>
+        <div style="color:#a78bfa">↕ 明确的 Bridge API</div>
+        <div style="padding:10px;border:2px solid #34d399;border-radius:9px;background:rgba(16,185,129,.14)"><strong>独立 ROS2 Gateway</strong><br><small>Action / Topic / TF / 状态聚合</small></div>
+        <div style="color:#34d399">↕ ROS2 DDS</div>
+        <div style="padding:10px;border:1px solid #f59e0b;border-radius:9px;background:rgba(245,158,11,.10)">感知 · 决策 · MoveIt 2 · ros2_control · Gazebo</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 独立 Gateway 边界（推荐）</h3>
+      <p>ROS2 运行于 Ubuntu 22.04，现有后端保持 Python 3.11。可独立测试、重放与替换真实硬件；故障域最清楚。</p>
+      <p><strong>代价：</strong>需要定义 Gateway 契约和双向状态同步。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="embedded" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:18px;min-height:250px">
+      <div style="display:grid;gap:13px;text-align:center;font-size:13px">
+        <div style="padding:10px;border:1px solid #60a5fa;border-radius:9px;background:rgba(59,130,246,.12)">Vue + Three.js</div>
+        <div style="color:#60a5fa">↕ WebSocket / REST</div>
+        <div style="padding:24px 10px;border:2px solid #f59e0b;border-radius:9px;background:rgba(245,158,11,.12)"><strong>FastAPI + rclpy 同进程</strong><br><small>HTTP、DDS、运行时状态共用事件循环</small></div>
+        <div style="color:#f59e0b">↕ ROS2 DDS</div>
+        <div style="padding:10px;border:1px solid #34d399;border-radius:9px;background:rgba(16,185,129,.10)">感知 · MoveIt 2 · Gazebo</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. FastAPI 内嵌 rclpy</h3>
+      <p>开发初期文件少、调用直接，适合一次性演示。</p>
+      <p><strong>代价：</strong>Python/ROS 版本、线程执行器和生命周期耦合；当前后端容器必须整体迁移到 ROS 镜像。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="ros_native" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:18px;min-height:250px">
+      <div style="display:grid;gap:13px;text-align:center;font-size:13px">
+        <div style="padding:10px;border:1px solid #60a5fa;border-radius:9px;background:rgba(59,130,246,.12)">Vue + Three.js</div>
+        <div style="color:#60a5fa">↕ rosbridge / 自定义网关</div>
+        <div style="padding:24px 10px;border:2px solid #34d399;border-radius:9px;background:rgba(16,185,129,.14)"><strong>ROS2 原生系统为主</strong><br><small>任务、设备、规划、状态全部 ROS 化</small></div>
+        <div style="color:#34d399">↕ 可选事件同步</div>
+        <div style="padding:10px;border:1px solid #a78bfa;border-radius:9px;background:rgba(139,92,246,.10)">FastAPI 退化为历史 / 报表服务</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. ROS2 原生重构</h3>
+      <p>长期机器人平台语义最统一，适合从零建设产品级控制平面。</p>
+      <p><strong>代价：</strong>会重写现有 Runtime、任务和设备链路，首阶段风险与工期最高。</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:22px;padding:16px;border-left:4px solid #34d399;background:rgba(16,185,129,.08);border-radius:8px">
+  <h3 style="margin-top:0">为什么推荐 A</h3>
+  <p style="margin-bottom:0">它保留现有 Vue/FastAPI 原型的投入，同时让安全关键机器人执行链完全留在 ROS2/Linux 内；Gazebo 与未来真实控制器只需替换 ROS2 硬件接口，Web 层无需感知具体驱动。</p>
+</div>

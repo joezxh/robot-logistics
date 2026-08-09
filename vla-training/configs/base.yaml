@@ -1,0 +1,30 @@
+# Common settings shared by every run. Task configs override on top of this.
+#
+# Loaded by src/vla_training/config.py, which merges files left-to-right:
+#   base.yaml < dataset.yaml < finetune_lora.yaml < CLI overrides
+
+seed: 42
+
+paths:
+  # Raw trajectories as captured from the simulator or a real robot.
+  raw_data_dir: data/raw
+  # Converted, training-ready shards.
+  processed_data_dir: data/processed
+  # Checkpoints, logs and exported artefacts.
+  output_dir: outputs
+  checkpoint_dir: outputs/checkpoints
+  export_dir: outputs/export
+
+logging:
+  level: INFO
+  # Tracking backend: one of none | tensorboard | wandb
+  tracker: tensorboard
+  log_every_n_steps: 10
+
+runtime:
+  # auto resolves to cuda when available, else cpu
+  device: auto
+  # bf16 on Ampere+, fp16 on older cards, no for CPU debugging
+  mixed_precision: bf16
+  num_workers: 4
+  pin_memory: true

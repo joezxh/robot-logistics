@@ -1,0 +1,88 @@
+<h2>设计第 4 节：Web/前端交互与边缘视角</h2>
+<p class="subtitle">仓库视角 → 边缘视角跳转 · Gazebo + 点云 + 检测叠加 · 10 Hz 上限 · 二段确认。</p>
+
+<div class="mockup">
+  <div class="mockup-header">A. 页面骨架</div>
+  <div class="mockup-body" style="padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px">
+    ┌────────────────────────────────────────────────────────────────────┐
+    │ 顶栏：设备 · 任务 · 告警 · 日志          角色：operator | supervisor │
+    ├────────────────────────┬───────────────────────────────────────────┤
+    │  设备列表              │  Three.js 仓库视角                       │
+    │  · robot-01  ●        │   · robot-01 / robot-02  / robot-03      │
+    │  · robot-02  ◐        │   · 点击设备 → 边缘视角                    │
+    │  · robot-03  ○        │   · 浮动检测框 · 任务阶段标签              │
+    ├────────────────────────┴───────────────────────────────────────────┤
+    │  日志抽屉（可收起）：告警 / 事件 / WS 状态                          │
+    └────────────────────────────────────────────────────────────────────┘
+  </div>
+</div>
+
+<div class="split" style="margin-top:18px">
+  <div class="mockup">
+    <div class="mockup-header">B. 边缘视角布局</div>
+    <div class="mockup-body" style="padding:14px">
+      <ul style="margin:0">
+        <li><strong>左 70%</strong>：Gazebo 第一人称 + 点云 + 检测叠加（10 Hz 上限）</li>
+        <li><strong>右 30%</strong>：任务阶段时间线 + arm_state_mode + 限速 + 控制面板</li>
+        <li><strong>顶部状态条</strong>：连接质量 / 最近心跳 / 当前阶段</li>
+        <li><strong>底部</strong>：仅观察者模式下的“录制”按钮（仿真）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">C. 控制面权限</div>
+    <div class="mockup-body" style="padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px">
+      observer : 看                  — 无
+      operator : 看 + 下发任务       — PickPlace/Navigate/Pause/Resume
+      supervisor:看 + 锁定设备        — 以上 + lock_device
+      local_hmi : 急停/清零           — 本机，仅限急停面板
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:18px">
+  <div class="mockup-header">D. 下发任务流程（二段确认）</div>
+  <div class="mockup-body" style="padding:14px">
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;font-size:12px;text-align:center">
+      <div style="padding:10px;border:1px solid #60a5fa;border-radius:8px">① 选择目标 + 放置区</div>
+      <div style="padding:10px;border:1px solid #60a5fa;border-radius:8px">② 勾选安全约束</div>
+      <div style="padding:10px;border:1px solid #34d399;border-radius:8px">③ “确认下发”按钮</div>
+      <div style="padding:10px;border:1px solid #f59e0b;border-radius:8px">④ UI 切到 “待接收”</div>
+    </div>
+    <p style="margin:8px 0 0">Action 接收后 UI 推进阶段进度；任何异常状态会以 banner 形式呈现，30 s 内无反馈 → “连接弱” 黄色提示 + 上次状态快照。</p>
+  </div>
+</div>
+
+<div class="split" style="margin-top:18px">
+  <div class="mockup">
+    <div class="mockup-header">E. WS 通道与重连</div>
+    <div class="mockup-body" style="padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px">
+      /ws/devices          设备总览（arm_state_mode · state · stage）
+      /ws/edge/{id}        边缘视角（camera · 点云 · detection · scene）
+      /ws/alerts           告警全局广播（与设备解耦）
+      /ws/logs             审计日志（仅 supervisor 可见）
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">F. 渲染频率与降级</div>
+    <div class="mockup-body" style="padding:14px">
+      <ul style="margin:0">
+        <li>边缘视角默认 10 Hz 上限；超载自动降到 5 Hz</li>
+        <li>点位姿态仅推送增量（差分坐标），避免重复 6D 信息</li>
+        <li>相机流优先保证：点云降级 → 检测降级</li>
+        <li>WS 失联 ≥30 s → 黄色提示 + 上次状态快照（不自动跳转）</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:18px;padding:14px;border-left:4px solid #34d399;background:rgba(16,185,129,.10);border-radius:8px">
+  <strong>等待最后确认：</strong>
+  <ol style="margin-bottom:0">
+    <li>骨架、视角、权限、控制流程是否完整？</li>
+    <li>是否需要为 supervisor 加一个“查看 PG/SQL 状态”面板（仅查看）？</li>
+    <li>是否需要为仿真中机器加一个“手动 override”（仅 supervisor，且留审计日志）？</li>
+  </ol>
+</div>

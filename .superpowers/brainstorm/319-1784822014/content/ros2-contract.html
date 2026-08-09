@@ -1,0 +1,92 @@
+<h2>设计第 2 节：ROS2 接口契约</h2>
+<p class="subtitle">Gateway 仅下发任务级 Action；事件触发拉取 + 周期心跳保持 Web 状态同步；Gazebo 与未来硬件共享 <code>arm_hal</code> 抽象。</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">A. ROS2 包与节点</div>
+    <div class="mockup-body" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:14px">
+      robot_msgs              # Action/Service/Topic/Message
+      robot_bringup           # launch + 参数选择
+      robot_moveit_config     # SRDF/Kinematics/Plugins
+      robot_gateway           # Action 客户端，状态聚合，心跳
+      robot_decision          # 状态机，抓取候选，恢复
+      robot_perception        # 相机 + 检测 + 位姿 + PlanningScene
+      robot_arm_hal           # 硬件抽象（Gazebo/真实两套驱动 + 同一接口）
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">B. 关键 Action / Service</div>
+    <div class="mockup-body" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:14px">
+      <div><strong>robot_msgs/action/PickPlace</strong><br><small>goal: target_object_id · place_zone_id · params<br>feedback: stage · progress · last_error<br>result: success · stats · failure_reason</small></div>
+      <hr/>
+      <div><strong>MoveGroup action</strong>：交给 MoveIt 2</div>
+      <div><strong>ExecuteTrajectory action</strong>：真实下发</div>
+      <div><strong>Perception/detect_objects srv</strong>：按需同步触发</div>
+      <div><strong>PlanningScene/update srv</strong>：添加/移除障碍物</div>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">C. 关键 Topic</div>
+    <div class="mockup-body" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:14px">
+      <div><span style="color:#22d3ee">cam</span>  /&lt;ns&gt;/camera/image_raw  (BE)</div>
+      <div><span style="color:#22d3ee">cam</span>  /&lt;ns&gt;/camera/points    (BE)</div>
+      <div><span style="color:#22d3ee">pcp</span>  /&lt;ns&gt;/perception/detections (RV)</div>
+      <div><span style="color:#22d3ee">pcp</span>  /&lt;ns&gt;/perception/poses  (BE+KEEP_LAST)</div>
+      <div><span style="color:#f59e0b">dec</span>  /&lt;ns&gt;/decision/feedback (BE)</div>
+      <div><span style="color:#f97316">mv</span>   /&lt;ns&gt;/planning_scene_motion (BE)</div>
+      <div><span style="color:#94a3b8">gw</span>   /&lt;ns&gt;/robot/state        (RV+KEEP_LAST)</div>
+      <div><span style="color:#94a3b8">gw</span>   /&lt;ns&gt;/robot/diagnostics   (BE)</div>
+      <div><span style="color:#ef4444">safe</span> /&lt;ns&gt;/estop              (RV+TL)</div>
+      <div><span style="color:#ef4444">safe</span> /&lt;ns&gt;/arm_state_mode     (RV+KEEP_LAST)</div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">D. TF 树与命名约定</div>
+    <div class="mockup-body" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:14px">
+      world → map → robot_base<br>
+      → arm_base → shoulder → link1..link6 → gripper_frame<br>
+      ·· gripper_tip（TCP）<br>
+      ·· camera_optical_frame（外参固定）<br>
+      ·· detected_object_N（检测结果，TTL 5s）<br><br>
+      ns 命名：&lt;env&gt;_&lt;device_id&gt;<br>
+      例：sim_robot01、real_robot01
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:18px">
+  <div class="mockup-header">E. QoS 与安全信道</div>
+  <div class="mockup-body" style="padding:14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:13px">
+      <div style="padding:10px;border:1px solid #22d3ee;border-radius:8px;background:rgba(6,182,212,.10)"><strong>实时类（BE）</strong><br>camera/*、perception/poses、decision/feedback、diagnostics<br>深度 LATEST=1；订阅通过事件触发</div>
+      <div style="padding:10px;border:1px solid #34d399;border-radius:8px;background:rgba(16,185,129,.12)"><strong>状态类（RV+TL）</strong><br>/robot/state、/arm_state_mode、estop、goal/cancel<br>用于 Web 重连与延迟加入</div>
+      <div style="padding:10px;border:1px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.12)"><strong>关键指令（RV）</strong><br>Action goal/feedback/result、Service 调用<br>动作取消走专门 Action 接口</div>
+    </div>
+    <p style="margin-top:10px"><strong>安全信道：</strong>急停/模式只接受来自网关或本机 HMI 的写权限；任一节点心跳超时 3 倍周期即进入 <code>fault</code> 模式，机器人停机并尝试保留最近安全位置。</p>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:18px">
+  <div class="mockup-header">F. arm_hal 抽象接口</div>
+  <div class="mockup-body" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:14px">
+    robot_msgs/action/ExecuteJointTrajectory  // 带宽采样轨迹<br>
+    robot_msgs/srv/GetRobotState              // 关节位置/速度、夹具、外部状态<br>
+    robot_msgs/srv/SetToolPower               // 夹具吸/夹/释放<br>
+    ros2_control hardware_interface            // 兼容 JointTrajectoryController<br><br>
+    robot_arm_hal_gazebo                      // Gazebo Fortress 实现<br>
+    robot_arm_hal_real                        // 真实机械臂实现（后期）
+  </div>
+</div>
+
+<div style="margin-top:20px;padding:15px;border-left:4px solid #60a5fa;background:rgba(59,130,246,.08);border-radius:8px">
+  <strong>待确认点：</strong>
+  <ol style="margin-bottom:0">
+    <li>`PickPlace.action` 的 goal 字段是否足够（如需携带姿态/手型参数？）</li>
+    <li>检测结果 TF 的 TTL 是 5 秒是否合适？若 5 秒内已经执行了抓取动作会重新覆盖吗？</li>
+    <li>“急停/恢复”运行时是否需要远程人员手工确认（1人、3人、仅限本机 HMI）？</li>
+  </ol>
+</div>

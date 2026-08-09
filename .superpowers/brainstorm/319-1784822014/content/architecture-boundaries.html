@@ -1,0 +1,48 @@
+<h2>设计第 1 节：总体架构与子项目边界</h2>
+<p class="subtitle">首个可验收闭环：在 Gazebo Fortress 中点击通用 6 轴机械臂，进入边缘端视角，识别已知箱体并完成抓取—放置。</p>
+
+<div class="mockup">
+  <div class="mockup-header">控制平面与机器人执行平面分层</div>
+  <div class="mockup-body" style="padding:20px">
+    <div style="display:grid;grid-template-columns:1fr 64px 1.2fr;gap:12px;align-items:center">
+      <div style="display:grid;gap:12px">
+        <div class="label">Windows / Web 控制平面</div>
+        <div style="padding:14px;border:1px solid #60a5fa;border-radius:10px;background:rgba(59,130,246,.12)"><strong>Vue 3 + Three.js</strong><br><small>设备列表、任务控制、Gazebo 视频/数字孪生视角、规划可视化</small></div>
+        <div style="padding:14px;border:1px solid #a78bfa;border-radius:10px;background:rgba(139,92,246,.12)"><strong>FastAPI</strong><br><small>用户/API、任务编排、审计、告警、历史数据；不发关节级指令</small></div>
+      </div>
+
+      <div style="text-align:center;color:#94a3b8;font-size:12px">REST / WS<br>↔<br>Gateway<br>契约</div>
+
+      <div style="display:grid;gap:10px">
+        <div class="label">Ubuntu 22.04 / ROS2 Humble 边缘执行平面</div>
+        <div style="padding:12px;border:2px solid #34d399;border-radius:10px;background:rgba(16,185,129,.14)"><strong>robot_gateway</strong><br><small>任务 Action 客户端、状态聚合、幂等命令、心跳与断连策略</small></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="padding:12px;border:1px solid #22d3ee;border-radius:9px;background:rgba(6,182,212,.10)"><strong>感知子系统</strong><br><small>RGB-D → 点云 → 检测 → 6D 位姿 → PlanningScene</small></div>
+          <div style="padding:12px;border:1px solid #f59e0b;border-radius:9px;background:rgba(245,158,11,.10)"><strong>任务决策器</strong><br><small>校验 → 抓取候选 → pick/place 状态机 → 恢复</small></div>
+        </div>
+        <div style="padding:12px;border:1px solid #f97316;border-radius:9px;background:rgba(249,115,22,.10)"><strong>MoveIt 2 规划执行</strong><br><small>PlanningScene + OMPL/Pilz + 时间参数化 + ExecuteTrajectory</small></div>
+        <div style="padding:12px;border:1px solid #ef4444;border-radius:9px;background:rgba(239,68,68,.10)"><strong>ros2_control 安全边界</strong><br><small>JointTrajectoryController、夹具控制器、限位、急停/取消</small></div>
+        <div style="padding:12px;border:1px solid #64748b;border-radius:9px;background:rgba(100,116,139,.10)"><strong>Gazebo Fortress</strong><br><small>通用 6 轴 URDF/Xacro、RGB-D、夹具、箱体、控制器与世界</small></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:20px">
+  <h3>拆成 4 个顺序交付的子项目</h3>
+  <div class="options" style="pointer-events:none">
+    <div class="option"><div class="letter">1</div><div class="content"><h3>机器人与仿真底座</h3><p>模型、TF、ros2_control、MoveIt 配置、Gazebo 世界；先证明无感知的预设位姿运动。</p></div></div>
+    <div class="option"><div class="letter">2</div><div class="content"><h3>感知与场景更新</h3><p>RGB-D、目标检测、6D 位姿、场景障碍物和质量门控；通过 rosbag2 可重复测试。</p></div></div>
+    <div class="option"><div class="letter">3</div><div class="content"><h3>抓放决策闭环</h3><p>行为状态机、抓取候选、规划执行、失败恢复和安全取消。</p></div></div>
+    <div class="option"><div class="letter">4</div><div class="content"><h3>Web Gateway 与边缘视角</h3><p>任务协议、实时遥测、相机流/数字孪生视图、设备点击切换与操作指南。</p></div></div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros"><h4>首阶段明确包含</h4><ul><li>Gazebo 中已知箱体抓放闭环</li><li>MoveIt 2 碰撞规划与 ros2_control 执行</li><li>感知置信度/时效性门控和失败恢复</li><li>点击 robot-01 进入边缘端视角</li></ul></div>
+  <div class="cons"><h4>首阶段明确不包含</h4><ul><li>真实硬件联机和安全认证</li><li>Nav2、AGV 与堆垛机完整控制</li><li>开放词汇检测和云端抓取推理</li><li>动态障碍下的连续运动中重规划</li></ul></div>
+</div>
+
+<div style="margin-top:20px;padding:15px;border-left:4px solid #60a5fa;background:rgba(59,130,246,.08);border-radius:8px">
+  <strong>确认点：</strong>这个分层、4 个子项目顺序和首阶段范围是否正确？如需调整，请在终端说明。
+</div>

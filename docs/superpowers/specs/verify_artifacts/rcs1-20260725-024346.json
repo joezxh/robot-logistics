@@ -1,0 +1,136 @@
+{
+  "ts": "2026-07-24T18:44:27.959062+00:00",
+  "spec": "rcs-1-motion-control v0.1",
+  "registry": {
+    "devices": [
+      {
+        "device_id": "robot-01",
+        "morphology": "arm",
+        "num_joints": 6,
+        "control_hz": 1000,
+        "limits": {
+          "pos_lower": [
+            -3.14159,
+            -3.14159,
+            -3.14159,
+            -3.14159,
+            -3.14159,
+            -3.14159
+          ],
+          "pos_upper": [
+            3.14159,
+            3.14159,
+            3.14159,
+            3.14159,
+            3.14159,
+            3.14159
+          ],
+          "vel_max": [
+            2.5,
+            2.5,
+            2.5,
+            2.5,
+            2.5,
+            2.5
+          ],
+          "acc_max": [
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+            5.0
+          ],
+          "rad_th": 0.05,
+          "pos_th": 0.01
+        },
+        "home_joints": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "locked": false
+      },
+      {
+        "device_id": "agv-01",
+        "morphology": "agv",
+        "num_joints": 2,
+        "control_hz": 50,
+        "limits": {
+          "pos_lower": [
+            -2.0,
+            -2.0
+          ],
+          "pos_upper": [
+            2.0,
+            2.0
+          ],
+          "vel_max": [
+            1.0,
+            1.0
+          ],
+          "acc_max": [
+            2.0,
+            2.0
+          ],
+          "rad_th": 0.05,
+          "pos_th": 0.01
+        },
+        "home_joints": [
+          0.0,
+          0.0
+        ],
+        "locked": false
+      },
+      {
+        "device_id": "stacker-01",
+        "morphology": "stacker",
+        "num_joints": 2,
+        "control_hz": 50,
+        "limits": {
+          "pos_lower": [
+            -5.0,
+            -10.0
+          ],
+          "pos_upper": [
+            5.0,
+            10.0
+          ],
+          "vel_max": [
+            1.0,
+            2.0
+          ],
+          "acc_max": [
+            2.0,
+            4.0
+          ],
+          "rad_th": 0.05,
+          "pos_th": 0.01
+        },
+        "home_joints": [
+          0.0,
+          0.0
+        ],
+        "locked": false
+      }
+    ]
+  },
+  "post_command_state": {
+    "device_id": "robot-01",
+    "mode": "running",
+    "active_command_id": "6f33ba7f6e9742bebc5cda87230c8682",
+    "last_error": null
+  },
+  "estop_state": {
+    "device_id": "robot-01",
+    "mode": "e_stop",
+    "active_command_id": "6f33ba7f6e9742bebc5cda87230c8682",
+    "last_error": "estop"
+  },
+  "summary": {
+    "ok": true
+  }
+}
