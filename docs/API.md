@@ -3,6 +3,8 @@
 > Reference for the robot-logic prototype HTTP API. The default base URL is
 > `http://localhost:8000`. All endpoints are JSON unless noted; SSE endpoints
 > return `text/event-stream`.
+>
+> **Last updated**: 2026-08-09 — Phase 1 (dual-arm AGV loading robot) complete.
 
 ## Conventions
 
@@ -49,7 +51,7 @@ curl http://localhost:8000/api/status
 {
   "running": true,
   "uptime_seconds": 42.0,
-  "device_count": 4,
+  "device_count": 5,
   "task_count": 3,
   "queue_size": 3
 }
@@ -115,6 +117,31 @@ curl http://localhost:8000/api/devices
 
 `status` is one of `idle | running | charging | fault`.
 
+**Default devices**:
+
+| device_id | device_type | name | position |
+|-----------|-------------|------|----------|
+| robot-01 | container_robot | 集装箱装卸机器人 | [-8, 0, 2] |
+| loader-01 | loading_robot | 双臂AGV装卸机器人 | [-3, 0, 0] |
+| agv-01 | agv | AGV 转运车 | [-5, 0, -1] |
+| agv-02 | agv | AGV 转运车 2 | [1, 0, 2] |
+| stacker-01 | stacker | 立库堆垛机 | [7, 0, 0] |
+
+### `GET /api/stats`
+
+Detailed per-status / per-type task counts plus uptime.
+
+```json
+{
+  "by_status": {"pending": 1, "running": 2, "completed": 0},
+  "by_type": {"dock_loading": 1, "agv_transport": 1, "warehouse_storage": 1},
+  "per_device_battery": {"robot-01": 99.5, "loader-01": 100.0, "agv-01": 98.2},
+  "uptime_seconds": 42.0,
+  "running": true,
+  "reverted_count": 0
+}
+```
+
 ---
 
 ## Tasks
@@ -136,7 +163,7 @@ curl -X POST http://localhost:8000/api/tasks \
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `type` | string | yes | one of `dock_loading`, `agv_transport`, `warehouse_storage` |
+| `type` | string | yes | one of `dock_loading`, `agv_transport`, `warehouse_storage`, `container_unload`, or any custom string |
 | `description` | string | no | human label |
 | `priority` | int | no | `1` critical → `4` low (default 3) |
 | `device_id` | string | yes | must match `GET /api/devices` |
@@ -181,6 +208,72 @@ curl -X POST http://localhost:8000/api/tasks/rollback \
 ```
 
 `limit` defaults to 1, range 1-20.
+
+## Sites
+
+### `GET /api/sites`
+
+List all sites (dock/warehouse zones).
+
+### `POST /api/sites`
+
+Create a site.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes | 1-64 chars |
+| `kind` | string | yes | `dock` or `warehouse` |
+| `name` | string | yes | 1-128 chars |
+| `x`, `y`, `z` | float | no | position (default 0) |
+| `width`, `height`, `depth` | float | no | dimensions (default 2.5/1.5/2.5) |
+| `rotation` | float | no | radians (default 0) |
+| `color` | string | no | hex color (default `#5eb0ff`) |
+
+### `PATCH /api/sites/{site_id}`
+
+Partial update of a site. All fields optional.
+
+### `DELETE /api/sites/{site_id}`
+
+Remove a site. `404` if unknown.
+
+---
+
+## Device joints SSE
+
+### `GET /api/devices/{device_id}/joints` (SSE)
+
+Real-time joint positions for a device, updated at 30Hz. Used by the frontend
+for robot visualization.
+
+```bash
+curl -N http://localhost:8000/api/devices/loader-01/joints
+```
+
+```json
+{
+  "device_id": "loader-01",
+  "joints": {
+    "left_joint_1": 0.0,
+    "left_joint_2": 0.0,
+    "left_joint_3": 0.0,
+    "left_joint_4": 0.0,
+    "left_joint_5": 0.0,
+    "left_joint_6": 0.0,
+    "right_joint_1": 0.0,
+    "right_joint_2": 0.0,
+    "right_joint_3": 0.0,
+    "right_joint_4": 0.0,
+    "right_joint_5": 0.0,
+    "right_joint_6": 0.0,
+    "left_paddle": 0.0,
+    "right_paddle": 0.0
+  },
+  "timestamp": 1723190400.0
+}
+```
+
+For `loader-01`, 14 joints: 6 left arm + 6 right arm + 2 hug paddles.
 
 ---
 
@@ -346,11 +439,18 @@ Command body (validated by `shared/python/robot_contracts`):
 ```json
 {
   "command_id": "c-abc",
-  "type": "move_j | move_l | stop | home | estop | recover",
+  "type": "move_j | move_l | execute_task | stop | home | estop | recover",
   "target_joints": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-  "speed_scale": 1.0
+  "speed_scale": 1.0,
+  "task_type": "pick_box",
+  "parameters": {"target_pose": {"x": 0, "y": 0, "z": 0.5}},
+  "group": "both"
 }
 ```
+
+When `type` is `execute_task`, the `task_type` and `parameters` fields are used
+by `TaskCoordinator` to drive the 9-phase FSM. `group` selects the execution
+group: `"left"`, `"right"`, `"base"`, or `"both"`.
 
 ## MQTT interface
 

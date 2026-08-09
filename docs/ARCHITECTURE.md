@@ -4,6 +4,8 @@ This document describes the four sub-projects, their dependency directions, and
 the communication matrix between them. It is the companion to the
 [four-subproject split design spec](superpowers/specs/2026-08-07-four-subproject-split-design.md).
 
+> **Last updated**: 2026-08-09 — Phase 1 (dual-arm AGV loading robot) complete.
+
 ## Dependency direction (enforced)
 
 ```
@@ -51,31 +53,51 @@ These directions are checked by `scripts/verify_split.sh`.
   and `EventBus` alerts (QoS 1); subscribes command topics (QoS 1) and routes
   them through the **same** `on_command()` path as REST. Never touches the
   1 kHz tick.
+- **Tests**: 85 passed.
 
 ### `simulation/` — Logistics simulation
 
 - **backend/**: FastAPI orchestration — devices, tasks, sites, alerts, logs,
-  metrics (SSE). Embeds RCS when `RCS_EMBEDDED=true`.
+  metrics (SSE). Embeds RCS when `RCS_EMBEDDED=true`. Includes
+  `SimulationMqttBridge` for MQTT communication with `robot-app`.
+  Supports 5 devices: `robot-01`, `loader-01`, `agv-01`, `agv-02`, `stacker-01`.
 - **frontend/**: Vue 3 + Vite + Three.js dashboard. Calls `/api/*` and `/ws`
-  relative paths — unchanged by the split.
+  relative paths — unchanged by the split. Renders `LoaderRobot` (dual-arm AGV
+  with `AgvBase` + dual `RobotArm` + hug paddles), `RobotArm`, and warehouse
+  scene. SSE joint endpoint at `/api/devices/{device_id}/joints` (30Hz).
 - **ros2_ws/**: `robot_bringup` (depends on `robot_arm_hal` via underlay) and
   `robot_moveit_config`.
+- **Tests**: 71 passed (backend).
 
 ### `robot-app/` — Robot-side application
 
 - **robot_gateway**: MQTT ↔ ROS 2 bridge. Receives commands (QoS 1) from RCS,
-  forwards to local ROS 2 graph; publishes state (QoS 0) and telemetry (QoS 0).
-  Buffers while the broker is unreachable.
+  forwards to local ROS 2 graph via `~/motion_command` and `~/task_command`;
+  publishes state (QoS 0) via `~/robot_state` and telemetry (QoS 0).
+  Buffers while the broker is unreachable. Includes `task_sink` routing for
+  `execute_task` commands → `TaskCoordinator`.
 - **robot_msgs**: local message contracts mirroring `shared/contracts`.
-- **robot_decision / robot_perception / robot_arm_hal**: behavior, sensing, and
-  the arm hardware-abstraction layer (the shared HAL used by the simulation
-  workspace).
+  Dataclasses: `CommandMsg`, `MoveCommandGoal`, `Pose6DMsg`, `RobotStateMsg`,
+  `RobotTelemetryMsg`, `TaskCommandMsg`, `HugParamsMsg`, `BaseStateMsg`,
+  `HugStateMsg`. Zero rclpy dependency.
+- **robot_decision**: behavior layer — `TaskCoordinator` (9-phase FSM + ABORTING),
+  `TaskCoordinatorNode` (ROS 2 wrapper with adapter layer), `BaseExecutor`
+  (waypoint following), `ArmExecutor` (MoveIt), `HugController` (dual-arm
+  synchronous hug), `SafetyMonitor` (independent safety interlocks),
+  `MoveItClient`, `MotionPlannerNode`.
+- **robot_arm_hal**: dual-arm HAL — `arm_hal.ros2_control.xacro` (6-DOF macro)
+  + `dual_arm.ros2_control.xacro` (left/right instantiation via `arm_id`).
+- **robot_base_hal**: diff-drive base HAL — `base.ros2_control.xacro` +
+  `loader.urdf.xacro` + `diff_drive.yaml` controller config.
+- **robot_perception**: placeholder for Phase 2 (point cloud pipeline).
+- **Tests**: 37 passed (decision), 44 passed (gateway).
 
 ### `vla-training/` — VLA pipeline (skeleton)
 
 Data collection → conversion (RLDS/LeRobot-style) → LoRA fine-tune →
 evaluation → inference export. Declares `torch`/`transformers`/`peft` but does
 **not** download weights or run training. Export target: `robot-app/robot_decision`.
+- **Tests**: 5 passed.
 
 ### `shared/` — Communication contracts
 
@@ -92,6 +114,25 @@ evaluation → inference export. Declares `torch`/`transformers`/`peft` but does
 | Alert | RCS → broker | `rcs/{device_id}/alert` | 1 | `EventBus` events |
 | Telemetry | robot → broker | `robot/{device_id}/telemetry` | 0 | battery/temp/connectivity |
 
+**Command types** (in `command.schema.json`):
+
+| type | purpose | key fields |
+| --- | --- | --- |
+| `move_j` | joint-space motion | `target_joints[]`, `speed_scale` |
+| `move_l` | Cartesian linear motion | `target_pose{x,y,z,rx,ry,rz}` |
+| `execute_task` | task-level command | `task_type`, `parameters`, `group` |
+| `estop` | emergency stop | independent fast path |
+| `stop` / `home` / `recover` | debug passthrough | — |
+
+**Task types** (`execute_task.task_type`):
+
+| task_type | FSM entry phase | executor |
+| --- | --- | --- |
+| `goto` | navigating | BaseExecutor |
+| `pick_box` | navigating → ... → hugging | ArmExecutor + HugController |
+| `place_box` | navigating → ... → placing | ArmExecutor + HugController |
+| `home_all` | retreating → idle | all executors |
+
 REST surface (embedded under `/api/rcs`, standalone on `:8100`):
 
 - `GET  /api/rcs/registry`
@@ -99,5 +140,11 @@ REST surface (embedded under `/api/rcs`, standalone on `:8100`):
 - `GET  /api/rcs/{device_id}/state`
 - `POST /api/rcs/{device_id}/estop` / `clear_estop`
 - `GET  /api/rcs/_health` and `GET /health` (standalone only)
+
+SSE endpoints (simulation backend):
+
+- `GET /api/devices/{device_id}/joints` — real-time joint positions (30Hz)
+- `GET /api/logs/stream` — live log entries
+- `GET /api/alerts/stream` — alert state transitions
 
 See [`API.md`](API.md) for full request/response shapes.

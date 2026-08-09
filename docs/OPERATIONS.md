@@ -18,62 +18,252 @@ flowchart LR
     Runtime[In-memory Runtime]
     AlertEngine[AlertEngine]
     DB[(SQLite prototype.db)]
+    MQTTBridge[SimulationMqttBridge]
   end
   Sim -->|embedded router| RCS[RCS control loop]
   Sim -.->|MQTT broker| RCS
+  Sim -.->|MQTT| Broker[Mosquitto :1883]
+  Broker -.->|MQTT| RobotApp[robot-app / ROS 2]
   API --> Runtime
   API --> AlertEngine
   API --> DB
   API -->|text/event-stream| Browser
+  subgraph RobotApp[robot-app — ROS 2]
+    GW[robot_gateway]
+    DEC[robot_decision]
+    ARM[robot_arm_hal]
+    BASE[robot_base_hal]
+    MSG[robot_msgs]
+  end
+  GW -->|~/task_command| DEC
+  GW -->|~/motion_command| DEC
+  DEC -->|MoveIt| ARM
+  DEC -->|cmd_vel| BASE
 ```
 
 - **Simulation backend** (`simulation/backend/`): FastAPI + SQLAlchemy
   (async, SQLite) + an in-memory `Runtime` driving the simulator. Embeds RCS
   (default) or calls it as a standalone service. Hosts REST, SSE, and
-  Prometheus endpoints.
+  Prometheus endpoints. Includes `SimulationMqttBridge` for MQTT communication.
 - **Frontend** (`simulation/frontend/`): Vue 3 + Vite + Three.js. Vite dev
-  proxies `/api/*` to the backend.
+  proxies `/api/*` to the backend. Renders `LoaderRobot` (dual-arm AGV),
+  `RobotArm`, and warehouse scene.
 - **RCS** (`rcs/`): robot control system, mounted under `/api/rcs` (embedded)
   or served standalone on `:8100`. Communicates with the robot side over MQTT.
+- **robot-app** (`robot-app/ros2_ws/src/`): ROS 2 packages for the physical
+  robot side. `robot_gateway` bridges MQTT ↔ ROS 2; `robot_decision` hosts
+  `TaskCoordinator` (9-phase FSM), `SafetyMonitor`, `BaseExecutor`,
+  `ArmExecutor`, `HugController`.
+- **shared** (`shared/`): zero-dependency MQTT contracts (JSON Schema +
+  Pydantic models) shared between `rcs/`, `simulation/`, and `robot-app/`.
 
 ---
 
 ## Local development
 
 ### Prerequisites
-- Python ≥ 3.11
-- Node ≥ 20 / npm ≥ 10
 
-### One-shot startup
+| 工具 | 版本要求 | 用途 |
+|------|----------|------|
+| Python | ≥ 3.11 | simulation backend, rcs, shared contracts |
+| Node.js | ≥ 20 / npm ≥ 10 | frontend (Vue 3 + Vite) |
+| Docker + docker compose | 最新稳定版 | 可选：Mosquitto + 全栈部署 |
+| ROS 2 Humble | — | robot-app（仅物理机器人部署时需要） |
+| Git | ≥ 2.30 | 版本控制 |
+
+### 项目目录结构
+
+```
+robot-logic/
+├── shared/              # MQTT 通信契约（JSON Schema + Pydantic）
+├── rcs/                 # 机器人控制系统 (RCS)
+├── simulation/
+│   ├── backend/         # FastAPI 仿真后端
+│   ├── frontend/        # Vue 3 + Three.js 可视化前端
+│   └── ros2_ws/         # Gazebo/MoveIt 仿真工作区
+├── robot-app/
+│   └── ros2_ws/src/     # ROS 2 机器人端应用
+│       ├── robot_gateway/    # MQTT ↔ ROS 2 桥接
+│       ├── robot_decision/   # TaskCoordinator + 执行器
+│       ├── robot_arm_hal/    # 双臂 HAL (URDF + ros2_control)
+│       ├── robot_base_hal/   # 底盘 HAL (URDF + diff_drive)
+│       ├── robot_msgs/       # 本地消息契约
+│       └── robot_perception/ # 感知（Phase 2）
+├── vla-training/        # VLA 模型训练流水线
+├── deploy/              # Docker Compose + K8s 配置
+└── docs/                # 设计文档
+```
+
+### 快速启动（最小化：后端 + 前端）
+
+这是最简单的启动方式，不需要 Docker 或 ROS 2。RCS 默认嵌入在仿真后端中。
+
+**终端 1 — 仿真后端**：
 
 ```bash
-# Simulation backend (RCS embedded by default)
 cd simulation/backend
 python -m venv .venv
-. .venv/Scripts/activate       # Windows; on macOS/Linux use `source .venv/bin/activate`
-pip install -r requirements.txt
-uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+# source .venv/bin/activate
 
-# Frontend (separate shell)
+pip install -r requirements.txt
+# 可选：安装共享契约包以获得严格验证
+pip install -e ../../shared/python
+
+uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+**终端 2 — 前端**：
+
+```bash
 cd simulation/frontend
 npm install
 npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
-Open `http://localhost:5173`. Vite proxies `/api/*` to the FastAPI server
-on `:8000`.
+打开 `http://localhost:5173`。Vite 自动代理 `/api/*` 到后端 `:8000`。
 
-### Verifying
+### 带 MQTT 全链路启动（含 RCS standalone + robot-app）
+
+当需要测试 MQTT 通信链路或 robot-app ROS 2 节点时：
+
+**终端 1 — Mosquitto MQTT Broker**：
 
 ```bash
+# 方式 A：Docker（推荐）
+docker run -d --name mosquitto \
+  -p 1883:1883 -p 9001:9001 \
+  -v $(pwd)/deploy/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro \
+  eclipse-mosquitto:2
+
+# 方式 B：本地安装
+mosquitto -c deploy/mosquitto/mosquitto.conf
+```
+
+**终端 2 — 仿真后端（启用 MQTT）**：
+
+```bash
+cd simulation/backend
+# 设置环境变量启用 MQTT
+export SIM_MQTT_ENABLED=true
+export SIM_MQTT_HOST=127.0.0.1
+export SIM_MQTT_PORT=1883
+
+uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+**终端 3 — RCS standalone（可选，替代 embedded 模式）**：
+
+```bash
+cd rcs
+pip install -r requirements.txt
+# 或
+pip install -e .
+
+export RCS_MQTT_ENABLED=true
+export RCS_MQTT_HOST=127.0.0.1
+export RCS_MQTT_PORT=1883
+
+uvicorn rcs.app:create_app --factory --host 127.0.0.1 --port 8100 --reload
+```
+
+此时仿真后端需切换为 standalone 模式：
+
+```bash
+export RCS_EMBEDDED=false
+export RCS_SERVICE_URL=http://127.0.0.1:8100
+```
+
+**终端 4 — robot-app ROS 2 节点**（需要 ROS 2 Humble 环境）：
+
+```bash
+# 在 ROS 2 环境中
+cd robot-app/ros2_ws
+colcon build --symlink-install
+source install/setup.bash
+
+# 启动 gateway 节点
+ros2 run robot_gateway mqtt_bridge_node \
+  --ros-args \
+  -p device_id:=loader-01 \
+  -p mqtt_host:=127.0.0.1 \
+  -p mqtt_port:=1883
+
+# 启动 TaskCoordinator 节点
+ros2 run robot_decision task_coordinator_node
+```
+
+**终端 5 — 前端**：
+
+```bash
+cd simulation/frontend
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+```
+
+### 验证启动
+
+```bash
+# 后端健康检查
 curl http://localhost:8000/api/status
-curl -N http://localhost:8000/api/logs/stream        # SSE
-curl http://localhost:8000/metrics | head             # Prometheus text
+# 期望: {"running": true, "device_count": 5, ...}
+
+# 设备列表（应包含 loader-01）
+curl http://localhost:8000/api/devices
+
+# SSE 日志流
+curl -N http://localhost:8000/api/logs/stream
+
+# Prometheus 指标
+curl http://localhost:8000/metrics
+
+# RCS 健康检查（standalone 模式）
+curl http://localhost:8100/health
+
+# 关节状态 SSE（loader-01 双臂 14 关节）
+curl -N http://localhost:8000/api/devices/loader-01/joints
+```
+
+### 运行测试
+
+项目包含 4 个独立测试套件，总计 237 个测试：
+
+```bash
+# 1. simulation/backend (71 tests)
+cd simulation/backend
+pip install -r requirements.txt
+pytest -q
+
+# 2. rcs (85 tests)
+cd rcs
+pip install -r requirements.txt
+pytest -q
+
+# 3. robot_decision (37 tests)
+cd robot-app/ros2_ws/src/robot_decision
+pytest -q
+
+# 4. robot_gateway (44 tests)
+cd robot-app/ros2_ws/src/robot_gateway
+pytest -q
+```
+
+### 前端构建
+
+```bash
+cd simulation/frontend
+npm install
+npm run build    # vue-tsc 类型检查 + vite build
+# 产物在 dist/ 目录
 ```
 
 ---
 
 ## Configuration
+
+### 仿真后端配置
 
 Settings live in `simulation/backend/config.py` and read environment variables (or
 `.env` in the backend folder).
@@ -88,17 +278,39 @@ Settings live in `simulation/backend/config.py` and read environment variables (
 | `API_API_KEYS` | _empty_ | comma-separated valid keys |
 | `RATE_LIMIT_MAX` | `120` | requests per window per IP |
 | `RATE_LIMIT_WINDOW_SECONDS` | `60` | window size in seconds |
+| `RCS_EMBEDDED` | `true` | 嵌入 RCS 路由到仿真后端进程 |
+| `RCS_SERVICE_URL` | `http://127.0.0.1:8100` | standalone RCS 地址 |
+| `SIM_MQTT_ENABLED` | `false` | 启用仿真后端 MQTT bridge |
+| `SIM_MQTT_HOST` | `127.0.0.1` | MQTT broker 地址 |
+| `SIM_MQTT_PORT` | `1883` | MQTT broker 端口 |
+
+### RCS 配置
+
+RCS 拥有独立的配置（`rcs/rcs/config.py`），环境变量前缀 `RCS_`：
+
+| Env var | Default | Purpose |
+| --- | --- | --- |
+| `RCS_HOST` | `127.0.0.1` | standalone 绑定地址 |
+| `RCS_PORT` | `8100` | standalone 端口 |
+| `RCS_LOG_LEVEL` | `INFO` | 日志级别 |
+| `RCS_MQTT_ENABLED` | `false` | 启用 MQTT 适配器 |
+| `RCS_MQTT_HOST` | `127.0.0.1` | MQTT broker 地址 |
+| `RCS_MQTT_PORT` | `1883` | MQTT broker 端口 |
+| `RCS_MQTT_CLIENT_ID` | `rcs-adapter` | MQTT 客户端 ID |
+| `RCS_MQTT_STATE_PUBLISH_HZ` | `10.0` | 状态发布频率 |
+| `RCS_API_AUTH_ENABLED` | `false` | RCS 独立认证 |
 
 `simulation/backend/.env.example` ships a starter file:
 
 ```ini
+APP_NAME=Robot Logic System
 DATABASE_URL=sqlite+aiosqlite:///./data/prototype.db
-API_AUTH_ENABLED=false
-API_API_KEYS=dev-key-1,dev-key-2
-RATE_LIMIT_MAX=300
+LOG_LEVEL=INFO
+CLOUD_ENDPOINT=http://localhost:8080
+USE_CLOUD=false
 ```
 
-### Enabling auth + rate limit
+### 启用认证 + 限速
 
 ```bash
 export API_AUTH_ENABLED=1
@@ -198,27 +410,44 @@ server {
 
 ## Continuous integration
 
-A minimal `.github/workflows/ci.yml`:
+`.github/workflows/ci.yml` runs on push/PR to `master`:
 
 ```yaml
 name: ci
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
 jobs:
-  test:
+  backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install -r simulation/backend/requirements.txt
-      - run: pip install -r rcs/requirements.txt
       - run: cd simulation/backend && pytest -q
-      - run: cd rcs && pytest -q
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: cd simulation/frontend && npm ci && npx vue-tsc --noEmit
       - run: cd simulation/frontend && npm run build
+  docker:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t robot-logic-api -f simulation/backend/Dockerfile .
+      - run: docker build -t robot-logic-web -f simulation/frontend/Dockerfile ./simulation/frontend
 ```
+
+> **Note**: `robot_decision` 和 `robot_gateway` 的测试需要 ROS 2 环境，
+> 当前 CI 未包含。本地运行 `pytest` 在各包的 `tests/` 目录下即可。
 
 ---
 
@@ -330,7 +559,12 @@ For SSE specifically, configure `nginx.ingress.kubernetes.io/proxy-buffering: "o
 | `127.0.0.1:8000 refused to connect` | backend not started | `uvicorn backend.main:app --port 8000` |
 | Vite shows `Port 5173 in use` | stale Vite process | `Get-NetTCPConnection -LocalPort 5173` → kill PID |
 | `401 invalid api key` | `API_AUTH_ENABLED=1` set in `.env` | set header or disable auth locally |
-| `429 rate limit exceeded` | too many mints | raise `RATE_LIMIT_MAX` or drop key |
-| SSE shows only pings | new log lines aren't produced | POST a task to trigger |
+| `429 rate limit exceeded` | too many requests | raise `RATE_LIMIT_MAX` or drop key |
+| SSE shows only pings | no new log lines | POST a task to trigger activity |
 | `/metrics` returns nothing | process just restarted | wait one tick (0.5s) |
 | Rollback returns `409` | task still pending/running | wait until completion |
+| MQTT messages not received | broker not running or `SIM_MQTT_ENABLED=false` | start Mosquitto + set env var |
+| `loader-01` joints SSE empty | no MQTT state flow | check MQTT bridge is connected to broker |
+| `robot_gateway` node crashes on start | missing `robot_contracts` package | `pip install -e shared/python` |
+| ROS 2 `colcon build` fails | missing ROS 2 deps | `rosdep install --from-paths src --ignore-src -r -y` |
+| Frontend shows old robot model | browser cache | hard refresh (Ctrl+Shift+R) |
