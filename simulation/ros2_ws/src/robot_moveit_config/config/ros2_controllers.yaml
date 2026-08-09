@@ -1,0 +1,132 @@
+# ros2_control controllers for robot_arm_hal.
+# Phase 5 M1 uses a single arm controller + a gripper controller.
+# `joint_state_broadcaster` is the source of /joint_states.
+
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    gripper_controller:
+      type: position_controllers/JointGroupPositionController
+
+    left_arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    right_arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    left_paddle_controller:
+      type: position_controllers/JointGroupPositionController
+
+    right_paddle_controller:
+      type: position_controllers/JointGroupPositionController
+
+    diff_drive_controller:
+      type: diff_drive_controller/DiffDriveController
+
+arm_controller:
+  ros__parameters:
+    joints:
+      - shoulder_pan
+      - shoulder_lift
+      - elbow
+      - wrist_1
+      - wrist_2
+      - wrist_3
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    open_loop_control: true
+    constraints:
+      stopped_velocity_tolerance: 0.01
+      shoulder_pan: { trajectory: 0.20, goal: 0.05 }
+      shoulder_lift: { trajectory: 0.20, goal: 0.05 }
+      elbow: { trajectory: 0.20, goal: 0.05 }
+      wrist_1: { trajectory: 0.30, goal: 0.08 }
+      wrist_2: { trajectory: 0.30, goal: 0.08 }
+      wrist_3: { trajectory: 0.30, goal: 0.08 }
+
+gripper_controller:
+  ros__parameters:
+    joints:
+      - gripper_left
+
+left_arm_controller:
+  ros__parameters:
+    joints:
+      - left_shoulder_pan
+      - left_shoulder_lift
+      - left_elbow
+      - left_wrist_1
+      - left_wrist_2
+      - left_wrist_3
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    open_loop_control: true
+    constraints:
+      stopped_velocity_tolerance: 0.01
+      left_shoulder_pan: { trajectory: 0.20, goal: 0.05 }
+      left_shoulder_lift: { trajectory: 0.20, goal: 0.05 }
+      left_elbow: { trajectory: 0.20, goal: 0.05 }
+      left_wrist_1: { trajectory: 0.30, goal: 0.08 }
+      left_wrist_2: { trajectory: 0.30, goal: 0.08 }
+      left_wrist_3: { trajectory: 0.30, goal: 0.08 }
+
+right_arm_controller:
+  ros__parameters:
+    joints:
+      - right_shoulder_pan
+      - right_shoulder_lift
+      - right_elbow
+      - right_wrist_1
+      - right_wrist_2
+      - right_wrist_3
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    open_loop_control: true
+    constraints:
+      stopped_velocity_tolerance: 0.01
+      right_shoulder_pan: { trajectory: 0.20, goal: 0.05 }
+      right_shoulder_lift: { trajectory: 0.20, goal: 0.05 }
+      right_elbow: { trajectory: 0.20, goal: 0.05 }
+      right_wrist_1: { trajectory: 0.30, goal: 0.08 }
+      right_wrist_2: { trajectory: 0.30, goal: 0.08 }
+      right_wrist_3: { trajectory: 0.30, goal: 0.08 }
+
+left_paddle_controller:
+  ros__parameters:
+    joints: [left_paddle]
+
+right_paddle_controller:
+  ros__parameters:
+    joints: [right_paddle]
+
+diff_drive_controller:
+  ros__parameters:
+    left_wheel_names: [left_wheel]
+    right_wheel_names: [right_wheel]
+    wheel_separation: 0.6
+    wheel_radius: 0.1
+    publish_rate: 50.0
+    odom_frame_id: odom
+    base_frame_id: base_link
+    pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+    twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.01, 0.01, 0.01]
+    enable_odom_tf: true

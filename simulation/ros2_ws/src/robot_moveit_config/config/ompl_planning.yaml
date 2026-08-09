@@ -1,0 +1,39 @@
+# MoveIt OMPL planning configuration.
+# Wrapped in /** ros__parameters so rclcpp can load it as a params file.
+# Note: OMPL's `planner_configs` block must be a map (not a list) under the
+# planning_pipeline param so that move_group can look up named configs by
+# their key.
+
+/**:
+  ros__parameters:
+    ompl:
+      planning_plugins: ["ompl_interface/OMPLPlanner"]
+      # Default OMPL parameters for every group
+      default_planner_config: RRTConnectConfigDefault
+      # Named planner configs (map, not list)
+      planner_configs:
+        RRTConnectConfigDefault:
+          type: geometric::RRTConnect
+          range: 0.5
+          goal_bias: 0.05
+        RRTstarkConfigDefault:
+          type: geometric::RRTstar
+          range: 0.5
+          goal_bias: 0.05
+          delay_collision_checking: 1
+        AnytimeConfigDefault:
+          type: geometric::AnytimePathShortening
+          shortcut: true
+          hybridize: true
+          max_hybridization: 10
+          simplify_solutions: true
+      # Per-group planner overrides
+      left_arm:
+        planner_configs:
+          - RRTConnectConfigDefault
+      right_arm:
+        planner_configs:
+          - RRTConnectConfigDefault
+      dual_arm:
+        planner_configs:
+          - RRTstarkConfigDefault

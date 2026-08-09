@@ -1,0 +1,179 @@
+# MoveIt joint limits (used for motion planning sampling).
+# Conservative for safety; can be tuned per workspace.
+#
+# Wrapped in /** ros__parameters so rclcpp can load it as a params file.
+
+/**:
+  ros__parameters:
+    robot_description_planning:
+      joint_limits:
+        shoulder_pan:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 3.15
+          has_acceleration_limits: true
+          max_acceleration: 5.0
+        shoulder_lift:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 3.15
+          has_acceleration_limits: true
+          max_acceleration: 5.0
+        elbow:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 3.15
+          has_acceleration_limits: true
+          max_acceleration: 5.0
+        wrist_1:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 6.28
+          has_acceleration_limits: true
+          max_acceleration: 8.0
+        wrist_2:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 6.28
+          has_acceleration_limits: true
+          max_acceleration: 8.0
+        wrist_3:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 6.28
+          has_acceleration_limits: true
+          max_acceleration: 8.0
+        gripper_left:
+          has_position_limits: true
+          min_position: 0.0
+          max_position: 0.085
+          has_velocity_limits: true
+          max_velocity: 0.5
+          has_acceleration_limits: true
+          max_acceleration: 1.0
+        # Dual-arm joint limits (left)
+        left_shoulder_pan:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 3.15
+          has_acceleration_limits: true
+          max_acceleration: 5.0
+        left_shoulder_lift:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 3.15
+          has_acceleration_limits: true
+          max_acceleration: 5.0
+        left_elbow:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 3.15
+          has_acceleration_limits: true
+          max_acceleration: 5.0
+        left_wrist_1:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 6.28
+          has_acceleration_limits: true
+          max_acceleration: 8.0
+        left_wrist_2:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 6.28
+          has_acceleration_limits: true
+          max_acceleration: 8.0
+        left_wrist_3:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 6.28
+          has_acceleration_limits: true
+          max_acceleration: 8.0
+        left_paddle:
+          has_position_limits: true
+          min_position: 0.0
+          max_position: 0.15
+          has_velocity_limits: true
+          max_velocity: 0.5
+          has_acceleration_limits: true
+          max_acceleration: 1.0
+        # Dual-arm joint limits (right)
+        right_shoulder_pan:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 3.15
+          has_acceleration_limits: true
+          max_acceleration: 5.0
+        right_shoulder_lift:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 3.15
+          has_acceleration_limits: true
+          max_acceleration: 5.0
+        right_elbow:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 3.15
+          has_acceleration_limits: true
+          max_acceleration: 5.0
+        right_wrist_1:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 6.28
+          has_acceleration_limits: true
+          max_acceleration: 8.0
+        right_wrist_2:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 6.28
+          has_acceleration_limits: true
+          max_acceleration: 8.0
+        right_wrist_3:
+          has_position_limits: true
+          min_position: -3.14
+          max_position: 3.14
+          has_velocity_limits: true
+          max_velocity: 6.28
+          has_acceleration_limits: true
+          max_acceleration: 8.0
+        right_paddle:
+          has_position_limits: true
+          min_position: 0.0
+          max_position: 0.15
+          has_velocity_limits: true
+          max_velocity: 0.5
+          has_acceleration_limits: true
+          max_acceleration: 1.0

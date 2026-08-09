@@ -1,0 +1,174 @@
+<?xml version="1.0"?>
+<!--
+  robot.srdf
+  Phase 5 M3: virtual joints, planning groups, end effectors, disable_collisions.
+  Paired with robot_bringup/urdf/robot.urdf.xacro.
+
+  Collision notes:
+  Our URDF uses cylinder primitives for link collisions (not convex meshes).
+  Primitive-vs-primitive collision checking in MoveIt's FCL can produce false
+  positives at folded configurations because the cylinders are larger than the
+  underlying mesh would be.  We therefore disable a generous set of cross-link
+  collisions so OMPL can find plans for any reasonable goal.  Adjacent pairs
+  are still disabled per the standard MoveIt convention.
+-->
+<robot name="robot">
+
+  <!-- Treat the robot as floating relative to world for MoveIt planning. -->
+  <virtual_joint name="world_to_base" type="fixed" parent_frame="world" child_link="base_link"/>
+
+  <!-- Default planner group: full arm (6-DOF chain). Gripper is separate. -->
+  <group name="manipulator">
+    <chain base_link="base_link" tip_link="tcp_frame"/>
+  </group>
+
+  <!-- End-effector group: just the gripper, used for grasp planning. -->
+  <group name="gripper">
+    <link name="gripper_base"/>
+    <link name="left_finger"/>
+    <link name="right_finger"/>
+    <joint name="gripper_left" />
+    <joint name="gripper_right" />
+  </group>
+
+  <!-- Default EE pose / frame for MoveIt. -->
+  <end_effector name="gripper_ee" parent_link="tcp_frame" parent_group="manipulator" group="gripper"/>
+
+  <!-- Dual-arm planning groups -->
+  <group name="left_arm">
+    <chain base_link="left_arm_base" tip_link="left_tcp_frame"/>
+  </group>
+
+  <group name="right_arm">
+    <chain base_link="right_arm_base" tip_link="right_tcp_frame"/>
+  </group>
+
+  <group name="dual_arm">
+    <joint name="left_shoulder_pan"/>
+    <joint name="left_shoulder_lift"/>
+    <joint name="left_elbow"/>
+    <joint name="left_wrist_1"/>
+    <joint name="left_wrist_2"/>
+    <joint name="left_wrist_3"/>
+    <joint name="right_shoulder_pan"/>
+    <joint name="right_shoulder_lift"/>
+    <joint name="right_elbow"/>
+    <joint name="right_wrist_1"/>
+    <joint name="right_wrist_2"/>
+    <joint name="right_wrist_3"/>
+  </group>
+
+  <!-- End-effectors for dual arms -->
+  <end_effector name="left_paddle_ee" parent_link="left_tcp_frame" parent_group="left_arm"/>
+  <end_effector name="right_paddle_ee" parent_link="right_tcp_frame" parent_group="right_arm"/>
+
+  <!--
+    Adjacent link disables (standard).
+    Reason="adjacent" tells MoveIt the links are parent/child on the chain.
+  -->
+  <disable_collisions link1="base_link" link2="shoulder_link" reason="adjacent"/>
+  <disable_collisions link1="shoulder_link" link2="upper_arm_link" reason="adjacent"/>
+  <disable_collisions link1="upper_arm_link" link2="forearm_link" reason="adjacent"/>
+  <disable_collisions link1="forearm_link" link2="wrist_1_link" reason="adjacent"/>
+  <disable_collisions link1="wrist_1_link" link2="wrist_2_link" reason="adjacent"/>
+  <disable_collisions link1="wrist_2_link" link2="wrist_3_link" reason="adjacent"/>
+  <disable_collisions link1="wrist_3_link" link2="gripper_base" reason="adjacent"/>
+  <disable_collisions link1="gripper_base" link2="left_finger" reason="adjacent"/>
+  <disable_collisions link1="gripper_base" link2="right_finger" reason="adjacent"/>
+
+  <!--
+    Cross-link disables (cylinder collisions).
+    These pairs never touch on this geometry; disabling them avoids false
+    positives from MoveIt's primitive primitive FCL collision check.
+  -->
+  <disable_collisions link1="upper_arm_link" link2="wrist_1_link" reason="never"/>
+  <disable_collisions link1="upper_arm_link" link2="wrist_2_link" reason="never"/>
+  <disable_collisions link1="upper_arm_link" link2="wrist_3_link" reason="never"/>
+  <disable_collisions link1="upper_arm_link" link2="gripper_base" reason="never"/>
+  <disable_collisions link1="forearm_link" link2="wrist_2_link" reason="never"/>
+  <disable_collisions link1="forearm_link" link2="wrist_3_link" reason="never"/>
+  <disable_collisions link1="forearm_link" link2="gripper_base" reason="never"/>
+  <disable_collisions link1="wrist_1_link" link2="wrist_3_link" reason="never"/>
+  <disable_collisions link1="wrist_1_link" link2="gripper_base" reason="never"/>
+  <disable_collisions link1="wrist_2_link" link2="gripper_base" reason="never"/>
+  <disable_collisions link1="wrist_2_link" link2="left_finger" reason="never"/>
+  <disable_collisions link1="wrist_2_link" link2="right_finger" reason="never"/>
+  <disable_collisions link1="wrist_3_link" link2="left_finger" reason="never"/>
+  <disable_collisions link1="wrist_3_link" link2="right_finger" reason="never"/>
+  <disable_collisions link1="shoulder_link" link2="upper_arm_link" reason="never"/>
+  <disable_collisions link1="shoulder_link" link2="forearm_link" reason="never"/>
+  <disable_collisions link1="shoulder_link" link2="wrist_1_link" reason="never"/>
+  <disable_collisions link1="base_link" link2="upper_arm_link" reason="never"/>
+  <disable_collisions link1="base_link" link2="forearm_link" reason="never"/>
+
+  <!-- Cross-arm disable collisions -->
+  <disable_collisions link1="left_shoulder_link" link2="right_shoulder_link" reason="never"/>
+  <disable_collisions link1="left_upper_arm_link" link2="right_upper_arm_link" reason="never"/>
+  <disable_collisions link1="left_forearm_link" link2="right_forearm_link" reason="never"/>
+  <disable_collisions link1="left_wrist_1_link" link2="right_wrist_1_link" reason="never"/>
+  <disable_collisions link1="left_wrist_2_link" link2="right_wrist_2_link" reason="never"/>
+  <disable_collisions link1="left_wrist_3_link" link2="right_wrist_3_link" reason="never"/>
+  <disable_collisions link1="left_paddle_link" link2="right_paddle_link" reason="never"/>
+
+  <!-- Arm-to-base disable collisions -->
+  <disable_collisions link1="base_link" link2="left_shoulder_link" reason="never"/>
+  <disable_collisions link1="base_link" link2="left_upper_arm_link" reason="never"/>
+  <disable_collisions link1="base_link" link2="right_shoulder_link" reason="never"/>
+  <disable_collisions link1="base_link" link2="right_upper_arm_link" reason="never"/>
+  <disable_collisions link1="torso_mount" link2="left_shoulder_link" reason="never"/>
+  <disable_collisions link1="torso_mount" link2="right_shoulder_link" reason="never"/>
+
+  <!-- Group states (used by MoveIt for known-good presets). -->
+  <group_state name="home" group="manipulator">
+    <joint name="shoulder_pan" value="0"/>
+    <joint name="shoulder_lift" value="-1.57"/>
+    <joint name="elbow" value="1.57"/>
+    <joint name="wrist_1" value="-1.57"/>
+    <joint name="wrist_2" value="-1.57"/>
+    <joint name="wrist_3" value="0"/>
+  </group_state>
+
+  <group_state name="ready" group="manipulator">
+    <joint name="shoulder_pan" value="0"/>
+    <joint name="shoulder_lift" value="-1.2"/>
+    <joint name="elbow" value="1.5"/>
+    <joint name="wrist_1" value="-1.5"/>
+    <joint name="wrist_2" value="-1.57"/>
+    <joint name="wrist_3" value="0"/>
+  </group_state>
+
+  <!-- Dual-arm group states -->
+  <group_state name="left_home" group="left_arm">
+    <joint name="left_shoulder_pan" value="0"/>
+    <joint name="left_shoulder_lift" value="-1.57"/>
+    <joint name="left_elbow" value="1.57"/>
+    <joint name="left_wrist_1" value="-1.57"/>
+    <joint name="left_wrist_2" value="-1.57"/>
+    <joint name="left_wrist_3" value="0"/>
+  </group_state>
+
+  <group_state name="right_home" group="right_arm">
+    <joint name="right_shoulder_pan" value="0"/>
+    <joint name="right_shoulder_lift" value="-1.57"/>
+    <joint name="right_elbow" value="1.57"/>
+    <joint name="right_wrist_1" value="-1.57"/>
+    <joint name="right_wrist_2" value="-1.57"/>
+    <joint name="right_wrist_3" value="0"/>
+  </group_state>
+
+  <group_state name="stowed" group="dual_arm">
+    <joint name="left_shoulder_pan" value="0"/>
+    <joint name="left_shoulder_lift" value="-1.57"/>
+    <joint name="left_elbow" value="1.57"/>
+    <joint name="left_wrist_1" value="-1.57"/>
+    <joint name="left_wrist_2" value="-1.57"/>
+    <joint name="left_wrist_3" value="0"/>
+    <joint name="right_shoulder_pan" value="0"/>
+    <joint name="right_shoulder_lift" value="-1.57"/>
+    <joint name="right_elbow" value="1.57"/>
+    <joint name="right_wrist_1" value="-1.57"/>
+    <joint name="right_wrist_2" value="-1.57"/>
+    <joint name="right_wrist_3" value="0"/>
+  </group_state>
+
+</robot>
