@@ -90,6 +90,10 @@ These directions are checked by `scripts/verify_split.sh`.
 - **robot_base_hal**: diff-drive base HAL — `base.ros2_control.xacro` +
   `loader.urdf.xacro` + `diff_drive.yaml` controller config.
 - **robot_perception**: placeholder for Phase 2 (point cloud pipeline).
+  *Phase 2 plan*: `PointCloudProcessorNode` (7-step PCL pipeline: PassThrough →
+  VoxelGrid → StatisticalOutlier → RANSAC → EuclideanCluster → BBox → Pose),
+  publishing `vision_msgs/Detection3DArray` on `/detections`.
+  See [Phase 2 spec](superpowers/specs/2026-08-09-phase2-perception-navigation-design.md).
 - **Tests**: 37 passed (decision), 44 passed (gateway).
 
 ### `vla-training/` — VLA pipeline (skeleton)
@@ -148,3 +152,19 @@ SSE endpoints (simulation backend):
 - `GET /api/alerts/stream` — alert state transitions
 
 See [`API.md`](API.md) for full request/response shapes.
+
+## Roadmap — Phase 2
+
+Phase 2 (感知与导航) adds synthetic sensor data, a PCL point cloud pipeline,
+Nav2 integration, and frontend perception overlays. Estimated ~47 new tests
+(→ ~284 total). Target: 4 weeks.
+
+| Area | Change |
+| --- | --- |
+| Simulation backend | `PointCloudGenerator` + `LaserScanGenerator` publishing via MQTT |
+| robot_perception | 7-step PCL pipeline → `Detection3DArray` |
+| robot_decision | `BaseExecutor` refactored to Nav2 `NavigateToPose` action client |
+| Frontend | `DetectionOverlay` (3D bbox), `NavPathOverlay`, `CostmapOverlay` |
+| New SSE | `/api/devices/{id}/detections` (10Hz), `/api/devices/{id}/nav_path` (1Hz) |
+
+Full plan: [`docs/superpowers/plans/2026-08-09-phase2-perception-navigation.md`](superpowers/plans/2026-08-09-phase2-perception-navigation.md).
