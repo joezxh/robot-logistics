@@ -1,0 +1,15 @@
+task_coordinator:
+  ros__parameters:
+    phase_timeouts:
+      navigating: 60.0
+      docking: 30.0
+      approaching: 20.0
+      hugging: 15.0
+      lifting: 15.0
+      transporting: 60.0
+      placing: 15.0
+      retreating: 20.0
+    safety_zone_radius: 1.5
+    min_obstacle_distance: 0.3
+    max_linear_speed: 0.5
+    max_angular_speed: 1.0
