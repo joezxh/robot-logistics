@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://robot-logic/contracts/command.schema.json",
+  "title": "RCS Command",
+  "description": "Downlink command published to rcs/{device_id}/command. Field-identical to the RCS REST CommandRequest so both entry points behave the same.",
+  "type": "object",
+  "required": [
+    "type"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "command_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Client-supplied idempotency key. When null the server generates a UUID."
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "move_j",
+        "move_l",
+        "stop",
+        "home",
+        "estop",
+        "recover",
+        "execute_task"
+      ]
+    },
+    "target_pose": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "x",
+        "y",
+        "z",
+        "rx",
+        "ry",
+        "rz"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        },
+        "rx": {
+          "type": "number"
+        },
+        "ry": {
+          "type": "number"
+        },
+        "rz": {
+          "type": "number"
+        }
+      }
+    },
+    "target_joints": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "number"
+      },
+      "description": "Length must match the device's num_joints."
+    },
+    "speed_scale": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 10.0,
+      "default": 1.0
+    },
+    "constraints": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Free-form per-command constraints."
+    },
+    "task_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Task type for execute_task commands: goto, dock, pick_box, place_box, transport, hug_close, hug_release, home_all"
+    },
+    "parameters": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Free-form task parameters (target_pose, hug_params, etc.)"
+    },
+    "group": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Target group for debug passthrough: left, right, base, both"
+    }
+  }
+}

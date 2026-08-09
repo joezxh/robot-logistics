@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://robot-logic/contracts/state.schema.json",
+  "title": "RCS Device State",
+  "description": "Uplink state frame published to rcs/{device_id}/state. Mirrors the JSON emitted by rcs.state.state_stream.StateStream (already rate-limited to 10 Hz).",
+  "type": "object",
+  "required": [
+    "device_id",
+    "iso_ts"
+  ],
+  "properties": {
+    "device_id": {
+      "type": "string"
+    },
+    "joint": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "device_id": {
+          "type": "string"
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "velocities": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "efforts": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "timestamp_ns": {
+          "type": "integer"
+        }
+      }
+    },
+    "err": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Tracking error summary.",
+      "properties": {
+        "max_joint_error": {
+          "type": "number"
+        },
+        "position_error_m": {
+          "type": "number"
+        },
+        "timestamp_ns": {
+          "type": "integer"
+        }
+      }
+    },
+    "ctrl": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string"
+        },
+        "active_command_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "last_error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "phase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "iso_ts": {
+      "type": "string",
+      "description": "UTC timestamp, format YYYY-MM-DDTHH:MM:SSZ."
+    },
+    "degraded": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when the frame exceeded the 64 KB cap and fields were dropped."
+    },
+    "base": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "velocity": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "odom": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "yaw": {
+              "type": "number"
+            }
+          }
+        },
+        "battery_soc": {
+          "type": "number"
+        }
+      }
+    },
+    "hug": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "pressure_l": {
+          "type": "number"
+        },
+        "pressure_r": {
+          "type": "number"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "closed",
+            "holding",
+            "open"
+          ]
+        }
+      }
+    }
+  }
+}

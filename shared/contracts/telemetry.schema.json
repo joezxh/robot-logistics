@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://robot-logic/contracts/telemetry.schema.json",
+  "title": "Robot Telemetry",
+  "description": "Uplink telemetry published by the robot-side application to robot/{device_id}/telemetry.",
+  "type": "object",
+  "required": [
+    "device_id",
+    "iso_ts"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "device_id": {
+      "type": "string"
+    },
+    "iso_ts": {
+      "type": "string",
+      "description": "UTC timestamp, format YYYY-MM-DDTHH:MM:SSZ."
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Numeric measurements: battery_voltage, battery_soc, motor_temp_l, motor_temp_r, drive_temp_l, drive_temp_r, ..."
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "String status fields: base_state (navigating/following/stopped), hug_state (closing/holding/opening), ..."
+    }
+  }
+}
