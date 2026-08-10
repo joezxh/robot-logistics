@@ -1,6 +1,53 @@
 # 部署配置与性能指标
 
 > 本章介绍物流装卸机器人算法系统的部署配置模板和性能指标要求。
+>
+> **实现状态**：本章描述目标部署配置与性能指标。当前已实际实现 Docker Compose 三服务部署（Mosquitto broker + RCS API + Simulation Backend），以及 FastAPI + Vue 3 前后端分离架构。详见下方 §4.0。
+
+---
+
+## 4.0 当前实际部署架构（已实现）
+
+### 4.0.1 Docker Compose 部署
+
+`deploy/docker-compose.yml` 定义了三个服务：
+
+| 服务 | 镜像 | 端口 | 职责 |
+|------|------|------|------|
+| **broker** | eclipse-mosquitto:2 | 1883, 9001 | MQTT 消息代理 |
+| **rcs** | 自构建 (Python 3.11-slim) | 8100 | RCS 独立模式 FastAPI |
+| **api** | 自构建 (Python 3.11-slim) | 8000 | 仿真后端 FastAPI（内嵌 RCS） |
+
+### 4.0.2 本地开发环境
+
+| 组件 | 技术栈 | 启动方式 |
+|------|--------|----------|
+| 仿真后端 | FastAPI + uvicorn | `cd simulation/backend && uvicorn main:app --reload` |
+| 仿真前端 | Vue 3 + Vite + Three.js | `cd simulation/frontend && npm run dev` |
+| RCS 独立模式 | FastAPI + uvicorn | `cd rcs && uvicorn rcs.app:app --port 8100` |
+| MQTT Broker | Mosquitto 2.x | `docker compose up broker` 或本地安装 |
+| ROS 2 节点 | ROS 2 Humble + Python | `ros2 run robot_decision motion_planner_node` |
+
+### 4.0.3 MQTT 通信架构
+
+| 主题 | QoS | 方向 | 内容 |
+|------|-----|------|------|
+| `robot/{id}/command` | 1 | RCS → robot-app | 控制指令 |
+| `robot/{id}/state` | 0 | robot-app → RCS | 设备状态 |
+| `robot/{id}/telemetry` | 0 | robot-app → RCS | 遥测数据 |
+| `robot/{id}/alert` | 1 | 双向 | 安全报警 |
+
+### 4.0.4 测试覆盖
+
+| 测试套件 | 测试数 | 运行方式 |
+|---------|--------|----------|
+| simulation/backend | 89 | `cd simulation/backend && pytest -q` |
+| rcs | 85 | `cd rcs && pytest -q` |
+| robot_decision | 43 | `cd robot-app/ros2_ws/src/robot_decision && pytest -q` |
+| robot_gateway | 44 | `cd robot-app/ros2_ws/src/robot_gateway && pytest -q` |
+| robot_perception | 7 | `cd robot-app/ros2_ws/src/robot_perception && pytest -q` |
+| vla-training | 40 | `cd vla-training && pytest -q` |
+| **总计** | **308** | **0 failures** |
 
 ---
 
@@ -147,6 +194,37 @@ planning:
 ---
 
 ## 4.3 部署架构
+
+### 当前实际部署（已实现）
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    当前部署架构                                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   ┌─────────────────────────────────────────────────────────┐ │
+│   │              Docker Compose 服务组                      │ │
+│   │  ┌─────────┐  ┌─────────┐  ┌─────────┐             │ │
+│   │  │ Mosquitto │  │   RCS   │  │  API    │             │ │
+│   │  │ Broker  │  │ :8100  │  │ :8000  │             │ │
+│   │  │ :1883   │  │(standalone)│  │(embedded)│            │ │
+│   │  └────┬────┘  └────┬────┘  └────┬────┘             │ │
+│   │       │           │           │                     │ │
+│   └───────┼───────────┼───────────┼─────────────────────┘ │
+│           │           │           │                         │
+│           └───────────┴───────────┘                         │
+│                    MQTT + HTTP/SSE                          │
+│                         │                                     │
+│   ┌─────────────────────┼─────────────────────────────────┐ │
+│   │              前端 (Vue 3 + Vite)                      │ │
+│   │  ┌─────────┐  ┌─────────┐  ┌─────────┐             │ │
+│   │  │ Three.js │  │ ECharts │  │  SSE    │             │ │
+│   │  │ 3D场景  │  │  图表   │  │  实时流 │             │ │
+│   │  └─────────┘  └─────────┘  └─────────┘             │ │
+│   └─────────────────────────────────────────────────────────┘ │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ### 边缘服务器配置
 

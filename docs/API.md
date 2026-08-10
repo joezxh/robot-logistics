@@ -4,7 +4,7 @@
 > `http://localhost:8000`. All endpoints are JSON unless noted; SSE endpoints
 > return `text/event-stream`.
 >
-> **Last updated**: 2026-08-09 — Phase 1 (dual-arm AGV loading robot) complete.
+> **Last updated**: 2026-08-09 — Phase 2 (感知与导航) 新增 detections / nav_path SSE 端点。
 
 ## Conventions
 
@@ -239,6 +239,50 @@ Remove a site. `404` if unknown.
 
 ---
 
+## Device management
+
+### `POST /api/devices/register`
+
+Register a custom device at runtime (used for demo / data import).
+
+```bash
+curl -X POST http://localhost:8000/api/devices/register \
+  -H 'Content-Type: application/json' \
+  -d '{"device_id":"robot-02","device_type":"container_robot","name":"Robot 02","x":0.0,"z":0.0}'
+```
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `device_id` | string | yes | 1-64 chars, must be unique |
+| `device_type` | string | yes | `container_robot` \| `agv` \| `stacker` |
+| `name` | string | yes | 1-128 chars |
+| `x`, `z` | float | no | initial position (default 0) |
+
+`409` if the device_id already exists.
+
+### `PATCH /api/devices/{device_id}`
+
+Partial update of a device. All fields optional.
+
+```bash
+curl -X PATCH http://localhost:8000/api/devices/agv-01 \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"AGV-01 更新","battery":85.0,"status":"charging"}'
+```
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `name` | string | display name |
+| `battery` | float | 0.0–100.0 |
+| `status` | string | `idle` \| `running` \| `charging` \| `fault` |
+| `x`, `z` | float | position override |
+
+### `DELETE /api/devices/{device_id}`
+
+Remove a device. `404` if unknown.
+
+---
+
 ## Device joints SSE
 
 ### `GET /api/devices/{device_id}/joints` (SSE)
@@ -274,6 +318,47 @@ curl -N http://localhost:8000/api/devices/loader-01/joints
 ```
 
 For `loader-01`, 14 joints: 6 left arm + 6 right arm + 2 hug paddles.
+
+---
+
+## Perception SSE (Phase 2)
+
+### `GET /api/devices/{device_id}/detections` (SSE)
+
+Real-time perception detections for a device, updated at 10Hz. Returns
+`Detection3DArray`-compatible dicts (bbox center + size + confidence).
+
+```bash
+curl -N http://localhost:8000/api/devices/loader-01/detections
+```
+
+```json
+[
+  {
+    "id": "site-01",
+    "position": [5.0, 0.0, 1.5],
+    "size": [2.5, 2.5, 1.5]
+  }
+]
+```
+
+Data is derived from the synthetic `PointCloudGenerator` ground truth.
+
+### `GET /api/devices/{device_id}/nav_path` (SSE)
+
+Navigation path for a device, updated at 1Hz. Returns the current planned
+path as a list of waypoints.
+
+```bash
+curl -N http://localhost:8000/api/devices/agv-01/nav_path
+```
+
+```json
+{
+  "device_id": "agv-01",
+  "path": [[0.0, 0.0, 0.0], [2.5, 0.0, 1.0], [5.0, 0.0, 2.0]]
+}
+```
 
 ---
 

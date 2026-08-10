@@ -1,6 +1,11 @@
 # 任务调度与决策
 
 > 本章介绍物流装卸机器人的任务调度算法和决策逻辑。
+>
+> **实现状态**：本章描述目标任务调度算法设计（Kahn 拓扑排序 + 优先级队列）。当前已实际实现以下组件：
+> - **TaskCoordinator**（`robot_decision/task_coordinator.py`）：9 阶段 FSM + ABORTING，管理任务执行生命周期
+> - **RCS dispatch.py**：RCS 调度循环，管理设备任务分发
+> - **SimulationMqttBridge**：MQTT 命令路由，支持 command/state/alert/telemetry 四主题
 
 ---
 
@@ -235,6 +240,18 @@ class TaskScheduler:
 ---
 
 ## 3.5 决策引擎
+
+### 当前实现状态（Phase 1）
+
+当前决策层已实现的组件：
+
+| 组件 | 功能 | 文件位置 |
+|------|------|----------|
+| **TaskCoordinator** | 9 阶段 FSM（IDLE → RECEIVED → VALIDATING → PLANNING → EXECUTING → MONITORING → COMPLETING → DONE + ABORTING） | `robot-app/ros2_ws/src/robot_decision/robot_decision/task_coordinator.py` |
+| **TaskCoordinatorNode** | ROS 2 节点封装，含 adapter 层 | `robot-app/ros2_ws/src/robot_decision/robot_decision/task_coordinator_node.py` |
+| **SafetyMonitor** | 独立安全联锁，监控急停、碰撞、越限 | `robot-app/ros2_ws/src/robot_decision/robot_decision/safety_monitor.py` |
+| **RCS dispatch** | 设备任务分发、状态机管理 | `rcs/rcs/dispatch.py` |
+| **RCS loop** | 1kHz 控制循环，设备状态更新 | `rcs/rcs/loop.py` |
 
 ### 决策矩阵
 

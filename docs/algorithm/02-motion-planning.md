@@ -1,6 +1,8 @@
 # 运动规划算法系统
 
 > 本章介绍物流装卸机器人的运动规划算法，包括共用基础层、全局轨迹规划、局部轨迹优化和轨迹插补模块。
+>
+> **实现状态**：本章描述目标运动规划算法设计（RRT* + 梯度/随机优化 + S 曲线插补）。当前 Phase 2 已将 `BaseExecutor` 重构为 Nav2 `NavigateToPose` action client（`robot_decision/base_executor.py`），实际导航由 Nav2 栈处理。双臂 AGV 装卸机器人的 `ArmExecutor`（MoveIt）、`HugController`（双臂同步抱夹）已在 Phase 1 实现。
 
 ---
 
@@ -899,6 +901,20 @@ class RobotControllerInterface:
 ---
 
 ## 2.5 运动规划器集成
+
+### 当前实现状态（Phase 2）
+
+当前运动执行层采用以下架构，与本章描述的目标算法设计互补：
+
+| 组件 | 实际实现 | 文件位置 |
+|------|---------|----------|
+| **BaseExecutor** | Nav2 NavigateToPose action client，支持 IDLE/FOLLOWING/STOPPED 状态机 | `robot-app/ros2_ws/src/robot_decision/robot_decision/base_executor.py` |
+| **ArmExecutor** | MoveIt action client，双臂独立控制 | `robot-app/ros2_ws/src/robot_decision/robot_decision/arm_executor.py` |
+| **HugController** | 双臂同步抱夹控制器，支持 HugParams 配置 | `robot-app/ros2_ws/src/robot_decision/robot_decision/hug_controller.py` |
+| **MotionPlannerNode** | ROS 2 节点，接收运动指令并分发到执行器 | `robot-app/ros2_ws/src/robot_decision/robot_decision/motion_planner_node.py` |
+| **RCS planning/** | 运动学求解（FK/IK）、轨迹插补、路径规划 | `rcs/rcs/planning/` |
+
+RCS 内置的 `planning/` 模块（`fk.py`、`ik.py`、`interpolator.py`、`trajectory.py`）提供了本章描述的运动学求解和轨迹插补能力，作为仿真和 RCS 内嵌模式下的运动规划后端。
 
 ### 完整规划流程
 

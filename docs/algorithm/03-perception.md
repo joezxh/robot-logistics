@@ -1,6 +1,57 @@
 # 环境感知与决策算法系统
 
 > 本章介绍物流装卸机器人的环境感知算法，包括视觉数据预处理、目标检测和云端深度感知模块。
+>
+> **实现状态**：本章描述目标感知系统设计（RGB-D 预处理 + YOLO 混合检测 + 云端姿态估计）。当前 Phase 2 已实现合成传感器 + 7 步点云处理管线，详见下方 §3.0。
+
+---
+
+## 3.0 Phase 2 已实现感知模块
+
+> 本节描述当前已实际落地的感知与导航组件，与上方 §3.1–§3.3 的目标设计互补。
+
+### 3.0.1 合成传感器
+
+| 组件 | 功能 | 文件位置 |
+|------|------|----------|
+| **PointCloudGenerator** | 合成深度相机点云（FOV 60°×45°，max 5m，深度噪声 σ=0.005m） | `simulation/backend/algorithm/simulator/point_cloud_gen.py` |
+| **LaserScanGenerator** | 合成 2D LIDAR（±90°，0.01rad 分辨率，range 0.1–30m） | `simulation/backend/algorithm/simulator/laser_scan_gen.py` |
+
+合成传感器集成在 `Runtime` 类中，每 tick 为每个设备生成传感器数据，并通过 SSE 端点 `/api/devices/{id}/detections`（10Hz）推送。
+
+### 3.0.2 PointCloudProcessor 7 步管线
+
+`robot-app/ros2_ws/src/robot_perception/robot_perception/point_cloud_processor.py`
+
+纯 Python + numpy 实现，输出 `Detection3DArray` 兼容 dict：
+
+| 步骤 | 算法 | 参数 | 作用 |
+|------|------|------|------|
+| 1 | PassThrough (Z) | z_min=0.1, z_max=2.0 | 过滤工作空间外的点 |
+| 2 | VoxelGrid 降采样 | leaf_size=0.01 | 减少点数，加速处理 |
+| 3 | StatisticalOutlier 移除 | mean_k=50, std_thresh=1.0 | 去除噪声点 |
+| 4 | RANSAC 平面分割 | distance_threshold=0.01 | 移除地面平面 |
+| 5 | EuclideanCluster | tolerance=0.02, min=100, max=25000 | 聚类提取物体（**Union-Find 26-邻域连通分量**） |
+| 6 | BoundingBox 拟合 | — | 为每个簇计算 3D BBox |
+| 7 | Pose 估计 | min_confidence=0.3 | 输出 6-DoF 位姿 |
+
+配置文件：`robot-app/ros2_ws/src/robot_perception/config/point_cloud_processor.yaml`
+
+### 3.0.3 Nav2 导航集成
+
+`robot-app/ros2_ws/src/robot_decision/robot_decision/base_executor.py`
+
+`BaseExecutor` 从 Phase 1 的 P 控制器航点跟随重构为 Nav2 `NavigateToPose` action client：
+- 状态机：IDLE → FOLLOWING → IDLE
+- 支持 cancel/stop 和 feedback/result 回调
+- 测试模式下无 ROS 2 依赖，graceful degradation
+
+### 3.0.4 SSE 端点
+
+| 端点 | 频率 | 内容 |
+|------|------|------|
+| `GET /api/devices/{id}/detections` | 10Hz | PointCloudProcessor 输出的 Detection3DArray |
+| `GET /api/devices/{id}/nav_path` | 1Hz | Nav2 路径规划结果 |
 
 ---
 

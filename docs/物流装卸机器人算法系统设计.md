@@ -1,8 +1,8 @@
 # 物流装卸机器人算法系统设计
 
-> **文档版本**：V2.1  
+> **文档版本**：V2.2  
 > **编制日期**：2026年7月21日  
-> **上次更新**：2026年8月9日（Phase 1 双臂 AGV 装卸机器人实施完成）  
+> **上次更新**：2026年8月9日（Phase 2 感知与导航 Task 1-6 完成）  
 > **文档类型**：算法技术设计  
 > **适用范围**：物流装卸机器人通用算法系统
 
@@ -2581,32 +2581,44 @@ cloud:
 |------|-------------|----------|------|
 | **TaskCoordinator** | §1.2 任务分解器 | `robot_decision/task_coordinator.py` | ✅ 9 阶段 FSM + ABORTING |
 | **ArmExecutor** | §2 运动规划器 | `robot_decision/arm_executor.py` | ✅ MoveIt 规划 + FollowJointTrajectory |
-| **BaseExecutor** | §2 运动规划器 | `robot_decision/base_executor.py` | ✅ 航点跟随（PID 占位） |
+| **BaseExecutor** | §2 运动规划器 | `robot_decision/base_executor.py` | ✅ Nav2 NavigateToPose action client |
 | **HugController** | §3 末端控制器 | `robot_decision/hug_controller.py` | ✅ 双臂同步抱拿状态机 |
 | **SafetyMonitor** | §3 安全互锁 | `robot_decision/safety_monitor.py` | ✅ 三级安全状态机 |
 | **FK/IK/轨迹规划** | §2 运动学 | `rcs/planning/` | ✅ FK/DH、IK/数值、插值器 |
 | **MQTT 通信** | §4 部署配置 | `rcs/mqtt/` + `robot_gateway/` | ✅ 双向 MQTT 桥接 |
 | **数字孪生** | §4 部署配置 | `simulation/` | ✅ FastAPI + Three.js |
 
-### 5.2 待实现（Phase 2+）
+### 5.2 Phase 2 已实现（感知与导航）
+
+| 模块 | 对应设计章节 | 实现位置 | 状态 |
+|------|-------------|----------|------|
+| **PointCloudGenerator** | §3 环境感知器 | `simulation/backend/algorithm/simulator/point_cloud_gen.py` | ✅ 合成深度相机点云 |
+| **LaserScanGenerator** | §3 环境感知器 | `simulation/backend/algorithm/simulator/laser_scan_gen.py` | ✅ 合成 2D LIDAR |
+| **PointCloudProcessor** | §3 点云处理 | `robot_perception/point_cloud_processor.py` | ✅ 7 步管线（Union-Find 聚类） |
+| **Nav2 参数配置** | §2 导航规划 | `robot_decision/config/nav2_params.yaml` | ✅ costmap + DWB + recovery |
+| **Runtime 传感器集成** | §4 数字孪生 | `simulation/backend/services/runtime.py` | ✅ tick() 内生成合成数据 |
+| **SSE 感知端点** | §4 数字孪生 | `simulation/backend/main.py` | ✅ detections (10Hz) + nav_path (1Hz) |
+
+### 5.3 待实现（Phase 2 剩余 + Phase 3）
 
 | 模块 | 对应设计章节 | 计划阶段 |
 |------|-------------|----------|
-| **点云感知管线** | §3 环境感知器 | Phase 2 |
-| **6-DoF 姿态估计** | §3 姿态估计 | Phase 2 |
-| **Nav2 导航集成** | §2 导航规划 | Phase 2 |
+| **前端 Overlay 组件** | §4 可视化 | Phase 2 Task 7-10 |
+| **6-DoF 姿态估计** | §3 姿态估计 | Phase 2/3 |
 | **真实 HAL** | §4 硬件层 | Phase 3 |
 | **VLA 推理** | §3 智能决策 | Phase 3 |
 
-### 5.3 测试覆盖
+### 5.4 测试覆盖
 
 | 测试套件 | 测试数 | 状态 |
 |----------|--------|------|
-| simulation/backend | 71 | ✅ |
+| simulation/backend | 89 | ✅ |
 | rcs | 85 | ✅ |
-| robot_decision | 37 | ✅ |
+| robot_decision | 43 | ✅ |
 | robot_gateway | 44 | ✅ |
-| **总计** | **237** | **0 failures** |
+| robot_perception | 7 | ✅ |
+| vla-training | 40 | ✅ |
+| **总计** | **308** | **0 failures** |
 
 ---
 
