@@ -120,6 +120,127 @@ python scripts/run_finetune.py \
     --set distill.teacher_model=tencent/HY-Embodied-0.5
 ```
 
+## 算力与机器配置要求
+
+以下估算基于当前配置：双路 224×224 图像输入、7-DOF 动作空间、chunk_size=8、
+LoRA rank=32、gradient_checkpointing=enabled、mixed_precision=bf16。
+
+### GPU 显存需求
+
+| 训练模式 | 基座模型 | 显存占用 | 最低 GPU | 推荐 GPU |
+| --- | --- | --- | --- | --- |
+| **LoRA 微调** | OpenVLA-7B (bf16) | ~19–22 GB | RTX 3090 / 4090 (24GB) | A100 40GB |
+| **LoRA 微调 (QLoRA 4-bit)** | OpenVLA-7B | ~8–12 GB | RTX 4060 Ti (16GB) | RTX 4090 (24GB) |
+| **LoRA 微调** | Hy-Embodied-0.5 (~2B) | ~8–12 GB | RTX 4060 Ti (16GB) | RTX 4090 (24GB) |
+| **LoRA 微调 (QLoRA 4-bit)** | Hy-Embodied-0.5 (~2B) | ~5–8 GB | RTX 3060 (12GB) | RTX 4060 Ti (16GB) |
+| **蒸馏** (Teacher 7B + Student 7B) | 双 7B | ~36–44 GB | A6000 (48GB) | A100 80GB |
+| **蒸馏** (Teacher 2B + Student 7B) | Hy-Embodied + OpenVLA | ~22–28 GB | A100 40GB | A100 80GB |
+| **蒸馏** (Teacher 2B + Student 2B, QLoRA) | 双 2B 级 | ~10–14 GB | RTX 4090 (24GB) | A100 40GB |
+
+> **显存拆解（以 OpenVLA-7B LoRA 为例，batch_size=8）：**
+> - 基座权重 (bf16)：~14 GB（冻结，不占梯度显存）
+> - LoRA 适配器 + 梯度：~0.5–1 GB（仅 ~30M 可训练参数）
+> - 优化器状态 (AdamW)：~0.2–0.5 GB（仅作用于可训练参数）
+> - 激活值 (gradient_checkpointing)：~4–6 GB（用 ~30% 步时间换激活内存）
+> - 图像特征缓存：~1–2 GB（双路 224×224 × batch 8）
+
+> **降低显存的旋钮（按效果排序）：**
+> 1. `model.load_in_4bit: true` — 显存减半，质量轻微下降
+> 2. `training.batch_size: 4` + `gradient_accumulation_steps: 8` — 保持有效批量不变
+> 3. `training.gradient_checkpointing: true` — 已默认开启，用计算换内存
+> 4. `lora.r: 16` — 降低秩，减少可训练参数
+> 5. 蒸馏时 `distill.teacher_load_in_4bit: true` — Teacher 用 4-bit 加载
+
+### 推荐硬件配置
+
+#### 最低配置（可跑通，适合调试与小数据集验证）
+
+| 组件 | 规格 |
+| --- | --- |
+| GPU | 1× NVIDIA RTX 4090 (24GB) 或 RTX 3090 (24GB) |
+| CPU | 8 核 / 16 线程（如 AMD Ryzen 7 5800X / Intel i7-12700） |
+| 内存 | 32 GB DDR4 |
+| 存储 | 100 GB NVMe SSD（模型权重 ~14 GB + 数据集 ~20–50 GB + 检查点） |
+| CUDA | ≥ 11.8，cuDNN ≥ 8.6 |
+| 系统 | Ubuntu 22.04+ / Windows 11 + WSL2 |
+
+#### 推荐配置（生产训练，完整数据集）
+
+| 组件 | 规格 |
+| --- | --- |
+| GPU | 1× NVIDIA A100 40GB 或 2× RTX 4090 (24GB) |
+| CPU | 16 核 / 32 线程（如 AMD Ryzen 9 7950X / Intel i9-13900K） |
+| 内存 | 64 GB DDR5 |
+| 存储 | 500 GB NVMe SSD（Gen4） |
+| CUDA | ≥ 12.1，cuDNN ≥ 8.9 |
+| 网络 | 下载模型权重需稳定带宽（OpenVLA-7B ~14 GB，Hy-Embodied ~4 GB） |
+
+#### 蒸馏专用配置（Teacher + Student 同时驻留显存）
+
+| 组件 | 规格 |
+| --- | --- |
+| GPU | 1× NVIDIA A100 80GB 或 2× A100 40GB |
+| CPU | 16+ 核（图像解码 + Teacher 前处理并行开销大） |
+| 内存 | 128 GB DDR5（Teacher 权重 + Student 权重 + 数据缓存） |
+| 存储 | 1 TB NVMe SSD（两套模型权重 + 大数据集 + 多检查点） |
+
+### 批处理大小建议
+
+当前默认配置：`batch_size=8` × `gradient_accumulation_steps=4` = **有效批量 32**。
+
+| GPU 显存 | batch_size | gradient_accumulation | 有效批量 | 适用场景 |
+| --- | --- | --- | --- | --- |
+| 12 GB (QLoRA, 2B) | 4 | 8 | 32 | RTX 3060 / 4060 Ti |
+| 16 GB (LoRA, 2B) | 8 | 4 | 32 | RTX 4060 Ti 16GB |
+| 24 GB (LoRA, 7B) | 8 | 4 | 32 | RTX 4090 |
+| 24 GB (QLoRA, 7B) | 16 | 2 | 32 | RTX 4090 + QLoRA |
+| 40 GB (蒸馏, 2B+7B) | 8 | 4 | 32 | A100 40GB |
+| 80 GB (蒸馏, 7B+7B) | 16 | 2 | 32 | A100 80GB |
+
+> **原则：** 先调 `gradient_accumulation_steps` 凑够有效批量，再动 `batch_size`。
+> 有效批量 = `batch_size × gradient_accumulation_steps × num_devices`。
+
+### 训练时间估算
+
+基于典型机器人模仿学习数据集规模：
+
+| 数据集规模 | Episodes | 帧数 | 训练样本 | 7B LoRA (A100) | 7B LoRA (4090) | 2B LoRA (4090) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 小型 | 200 | 50/ep | ~10K | ~15 min | ~45 min | ~20 min |
+| 中型 | 1,000 | 100/ep | ~100K | ~25 min | ~1.5 h | ~40 min |
+| 大型 | 5,000 | 200/ep | ~1M | ~4 h | ~15 h | ~6 h |
+
+> 以上假设 ~1 step/sec (A100) 或 ~0.25 step/sec (4090)，10 epochs。
+> 蒸馏模式额外增加 ~30–50% 时间（Teacher 的冻结前向传播）。
+
+### 分布式训练
+
+当前训练循环基于单设备设计，但架构已预留扩展点：
+
+| 特性 | 状态 | 说明 |
+| --- | --- | --- |
+| 单 GPU 训练 | ✅ 支持 | 默认模式 |
+| 多 GPU (DDP) | 🔜 规划中 | `accelerate` 已在依赖中，需适配 `build_model()` |
+| DeepSpeed ZeRO | 🔜 规划中 | 适合蒸馏场景的 Teacher/Student 分卡放置 |
+| FSDP | 🔜 规划中 | PyTorch 原生方案，适合大模型分片 |
+
+> **当前变通方案：** 蒸馏时可将 Teacher 放在 GPU 0、Student 放在 GPU 1，
+> 通过手动设置 `CUDA_VISIBLE_DEVICES` 分别加载。完整多卡并行将在后续版本支持。
+
+### 存储空间明细
+
+| 内容 | 大小 | 说明 |
+| --- | --- | --- |
+| OpenVLA-7B 权重 | ~14 GB | bf16 全精度 |
+| Hy-Embodied-0.5 权重 | ~4 GB | MoT-2B 架构 |
+| LoRA 检查点 (每个) | ~50–200 MB | 仅适配器权重 |
+| 合并后导出模型 | ~14–28 GB | 基座 + 合并适配器 |
+| 训练数据集 (中型) | ~20–50 GB | 双路 224×224 PNG/JPEG 图像 |
+| 训练数据集 (大型) | ~100–300 GB | 5000+ episodes 高分辨率 |
+| Python 环境 | ~5–10 GB | torch + transformers + PEFT + 依赖 |
+| **总计（最小可用）** | **~50 GB** | 单模型 + 小数据集 |
+| **总计（推荐）** | **~200–500 GB** | 多模型 + 大数据集 + 多检查点 |
+
 ## 三个关键设计约定
 
 **归一化统计只从训练集计算。** 把验证集纳入统计会让验证指标偏乐观——
