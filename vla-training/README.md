@@ -3,10 +3,11 @@
 围绕开源 VLA（Vision-Language-Action）大模型微调路线组织的训练工程，产出可部署到
 [`robot-app`](../robot-app/README.md) 的推理模型。
 
-> **当前状态：骨架。**
+> **当前状态：模型适配器 + 蒸馏框架已完成。**
 > 配置体系、数据流水线、检查点策略、导出契约均已实现且有测试覆盖；
-> 依赖具体基座模型的前向/反向计算以 `NotImplementedError` 显式标出——
-> 宁可缺失可见，也不要用假实现掩盖。
+> **Hy-Embodied-0.5-VLA** 基座模型适配器已实现（路线 A），
+> **知识蒸馏模块**已实现（路线 B），支持跨模型家族的 Teacher-Student 蒸馏。
+> 依赖具体基座模型的前向计算通过 `ModelAdapter` 接口可插拔接入。
 > **本工程不下载任何模型权重，也不会自动执行训练。**
 
 ## 流水线
@@ -20,11 +21,44 @@ collector  ->  converter  ->  dataset  ->  finetune  ->  evaluate  ->  export
 | --- | --- | --- |
 | 采集 | `data/collector.py` | 接口完成，采集后端待接 |
 | 转换 | `data/converter.py` | ✅ 完成 |
-| 数据集 | `data/dataset.py` | 索引/分块完成，图像解码待接 |
-| 模型 | `models/loader.py` | LoRA 注入完成，基座加载待接 |
-| 训练 | `train/finetune.py` | 循环/检查点完成，单步计算待接 |
-| 评估 | `eval/evaluate.py` | 离线指标完成，闭环回放待接 |
-| 导出 | `export/to_inference.py` | ✅ 完成 |
+| 数据集 | `data/dataset.py` | ✅ 完成（含图像解码） |
+| 模型适配器 | `models/adapter.py` | ✅ 完成（注册表 + 可插拔接口） |
+| Hy-Embodied | `models/families/hy_embodied.py` | ✅ 完成 |
+| 训练 | `train/finetune.py` | ✅ 完成（含蒸馏支持） |
+| 蒸馏 | `distill/` | ✅ 完成（Teacher + 损失 + 训练步骤） |
+| 评估 | `eval/evaluate.py` | ✅ 离线指标完成，闭环回放待接 |
+| 导出 | `export/to_inference.py` | ✅ 完成（含 LoRA 合并） |
+
+## 支持的基座模型
+
+| 模型 | 家族 | EmbodiedCLUE-VLA 排名 | 开源地址 |
+| --- | --- | --- | --- |
+| **Hy-Embodied-0.5-VLA** | `hy_embodied` | 🥇 73.0 | [HuggingFace](https://huggingface.co/tencent/HY-Embodied-0.5) |
+| OpenVLA-7B | `openvla` | - | [HuggingFace](https://huggingface.co/openvla/openvla-7b) |
+
+新增模型家族只需：
+1. 在 `models/families/` 下创建适配器（继承 `ModelAdapter`）
+2. 调用 `register_adapter("family_name", AdapterClass)` 注册
+
+## 知识蒸馏
+
+当配置 `distill.enabled: true` 时，训练循环自动切换为蒸馏模式：
+
+```
+Student (LoRA) ──┐
+                  ├── Loss = Imitation + α·KL(student‖teacher) + β·FeatureAlign
+Teacher (frozen) ─┘
+```
+
+蒸馏损失由三部分组成：
+- **模仿损失**（MSE）：学生仍然从 ground-truth 动作学习
+- **动作 KL 散度**：学生匹配 Teacher 的动作分布（温度软化）
+- **特征对齐**（可选）：学生模仿 Teacher 的中间层表征
+
+推荐的 Teacher 模型（来自 EmbodiedCLUE-VLA 评测）：
+- **Hy-Embodied-0.5-VLA**（73.0 分）—— 综合最强
+- **Motus**（68.5 分）—— 世界模型融合 VLA
+- **InternVLA-A1.5**（61.0 分）—— 具备潜在前瞻能力
 
 ## 为什么用 LoRA
 
@@ -40,32 +74,50 @@ collector  ->  converter  ->  dataset  ->  finetune  ->  evaluate  ->  export
 配置按文件分层合并，左到右覆盖，避免复制粘贴整份配置：
 
 ```
-base.yaml  <  dataset.yaml  <  finetune_lora.yaml  <  命令行 --set
+base.yaml  <  dataset.yaml  <  finetune_lora.yaml / finetune_hy_embodied.yaml  <  distill.yaml  <  命令行 --set
 ```
 
 | 文件 | 内容 |
 | --- | --- |
 | `configs/base.yaml` | 路径、随机种子、日志、运行时设备与精度 |
 | `configs/dataset.yaml` | 数据来源、观测空间、**动作空间**、指令模板 |
-| `configs/finetune_lora.yaml` | 基座模型、LoRA 超参、训练超参、检查点策略 |
+| `configs/finetune_lora.yaml` | OpenVLA 基座模型、LoRA 超参、训练超参 |
+| `configs/finetune_hy_embodied.yaml` | Hy-Embodied-0.5-VLA 基座配置 |
+| `configs/distill.yaml` | 蒸馏开关、Teacher 模型、温度/α/β 超参 |
 
 > `action.dim` 必须与 `rcs.registry` 中该设备的自由度一致。不一致时训练会正常收敛，
 > 然后在真机上输出无意义指令——所以导出的 manifest 会在加载时强制校验（见下）。
 
 ## 使用
 
+### 路线 A：LoRA 微调 Hy-Embodied-0.5-VLA
+
 ```bash
-# 1. 安装依赖（先装匹配驱动的 CUDA 版 torch）
+# 1. 安装依赖
 pip install -r vla-training/requirements.txt
 
-# 2. 准备数据：原始轨迹 -> 划分 + 归一化统计
+# 2. 下载 Hy-Embodied-0.5-VLA 权重
+huggingface-cli download tencent/HY-Embodied-0.5
+
+# 3. 准备数据
 python scripts/prepare_data.py --config configs/base.yaml configs/dataset.yaml
 
-# 3. 微调
-python scripts/run_finetune.py --set training.epochs=3 training.batch_size=4
+# 4. 微调（使用 Hy-Embodied 配置）
+python scripts/run_finetune.py \
+    configs/base.yaml configs/dataset.yaml configs/finetune_hy_embodied.yaml
 
-# 4. 导出为机器人端可加载的 bundle
+# 5. 导出
 python scripts/export_model.py --checkpoint outputs/checkpoints/best
+```
+
+### 路线 B：知识蒸馏
+
+```bash
+# 使用 Hy-Embodied-0.5-VLA 作为 Teacher 蒸馏到 Student
+python scripts/run_finetune.py \
+    configs/base.yaml configs/dataset.yaml \
+    configs/finetune_hy_embodied.yaml configs/distill.yaml \
+    --set distill.teacher_model=tencent/HY-Embodied-0.5
 ```
 
 ## 三个关键设计约定
@@ -97,10 +149,10 @@ cd vla-training && python -m pytest
 
 ## 待接入清单
 
-1. `models/loader.py::load_base_model` — 选定并下载基座权重后填入
-2. `models/loader.py::load_processor` — 图像预处理必须与基座一致
-3. `data/dataset.py::_load_image` — 复用上面的 processor
-4. `train/finetune.py::training_step` — 依赖基座模型签名
-5. `eval/evaluate.py::predict_actions` — 同上
+1. ~~`models/loader.py::load_base_model`~~ ✅ 通过 ModelAdapter 注册表实现
+2. ~~`models/loader.py::load_processor`~~ ✅ 通过 ModelAdapter 注册表实现
+3. ~~`data/dataset.py::_load_image`~~ ✅ 已实现图像解码
+4. ~~`train/finetune.py::training_step`~~ ✅ 通过 adapter.compute_loss() 实现
+5. ~~`eval/evaluate.py::predict_actions`~~ ✅ 通过 adapter.predict_actions() 实现
 6. `eval/evaluate.py::evaluate_closed_loop` — 需仿真器步进接口与成功判据
 7. `data/collector.py` 两个 `collect` — 需仿真器脚本化策略 / 真机遥操作工具

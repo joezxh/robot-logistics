@@ -47,28 +47,34 @@ class EvalReport:
         }
 
 
-def evaluate_offline(model: Any, val_loader: Any, device: str) -> dict[str, float]:
+def evaluate_offline(adapter: Any, val_loader: Any, device: str) -> dict[str, float]:
     """Per-step action error over the validation split.
 
     Reported with the ``val_`` prefix so the keys match
     ``checkpointing.metric_for_best``.
+
+    The adapter's :meth:`predict_actions` replaces the old skeleton
+    ``predict_actions`` function -- each model family knows how to extract
+    action predictions from its own output format.
     """
     import torch
 
-    model.eval()
+    if hasattr(adapter, "eval"):
+        adapter.eval()
     total_mse = 0.0
     total_l1 = 0.0
     count = 0
 
     with torch.no_grad():
         for batch in val_loader:
-            predicted = predict_actions(model, batch, device)
+            predicted = predict_actions(adapter, batch, device)
             target = batch["actions"].to(device)
             total_mse += float(torch.nn.functional.mse_loss(predicted, target)) * len(target)
             total_l1 += float(torch.nn.functional.l1_loss(predicted, target)) * len(target)
             count += len(target)
 
-    model.train()
+    if hasattr(adapter, "train"):
+        adapter.train()
     if count == 0:
         logger.warning("validation split is empty; reporting zero error")
         return {"val_action_mse": 0.0, "val_action_l1": 0.0}
@@ -76,18 +82,17 @@ def evaluate_offline(model: Any, val_loader: Any, device: str) -> dict[str, floa
     return {"val_action_mse": total_mse / count, "val_action_l1": total_l1 / count}
 
 
-def predict_actions(model: Any, batch: Any, device: str) -> Any:
+def predict_actions(adapter: Any, batch: Any, device: str) -> Any:
     """Forward pass returning a normalised action chunk.
 
-    Skeleton: signature depends on the base model family.
+    Delegates to the adapter's :meth:`predict_actions` which knows how to
+    extract the action tensor from the model-specific output format.
     """
-    raise NotImplementedError(
-        "predict_actions depends on the chosen base model; see vla-training/README.md"
-    )
+    return adapter.predict_actions(batch, device)
 
 
 def evaluate_closed_loop(
-    model: Any,
+    adapter: Any,
     tasks: Sequence[str],
     *,
     episodes_per_task: int = 10,

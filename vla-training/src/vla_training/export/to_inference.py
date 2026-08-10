@@ -147,8 +147,22 @@ def export(
 def merge_and_save(checkpoint_dir: Path, export_dir: Path, config: Mapping[str, Any]) -> None:
     """Merge LoRA adapters into the base weights and write the result.
 
-    Skeleton: needs the base model loader, which is base-model specific.
+    Uses the model adapter's ``merge_adapters`` method, which delegates to
+    the standard PEFT / transformers save path for HF-compatible checkpoints.
+    Model families that need custom merging (e.g. non-HF checkpoints) can
+    override ``merge_adapters`` in their adapter class.
     """
-    raise NotImplementedError(
-        "adapter merging requires the base model loader; see vla-training/README.md"
-    )
+    from ..models.loader import build_adapter
+
+    adapter = build_adapter(config)
+
+    # Load the trained LoRA weights from the checkpoint.
+    if hasattr(adapter.model, "from_pretrained"):
+        try:
+            adapter.model = type(adapter.model).from_pretrained(str(checkpoint_dir))
+            logger.info("loaded LoRA weights from %s", checkpoint_dir)
+        except Exception as exc:
+            logger.warning("could not load checkpoint %s: %s", checkpoint_dir, exc)
+
+    adapter.merge_adapters(export_dir)
+    logger.info("exported merged model to %s", export_dir)

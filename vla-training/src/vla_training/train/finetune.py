@@ -2,8 +2,15 @@
 
 Assembles config, data, model and optimiser, then runs the training loop. The
 loop structure, checkpointing policy and metric bookkeeping are concrete; the
-forward/backward step is the skeleton boundary, since it depends on the chosen
-base model's signature.
+forward/backward step delegates to the model adapter so the loop stays
+model-agnostic.
+
+Distillation
+~~~~~~~~~~~~
+When ``distill.enabled`` is set in the config the training step switches to
+:func:`vla_training.distill.step.distillation_step`, which adds a teacher
+guidance loss on top of the ground-truth action loss.  See
+:mod:`vla_training.distill` for details.
 """
 from __future__ import annotations
 
@@ -75,8 +82,15 @@ def finetune(config: Mapping[str, Any]) -> TrainState:
     )
 
     train_loader, val_loader = build_dataloaders(config)
-    model = build_model(config, device)
-    optimizer, scheduler = build_optimizer(model, config, steps_per_epoch=len(train_loader))
+    adapter = build_model(config, device)
+
+    # When distillation is enabled, load the teacher model.
+    teacher = None
+    if bool(get_by_path(config, "distill.enabled", False)):
+        teacher = _build_teacher(config, device)
+        logger.info("distillation enabled: teacher=%s", get_by_path(config, "distill.teacher_model", ""))
+
+    optimizer, scheduler = build_optimizer(adapter, config, steps_per_epoch=len(train_loader))
 
     state = TrainState()
     epochs = int(get_by_path(config, "training.epochs", 10))
@@ -88,12 +102,12 @@ def finetune(config: Mapping[str, Any]) -> TrainState:
     for epoch in range(epochs):
         state.epoch = epoch
         for batch_idx, batch in enumerate(train_loader):
-            loss = training_step(model, batch, device)
+            loss = training_step(adapter, batch, device, teacher=teacher)
             # Scale so the effective gradient matches a true large batch.
             (loss / accum).backward()
 
             if (batch_idx + 1) % accum == 0:
-                clip_gradients(model, config)
+                clip_gradients(adapter, config)
                 optimizer.step()
                 if scheduler is not None:
                     scheduler.step()
@@ -103,15 +117,15 @@ def finetune(config: Mapping[str, Any]) -> TrainState:
                 if state.step % log_every == 0:
                     logger.info("epoch=%d step=%d loss=%.5f", epoch, state.step, float(loss))
                 if eval_every and state.step % eval_every == 0:
-                    metrics = evaluate_step(model, val_loader, device)
+                    metrics = evaluate_step(adapter, val_loader, device)
                     state.history.append({"step": state.step, **metrics})
                     state.best_metric = maybe_save_best(
-                        model, state, metrics, ckpt_dir, config
+                        adapter, state, metrics, ckpt_dir, config
                     )
                 if save_every and state.step % save_every == 0:
-                    save_checkpoint(model, state, ckpt_dir / f"step-{state.step}", config)
+                    save_checkpoint(adapter, state, ckpt_dir / f"step-{state.step}", config)
 
-    save_checkpoint(model, state, ckpt_dir / "final", config)
+    save_checkpoint(adapter, state, ckpt_dir / "final", config)
     logger.info("fine-tune complete: %d steps, best=%.5f", state.step, state.best_metric)
     return state
 
@@ -129,8 +143,8 @@ def build_dataloaders(config: Mapping[str, Any]):
     batch_size = int(get_by_path(config, "training.batch_size", 8))
     workers = int(get_by_path(config, "runtime.num_workers", 4))
 
-    train_ds = VLADataset(processed / "train", chunk_size=chunk, camera_names=cameras)
-    val_ds = VLADataset(processed / "val", stats=train_ds.stats, chunk_size=chunk, camera_names=cameras)
+    train_ds = VLADataset(processed / "train", chunk_size=chunk, camera_names=cameras, config=config)
+    val_ds = VLADataset(processed / "val", stats=train_ds.stats, chunk_size=chunk, camera_names=cameras, config=config)
 
     return (
         build_dataloader(train_ds, batch_size=batch_size, shuffle=True, num_workers=workers),
@@ -139,24 +153,42 @@ def build_dataloaders(config: Mapping[str, Any]):
 
 
 def build_model(config: Mapping[str, Any], device: str) -> Any:
-    """Load the base model, attach LoRA adapters and move it to ``device``."""
-    from ..models.loader import apply_lora, load_base_model
+    """Load the base model, attach LoRA adapters and return a ModelAdapter.
 
-    model = load_base_model(config)
-    model = apply_lora(model, config)
-    if bool(get_by_path(config, "training.gradient_checkpointing", False)):
-        # Trades ~30% step time for a large activation-memory saving; usually
-        # the difference between fitting on one card and not.
-        if hasattr(model, "gradient_checkpointing_enable"):
-            model.gradient_checkpointing_enable()
-    return model.to(device)
+    Uses :func:`~vla_training.models.loader.build_adapter` which handles
+    model loading, LoRA injection, gradient checkpointing and device placement
+    in one call.
+    """
+    from ..models.loader import build_adapter
+
+    adapter = build_adapter(config)
+    # Move to device if build_adapter didn't already (device=auto case).
+    if device != "auto" and hasattr(adapter.model, "to"):
+        try:
+            adapter.model = adapter.model.to(device)
+        except Exception:
+            pass  # already on device (e.g. 4-bit)
+    return adapter
+
+
+def _build_teacher(config: Mapping[str, Any], device: str) -> Any:
+    """Lazily import and build the distillation teacher to keep the import optional."""
+    from ..distill.teacher import build_teacher
+
+    return build_teacher(config, device)
 
 
 def build_optimizer(model: Any, config: Mapping[str, Any], *, steps_per_epoch: int):
     """AdamW over the trainable (adapter) parameters, plus an LR schedule."""
     import torch
 
-    params = [p for p in model.parameters() if p.requires_grad]
+    # Support both raw models and ModelAdapter wrappers.
+    if hasattr(model, "parameters") and hasattr(model, "trainable_only"):
+        # ModelAdapter -- use its helper
+        params = list(model.parameters(trainable_only=True))
+    else:
+        params = [p for p in model.parameters() if p.requires_grad]
+
     optimizer = torch.optim.AdamW(
         params,
         lr=float(get_by_path(config, "training.learning_rate", 2e-4)),
@@ -186,41 +218,50 @@ def clip_gradients(model: Any, config: Mapping[str, Any]) -> None:
         return
     import torch
 
-    torch.nn.utils.clip_grad_norm_(
-        [p for p in model.parameters() if p.requires_grad], max_norm
-    )
+    if hasattr(model, "parameters"):
+        grads = [p for p in model.parameters(trainable_only=True)] if hasattr(model, "trainable_only") else [p for p in model.parameters() if p.requires_grad]
+    else:
+        grads = [p for p in model.parameters() if p.requires_grad]
+    torch.nn.utils.clip_grad_norm_(grads, max_norm)
 
 
 # --- steps ------------------------------------------------------------------
 
 
-def training_step(model: Any, batch: Any, device: str) -> Any:
+def training_step(adapter: Any, batch: Any, device: str, *, teacher: Any = None) -> Any:
     """One forward pass returning a scalar loss.
 
-    Skeleton: the call signature depends on the base model family.
+    When *teacher* is ``None`` this computes the standard imitation loss
+    (MSE between predicted and ground-truth actions).  When a teacher is
+    provided, the loss is a weighted combination of imitation loss and
+    distillation loss (KL divergence + feature alignment).
     """
-    raise NotImplementedError(
-        "training_step depends on the chosen base model; see vla-training/README.md"
-    )
+    if teacher is not None:
+        from ..distill.step import distillation_step
+
+        return distillation_step(adapter, teacher, batch, device, adapter.config)
+
+    return adapter.compute_loss(batch, device)
 
 
-def evaluate_step(model: Any, val_loader: Any, device: str) -> dict[str, float]:
+def evaluate_step(adapter: Any, val_loader: Any, device: str) -> dict[str, float]:
     """Validation pass returning the metrics named in ``evaluation.metrics``."""
     from ..eval.evaluate import evaluate_offline
 
-    return evaluate_offline(model, val_loader, device)
+    return evaluate_offline(adapter, val_loader, device)
 
 
 # --- checkpointing ----------------------------------------------------------
 
 
-def save_checkpoint(model: Any, state: TrainState, path: Path, config: Mapping[str, Any]) -> None:
+def save_checkpoint(adapter: Any, state: TrainState, path: Path, config: Mapping[str, Any]) -> None:
     """Persist adapters plus run state.
 
     Only the LoRA adapters are saved -- a few tens of MB against ~14GB for the
     frozen base, which is the whole point of the approach.
     """
     path.mkdir(parents=True, exist_ok=True)
+    model = adapter.model if hasattr(adapter, "model") else adapter
     if hasattr(model, "save_pretrained"):
         model.save_pretrained(path)
     (path / "train_state.json").write_text(
@@ -230,7 +271,7 @@ def save_checkpoint(model: Any, state: TrainState, path: Path, config: Mapping[s
 
 
 def maybe_save_best(
-    model: Any,
+    adapter: Any,
     state: TrainState,
     metrics: Mapping[str, float],
     ckpt_dir: Path,
@@ -249,5 +290,5 @@ def maybe_save_best(
         return state.best_metric
 
     logger.info("new best %s=%.5f (was %.5f)", metric_name, value, state.best_metric)
-    save_checkpoint(model, state, ckpt_dir / "best", config)
+    save_checkpoint(adapter, state, ckpt_dir / "best", config)
     return value

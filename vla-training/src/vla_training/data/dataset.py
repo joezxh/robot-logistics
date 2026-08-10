@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 from .converter import STATS_FILENAME, normalize_action
 from .types import DatasetStats
@@ -42,6 +42,9 @@ class VLADataset:
     :param chunk_size: number of consecutive future actions returned per sample.
         Predicting a chunk instead of a single step markedly reduces compounding
         error during closed-loop rollout.
+    :param config: optional full training config; when provided, image loading
+        uses :func:`vla_training.models.loader.load_image` to match the base
+        model's preprocessing expectations.
     """
 
     def __init__(
@@ -52,11 +55,13 @@ class VLADataset:
         chunk_size: int = 1,
         image_size: tuple[int, int] = (224, 224),
         camera_names: Sequence[str] | None = None,
+        config: Mapping[str, Any] | None = None,
     ) -> None:
         self.split_dir = Path(split_dir)
         self.chunk_size = chunk_size
         self.image_size = image_size
         self.camera_names = list(camera_names or ["wrist_cam", "overhead_cam"])
+        self._config = config
 
         manifest_path = self.split_dir / "manifest.json"
         if not manifest_path.is_file():
@@ -141,14 +146,38 @@ class VLADataset:
     def _load_image(self, path: str | None):
         """Load and preprocess one camera frame.
 
-        Skeleton: the concrete decode + normalisation must match the base VLA
-        model's image processor, so it is wired up together with the model in
-        :mod:`vla_training.models.loader`.
+        When a training config is available, delegates to
+        :func:`vla_training.models.loader.load_image` which uses PIL to load
+        the image and resizes it to the resolution declared in the config.
+        The model adapter's ``preprocess_batch`` handles the final
+        normalisation (tensor conversion, channel ordering) at batch time.
         """
-        raise NotImplementedError(
-            "image loading must match the base model's image processor; "
-            "see vla-training/README.md"
+        torch = _torch()
+        if path is None:
+            # Missing camera -- return a zero tensor so the batch still collates.
+            w, h = self.image_size[1], self.image_size[0]
+            return torch.zeros(3, h, w, dtype=torch.float32)
+
+        if self._config is not None:
+            from ..models.loader import load_image
+
+            pil_img = load_image(path, self._config)
+            # Convert PIL -> CHW float tensor in [0, 1].  The adapter's
+            # preprocess_batch will apply model-specific normalisation.
+            import numpy as np
+
+            arr = np.array(pil_img, dtype=np.float32) / 255.0
+            return torch.from_numpy(arr).permute(2, 0, 1)
+
+        # Fallback: load raw pixels with PIL and resize.
+        from PIL import Image
+        import numpy as np
+
+        img = Image.open(path).convert("RGB").resize(
+            (self.image_size[1], self.image_size[0])
         )
+        arr = np.array(img, dtype=np.float32) / 255.0
+        return torch.from_numpy(arr).permute(2, 0, 1)
 
 
 def build_dataloader(dataset: VLADataset, *, batch_size: int, shuffle: bool, num_workers: int = 4):

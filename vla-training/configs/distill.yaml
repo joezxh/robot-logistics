@@ -1,0 +1,53 @@
+# Knowledge distillation configuration.
+#
+# When ``distill.enabled: true`` is present in the merged config, the training
+# loop switches from pure imitation learning to distillation-guided training.
+# A frozen teacher model produces soft action targets that regularise the
+# student's action distribution.
+#
+# This file is layered on top of a base training config:
+#   configs/base.yaml < configs/dataset.yaml < configs/finetune_hy_embodied.yaml < configs/distill.yaml
+#
+# Teacher model recommendations (from EmbodiedCLUE-VLA benchmark):
+#   - Hy-Embodied-0.5-VLA (score 73.0) -- best overall, open-source
+#   - Motus (score 68.5) -- strong world-model-based VLA
+#   - InternVLA-A1.5 (score 61.0) -- latent foresight capabilities
+#
+# Usage:
+#   python -m vla_training.train.finetune \
+#       configs/base.yaml configs/dataset.yaml \
+#       configs/finetune_hy_embodied.yaml configs/distill.yaml
+
+distill:
+  enabled: true
+
+  # Teacher checkpoint -- HuggingFace repo id or local path.
+  # The teacher can be from a different model family than the student.
+  teacher_model: tencent/HY-Embodied-0.5
+  teacher_family: hy_embodied
+  teacher_trust_remote_code: true
+  teacher_load_in_4bit: false
+
+  # Distillation hyper-parameters.
+  #
+  # temperature: softmax temperature for the KL term.
+  #   Higher values produce softer teacher distributions.
+  #   Typical range: 1.0 - 5.0.  Default: 2.0.
+  temperature: 2.0
+
+  # alpha: weight of the action KL divergence term.
+  #   Controls how much the student should match the teacher's action
+  #   distribution vs. the ground-truth actions.
+  #   0.0 = pure imitation, 1.0 = equal weight.
+  alpha: 0.5
+
+  # beta: weight of the feature alignment term.
+  #   Encourages the student to learn the teacher's intermediate
+  #   representations.  Set to 0 to disable.
+  #   Typical range: 0.01 - 0.3.
+  beta: 0.1
+
+  # feature_layer: name or index of the intermediate layer to align.
+  #   null = use the last hidden state before the action head.
+  #   Adjust based on the teacher architecture for best results.
+  feature_layer: null

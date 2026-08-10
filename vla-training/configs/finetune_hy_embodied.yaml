@@ -1,0 +1,69 @@
+# LoRA fine-tuning of the Hy-Embodied-0.5-VLA base model.
+#
+# Hy-Embodied-0.5-VLA (Tencent) ranked #1 on the EmbodiedCLUE-VLA benchmark
+# (RoboTwin 2.0) with a score of 73.0.  It uses a Mixture-of-Transformers
+# (MoT) backbone and is open-sourced on HuggingFace:
+#   https://huggingface.co/tencent/HY-Embodied-0.5
+#
+# Usage:
+#   python -m vla_training.train.finetune \
+#       configs/base.yaml configs/dataset.yaml configs/finetune_hy_embodied.yaml
+#
+# Prerequisites:
+#   1. Download the model weights:
+#      huggingface-cli download tencent/HY-Embodied-0.5
+#   2. Install dependencies: pip install -r vla-training/requirements.txt
+
+model:
+  # HuggingFace identifier or local path of the Hy-Embodied checkpoint.
+  base_model: tencent/HY-Embodied-0.5
+  # Model family -- selects the adapter from the registry.
+  family: hy_embodied
+  # Hy-Embodied ships custom modelling code; trust it.
+  trust_remote_code: true
+  # 4-bit quantisation (QLoRA) roughly halves VRAM at a small quality cost.
+  load_in_4bit: false
+  # Name of the action output attribute in the model's forward output.
+  # Adjust if the checkpoint version uses a different key.
+  action_key: actions
+
+lora:
+  enabled: true
+  # Rank 32 is the usual sweet spot for robot fine-tuning.
+  r: 32
+  alpha: 64
+  dropout: 0.05
+  bias: none
+  # Target modules may differ for Hy-Embodied vs OpenVLA.  The MoT architecture
+  # typically uses q_proj/k_proj/v_proj/o_proj in its attention layers; verify
+  # against the model's layer names if LoRA matches nothing.
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+  modules_to_save:
+    - action_head
+
+training:
+  epochs: 10
+  batch_size: 8
+  gradient_accumulation_steps: 4
+  learning_rate: 2.0e-4
+  weight_decay: 0.01
+  warmup_ratio: 0.03
+  lr_scheduler: cosine
+  max_grad_norm: 1.0
+  gradient_checkpointing: true
+
+checkpointing:
+  save_every_n_steps: 500
+  keep_last_n: 3
+  metric_for_best: val_action_mse
+  greater_is_better: false
+
+evaluation:
+  eval_every_n_steps: 500
+  metrics:
+    - action_mse
+    - action_l1
