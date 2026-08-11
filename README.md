@@ -9,6 +9,8 @@
 ![vue](https://img.shields.io/badge/vue-3.x-green)
 ![license](https://img.shields.io/badge/license-MIT-lightgrey)
 
+> 🌐 **Language / 语言**：[English](README.md) · [中文](README_CN.md)
+
 ---
 
 ## What this is
@@ -26,6 +28,76 @@ independent sub-projects plus a shared contract layer:
 
 The simulation backend and RCS communicate over HTTP (embedded mode) or over an
 MQTT broker (standalone mode). The robot side always bridges via MQTT.
+
+---
+
+## Documentation
+
+All design docs, specs, algorithm notes, and paper write-ups live under
+[`docs/`](docs/). A full catalog follows.
+
+### Top-level docs
+
+| Document | Description |
+| --- | --- |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System architecture: dependency map & communication matrix. |
+| [`docs/API.md`](docs/API.md) | HTTP (REST/WebSocket) + MQTT interface reference. |
+| [`docs/OPERATIONS.md`](docs/OPERATIONS.md) | Deployment & operations guide (Docker, k8s, CI). |
+| [`docs/OPERATIONS-ZH.md`](docs/OPERATIONS-ZH.md) | 运维部署指南（中文版）。 |
+| [`docs/robot-algorithm-design.md`](docs/robot-algorithm-design.md) | Robot algorithm design overview. |
+| [`docs/机器人智能仓储物流系统_完整设计文档.md`](docs/机器人智能仓储物流系统_完整设计文档.md) | 完整系统设计文档（中文）。 |
+| [`docs/物流装卸机器人算法系统设计.md`](docs/物流装卸机器人算法系统设计.md) | 物流装卸机器人算法系统设计（中文）。 |
+| [`docs/集装箱机器人与散货机器人_技术规格书.md`](docs/集装箱机器人与散货机器人_技术规格书.md) | 集装箱/散货/双臂AGV/实验室装卸机器人技术规格书（含采购附录）。 |
+
+### Algorithm design (`docs/algorithm/`)
+
+| Document | Description |
+| --- | --- |
+| [`docs/algorithm/README.md`](docs/algorithm/README.md) | Algorithm module index. |
+| [`docs/algorithm/01-overview.md`](docs/algorithm/01-overview.md) | Overview. |
+| [`docs/algorithm/02-motion-planning.md`](docs/algorithm/02-motion-planning.md) | Motion planning. |
+| [`docs/algorithm/03-perception.md`](docs/algorithm/03-perception.md) | Perception. |
+| [`docs/algorithm/04-task-scheduling.md`](docs/algorithm/04-task-scheduling.md) | Task scheduling. |
+| [`docs/algorithm/05-deployment.md`](docs/algorithm/05-deployment.md) | Deployment. |
+
+### Technical design (`docs/technical/`)
+
+| Document | Description |
+| --- | --- |
+| [`docs/technical/container-robot/集装箱机器人技术设计方案_V1.0.md`](docs/technical/container-robot/集装箱机器人技术设计方案_V1.0.md) | 集装箱机器人技术设计方案 V1.0. |
+| [`docs/technical/bulk-cargo-robot/散货机器人技术设计方案_V1.0.md`](docs/technical/bulk-cargo-robot/散货机器人技术设计方案_V1.0.md) | 散货机器人技术设计方案 V1.0. |
+
+### VLA paper studies (`docs/paper/`)
+
+Each paper has an English version and a Chinese version (`-CN`).
+
+| Paper | English | 中文 |
+| --- | --- | --- |
+| AdaJEPA | [`adajepa.md`](docs/paper/adajepa.md) | [`adajepa-CN.md`](docs/paper/adajepa-CN.md) |
+| CogACT | [`cogact.md`](docs/paper/cogact.md) | [`cogact-CN.md`](docs/paper/cogact-CN.md) |
+| Diffusion Policy | [`diffusion-policy.md`](docs/paper/diffusion-policy.md) | [`diffusion-policy-CN.md`](docs/paper/diffusion-policy-CN.md) |
+| Embodied-R1 | [`embodied-r1.md`](docs/paper/embodied-r1.md) | [`embodied-r1-CN.md`](docs/paper/embodied-r1-CN.md) |
+| Octo | [`octo.md`](docs/paper/octo.md) | [`octo-CN.md`](docs/paper/octo-CN.md) |
+| OpenVLA | [`openvla.md`](docs/paper/openvla.md) | [`openvla-CN.md`](docs/paper/openvla-CN.md) |
+| Patch Policy | [`patch-policy.md`](docs/paper/patch-policy.md) | [`patch-policy-CN.md`](docs/paper/patch-policy-CN.md) |
+| R3M | [`r3m.md`](docs/paper/r3m.md) | [`r3m-CN.md`](docs/paper/r3m-CN.md) |
+| ReConVLA | [`reconvla.md`](docs/paper/reconvla.md) | [`reconvla-CN.md`](docs/paper/reconvla-CN.md) |
+| RoboVista | [`robovista.md`](docs/paper/robovista.md) | [`robovista-CN.md`](docs/paper/robovista-CN.md) |
+| RT-2 | [`rt2.md`](docs/paper/rt2.md) | [`rt2-CN.md`](docs/paper/rt2-CN.md) |
+| Scaling Diffusion Policy | [`scaling-diffusion-policy.md`](docs/paper/scaling-diffusion-policy.md) | [`scaling-diffusion-policy-CN.md`](docs/paper/scaling-diffusion-policy-CN.md) |
+| TinyVLA | [`tinyvla.md`](docs/paper/tinyvla.md) | [`tinyvla-CN.md`](docs/paper/tinyvla-CN.md) |
+| V-JEPA2 | [`v-jepa2.md`](docs/paper/v-jepa2.md) | [`v-jepa2-CN.md`](docs/paper/v-jepa2-CN.md) |
+| VLA Survey | [`vla-survey.md`](docs/paper/vla-survey.md) | [`vla-survey-CN.md`](docs/paper/vla-survey-CN.md) |
+| W2VLA | [`w2vla.md`](docs/paper/w2vla.md) | [`w2vla-CN.md`](docs/paper/w2vla-CN.md) |
+| WSA1 | [`wsa1.md`](docs/paper/wsa1.md) | [`wsa1-CN.md`](docs/paper/wsa1-CN.md) |
+
+### Engineering records (`docs/superpowers/`)
+
+| Path | Description |
+| --- | --- |
+| [`docs/superpowers/specs/`](docs/superpowers/specs/) | Design specs (prototype, RCS motion control, dual-arm AGV, e2e chain, etc.). |
+| [`docs/superpowers/instructions/`](docs/superpowers/instructions/) | Hand-off instructions (e.g. `rcs-1-handoff.md`). |
+| [`docs/superpowers/plans/`](docs/superpowers/plans/) | Phase/implementation plans & reports. |
 
 ---
 
