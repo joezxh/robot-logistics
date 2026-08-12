@@ -18,7 +18,8 @@ the communication matrix between them. It is the companion to the
      │
  simulation/ ──────────────┐
                             │ (colcon underlay overlay)
-                     robot-app/robot_arm_hal
+                     robot-app/robot_arm_hal (单臂 underlay)
+                     robot-app/robot_dual_arm_hal (双臂，叠加于 underlay)
 
  vla-training/  (standalone pipeline, deploys artifacts to robot-app/robot_decision)
 ```
@@ -30,8 +31,8 @@ Rules:
 - `rcs/` must **not** import the simulation backend. It owns its own
   `config.py` / `security.py`.
 - `robot-app/` depends on `shared/` for wire contracts, and on
-  `robot_arm_hal` (provided as a colcon underlay by the simulation workspace
-  when building the robot workspace, or vice-versa).
+  `robot_arm_hal` (单臂 6-DOF，作为 colcon underlay 由 simulation 工作区提供)
+  与 `robot_dual_arm_hal`（双臂，关节名带 left_/right_ 前缀，叠加于 underlay）。
 - `vla-training/` is decoupled; it only emits inference artifacts consumed by
   `robot-app/robot_decision`.
 
@@ -89,8 +90,9 @@ These directions are checked by `scripts/verify_split.sh`.
   (waypoint following), `ArmExecutor` (MoveIt), `HugController` (dual-arm
   synchronous hug), `SafetyMonitor` (independent safety interlocks),
   `MoveItClient`, `MotionPlannerNode`.
-- **robot_arm_hal**: dual-arm HAL — `arm_hal.ros2_control.xacro` (6-DOF macro)
-  + `dual_arm.ros2_control.xacro` (left/right instantiation via `arm_id`).
+- **robot_dual_arm_hal**: 双臂 HAL — `arm_hal.ros2_control.xacro` (6-DOF macro)
+  + `dual_arm.ros2_control.xacro` (left/right instantiation via `arm_id`)；
+  `robot_arm_hal` 单臂作为 underlay 保持不变。
 - **robot_base_hal**: diff-drive base HAL — `base.ros2_control.xacro` +
   `loader.urdf.xacro` + `diff_drive.yaml` controller config.
 - **robot_perception**: 7 步点云处理管线 — `PointCloudProcessor`

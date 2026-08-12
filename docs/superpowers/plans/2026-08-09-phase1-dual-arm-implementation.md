@@ -1175,7 +1175,7 @@ git commit -m "feat(base_hal): add robot_base_hal package with diff-drive URDF"
 ### Task 7: robot_arm_hal Dual-Arm Extension
 
 **Files:**
-- Create: `robot-app/ros2_ws/src/robot_arm_hal/urdf/dual_arm.ros2_control.xacro`
+- Create: `robot-app/ros2_ws/src/robot_dual_arm_hal/urdf/dual_arm.ros2_control.xacro`
 
 **Interfaces:**
 - Uses existing `arm_hal.ros2_control.xacro` macro `arm_hal_ros2_control`
@@ -1212,7 +1212,7 @@ git commit -m "feat(base_hal): add robot_base_hal package with diff-drive URDF"
 - [ ] **Step 2: Commit**
 
 ```bash
-git add robot-app/ros2_ws/src/robot_arm_hal/urdf/dual_arm.ros2_control.xacro
+git add robot-app/ros2_ws/src/robot_dual_arm_hal/urdf/dual_arm.ros2_control.xacro
 git commit -m "feat(arm_hal): add dual-arm ros2_control xacro instantiation"
 ```
 

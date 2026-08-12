@@ -98,12 +98,12 @@ graph TB
 @dataclass
 class RobotConfig:
     """机器人通用配置"""
-    num_joints: int = 6                    # 关节数量（6或7）
-    payload_kg: float = 25.0               # 负载(kg)
+    num_joints: int = 6                    # 单臂 6-DOF；双臂装卸机器人共 12 关节 + 2 抱板
+    payload_kg: float = 20.0               # AUBO-i20 单臂额定负载 20kg
     
     # 精度参数
-    position_accuracy_mm: float = 0.5      # 定位精度(mm)
-    repeatability_mm: float = 0.1          # 重复精度(mm)
+    position_accuracy_mm: float = 0.05     # AUBO-i20 定位精度(mm)
+    repeatability_mm: float = 0.05         # AUBO-i20 重复定位精度 ±0.05mm
     
     # 速度参数
     max_velocity_mps: float = 3.0          # 最大线速度(m/s)

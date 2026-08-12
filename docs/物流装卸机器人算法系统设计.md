@@ -86,10 +86,10 @@ graph TB
 @dataclass
 class RobotConfig:
     """机器人通用配置"""
-    num_joints: int = 6
-    payload_kg: float = 25.0
-    position_accuracy_mm: float = 0.5
-    repeatability_mm: float = 0.1
+    num_joints: int = 6  # 单臂 6-DOF；双臂装卸机器人含 left+right 共 12 关节 + 2 抱板
+    payload_kg: float = 20.0  # AUBO-i20 单臂额定负载 20kg
+    position_accuracy_mm: float = 0.05
+    repeatability_mm: float = 0.05  # AUBO-i20 重复定位精度 ±0.05mm
     max_velocity_mps: float = 3.0
     max_acceleration_mps2: float = 15.0
     control_frequency_hz: int = 250
@@ -182,10 +182,10 @@ class Pose6D:
 @dataclass
 class RobotConfig:
     """机器人通用配置"""
-    num_joints: int = 6
-    payload_kg: float = 25.0
-    position_accuracy_mm: float = 0.5
-    repeatability_mm: float = 0.1
+    num_joints: int = 6  # 单臂 6-DOF；双臂装卸机器人含 left+right 共 12 关节 + 2 抱板
+    payload_kg: float = 20.0  # AUBO-i20 单臂额定负载 20kg
+    position_accuracy_mm: float = 0.05
+    repeatability_mm: float = 0.05  # AUBO-i20 重复定位精度 ±0.05mm
     max_velocity_mps: float = 3.0
     max_acceleration_mps2: float = 15.0
     control_frequency_hz: int = 250
@@ -2302,7 +2302,7 @@ class PerceptionCoordinator:
 ```
 Task {
     task_id: 唯一标识
-    task_type: pick / place / move
+    task_type: goto / dock / pick_box / place_box / transport / hug_close / hug_release / home_all
     dependencies: [前置任务ID列表]
     priority: CRITICAL / HIGH / NORMAL / LOW
     estimated_duration: 预估时长
@@ -2370,7 +2370,7 @@ class TaskPriority(Enum):
 class Task:
     """任务"""
     task_id: str
-    task_type: str  # "pick" / "place" / "move"
+    task_type: str  # "goto" / "dock" / "pick_box" / "place_box" / "transport" / "hug_close" / "hug_release" / "home_all"
     source_pose: Optional[np.ndarray]
     target_pose: Optional[np.ndarray]
     object_class: Optional[str] = None
@@ -2527,10 +2527,10 @@ class TaskScheduler:
 ```yaml
 # config/robot_config.yaml
 robot:
-  num_joints: 6
-  payload_kg: 25.0
-  position_accuracy_mm: 0.5
-  repeatability_mm: 0.1
+  num_joints: 6  # 单臂 6-DOF；双臂装卸机器人共 12 关节 + 2 抱板
+  payload_kg: 20.0  # AUBO-i20 单臂额定负载 20kg
+  position_accuracy_mm: 0.05
+  repeatability_mm: 0.05  # AUBO-i20 重复定位精度 ±0.05mm
   max_velocity_mps: 3.0
   max_acceleration_mps2: 15.0
   control_frequency_hz: 250

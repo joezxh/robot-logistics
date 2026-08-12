@@ -20,7 +20,7 @@
 ```
 Task {
     task_id: 唯一标识
-    task_type: pick / place / move
+    task_type: goto / dock / pick_box / place_box / transport / hug_close / hug_release / home_all
     dependencies: [前置任务ID列表]
     priority: CRITICAL / HIGH / NORMAL / LOW
     estimated_duration: 预估时长
@@ -89,7 +89,7 @@ class TaskPriority(Enum):
 class Task:
     """任务"""
     task_id: str
-    task_type: str  # "pick" / "place" / "move"
+    task_type: str  # "goto" / "dock" / "pick_box" / "place_box" / "transport" / "hug_close" / "hug_release" / "home_all"
     source_pose: Optional[np.ndarray]
     target_pose: Optional[np.ndarray]
     object_class: Optional[str] = None
@@ -247,7 +247,7 @@ class TaskScheduler:
 
 | 组件 | 功能 | 文件位置 |
 |------|------|----------|
-| **TaskCoordinator** | 9 阶段 FSM（IDLE → RECEIVED → VALIDATING → PLANNING → EXECUTING → MONITORING → COMPLETING → DONE + ABORTING） | `robot-app/ros2_ws/src/robot_decision/robot_decision/task_coordinator.py` |
+| **TaskCoordinator** | 9 阶段 FSM（IDLE → NAVIGATING → DOCKING → APPROACHING → HUGGING → LIFTING → TRANSPORTING → PLACING → RETREATING → IDLE + ABORTING） | `robot-app/ros2_ws/src/robot_decision/robot_decision/task_coordinator.py` |
 | **TaskCoordinatorNode** | ROS 2 节点封装，含 adapter 层 | `robot-app/ros2_ws/src/robot_decision/robot_decision/task_coordinator_node.py` |
 | **SafetyMonitor** | 独立安全联锁，监控急停、碰撞、越限 | `robot-app/ros2_ws/src/robot_decision/robot_decision/safety_monitor.py` |
 | **RCS dispatch** | 设备任务分发、状态机管理 | `rcs/rcs/dispatch.py` |

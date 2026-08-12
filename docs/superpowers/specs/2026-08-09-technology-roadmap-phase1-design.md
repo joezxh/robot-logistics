@@ -82,7 +82,7 @@ Phase 1 (双臂协调) ──▶ Phase 2 (感知+导航) ──▶ Phase 3 (硬�
 **在范围内**：
 - 契约扩展（shared/ + robot_msgs/）
 - robot_base_hal 新增包
-- robot_arm_hal 双臂 URDF 扩展
+- robot_dual_arm_hal 双臂 URDF 扩展（robot_arm_hal 单臂作为 underlay 保留）
 - robot_decision 核心模块（TaskCoordinator、BaseExecutor、ArmExecutor、HugController、SafetyMonitor）
 - robot_gateway task_sink 扩展
 - simulation 后端双臂支持
@@ -146,7 +146,8 @@ status 新增：`base_state`, `hug_state`
 
 ```
 robot-app/ros2_ws/src/
-├── robot_arm_hal/      双臂 HAL（包名保留）
+├── robot_arm_hal/      单臂 HAL（包名保留，作为 underlay）
+├── robot_dual_arm_hal/ 双臂 HAL（arm_id=left/right 实例化）
 │   └── urdf/           dual_arm.ros2_control.xacro（宏按 arm_id=left/right 实例化）
 ├── robot_base_hal/     【新增】差速底盘 HAL
 │   ├── urdf/           base.ros2_control.xacro + loader.urdf.xacro
@@ -314,7 +315,7 @@ RCS ──MQTT──▶ robot_gateway ──~/task_command──▶ TaskCoordina
 | `shared/contracts/telemetry.schema.json` | 扩展电池/温度指标 |
 | `shared/python/robot_contracts/payloads.py` | 同步扩展 |
 | `robot-app/ros2_ws/src/robot_base_hal/` | 新包（URDF + ros2_control + setup） |
-| `robot_arm_hal/urdf/dual_arm.ros2_control.xacro` | 双臂实例化 |
+| `robot_dual_arm_hal/urdf/dual_arm.ros2_control.xacro` | 双臂实例化 |
 | `robot_decision/robot_decision/task_coordinator.py` | 分层状态机 |
 | `robot_decision/robot_decision/base_executor.py` | 底盘执行器 |
 | `robot_decision/robot_decision/arm_executor.py` | 臂执行器 |

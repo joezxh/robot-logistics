@@ -86,7 +86,8 @@ robot-logic/
 │   └── ros2_ws/src/     # ROS 2 机器人端应用
 │       ├── robot_gateway/    # MQTT ↔ ROS 2 桥接
 │       ├── robot_decision/   # TaskCoordinator + 执行器
-│       ├── robot_arm_hal/    # 双臂 HAL (URDF + ros2_control)
+│       ├── robot_arm_hal/     # 单臂 HAL (robot_dual_arm_hal 的 underlay)
+│       ├── robot_dual_arm_hal/ # 双臂 HAL (URDF + ros2_control, left/right)
 │       ├── robot_base_hal/   # 底盘 HAL (URDF + diff_drive)
 │       ├── robot_msgs/       # 本地消息契约
 │       └── robot_perception/ # 感知（Phase 2）
