@@ -54,9 +54,10 @@ class Site:
 class SiteManager:
     """Holds a registry of dock and warehouse sites."""
 
-    def __init__(self) -> None:
+    def __init__(self, seed: bool = True) -> None:
         self.sites: dict[str, Site] = {}
-        self._seed()
+        if seed:
+            self._seed()
 
     def _seed(self) -> None:
         # Default layout — three docks on the south side, two warehouse racks on the north.

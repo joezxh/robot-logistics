@@ -27,6 +27,7 @@ class Runtime:
         self.reverted_tasks: dict[str, dict[str, Any]] = {}
         self.started_at: float | None = None
         self.running = False
+        self.current_scene: str | None = None
         # observability: pub/sub for SSE consumers
         self._subscribers: list[asyncio.AbstractEventLoop] = []
         self._last_log_index = 0
@@ -61,6 +62,57 @@ class Runtime:
         self.tasks[task_id] = record
         self.log(record["trace_id"], task_id, "task", f"created: {task_type}")
         return record
+
+    def reset(self) -> None:
+        """Clear runtime state without touching the synthetic sensor generators.
+
+        - Wipe devices (next load_scene will re-seed).
+        - Wipe sites, tasks, logs, reverted tasks.
+        - Reset started_at; keep running flag as-is.
+        - Drop any cached sensor / joint state.
+        """
+        self.devices = DeviceManager(seed_devices=[])
+        self.sites = SiteManager(seed=False)
+        self.tasks.clear()
+        self.logs.clear()
+        self.reverted_tasks.clear()
+        self._detections.clear()
+        self._nav_paths.clear()
+        self._joint_cache.clear()
+        self.started_at = None
+        self.log(self.trace_id(), None, "runtime", "reset")
+
+    def load_scene(self, name: str) -> dict[str, Any]:
+        """Apply a scene preset: reset runtime then register preset sites / devices / tasks."""
+        from backend.services.scene_presets import get_scene
+
+        preset = get_scene(name)  # raises KeyError for unknown scenes
+        self.reset()
+        # Register sites
+        for site_spec in preset["sites"]:
+            self.sites.add(site_spec)
+        # Register devices
+        for device_spec in preset["devices"]:
+            self.devices.add(device_spec)
+        # Create tasks
+        for task_spec in preset["tasks"]:
+            try:
+                priority = TaskPriority(task_spec["priority"])
+            except ValueError:
+                priority = TaskPriority.NORMAL
+            self.create_task(
+                task_spec["type"],
+                task_spec["description"],
+                priority,
+                task_spec["device_id"],
+            )
+        self.current_scene = name
+        self.log(self.trace_id(), None, "scene_presets", f"loaded scene {name!r}")
+        return {
+            "scene": name,
+            "devices": self.devices.list(),
+            "sites": self.sites.list(),
+        }
 
     def start(self) -> dict[str, Any]:
         self.running = True
@@ -211,6 +263,23 @@ class Runtime:
             "uptime_seconds": round(time.time() - self.started_at, 1) if self.started_at else 0,
             "running": self.running,
             "reverted_count": len(self.reverted_tasks),
+        }
+
+    def _scene_kpi(self, name: str) -> dict[str, Any]:
+        """Compute scene-specific KPI snapshot (used by /api/scenes/{name}/kpi)."""
+        tasks = list(self.tasks.values())
+        completed = sum(t["status"] == "completed" for t in tasks)
+        failed = sum(t["status"] == "failed" for t in tasks)
+        total = len(tasks) or 1
+        success_rate = round((completed / total) * 100, 1)
+        throughput_per_hour = 42 + completed * 3  # 沿用 metrics() 的占位算法
+        return {
+            "scene": name,
+            "throughput_per_hour": throughput_per_hour,
+            "success_rate": success_rate,
+            "active_tasks": sum(1 for t in tasks if t["status"] == "running"),
+            "completed_tasks": completed,
+            "failed_tasks": failed,
         }
 
     @staticmethod
