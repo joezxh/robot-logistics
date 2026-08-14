@@ -60,4 +60,8 @@ export class LoaderRobot {
     if (position) this.group.position.copy(position)
     scene.add(this.group)
   }
+
+  addEndEffector(mesh: THREE.Object3D) {
+    this.group.add(mesh)
+  }
 }
