@@ -25,6 +25,9 @@ setup(
         "console_scripts": [
             "motion_planner_node = robot_decision.motion_planner:main",
             "task_coordinator_node = robot_decision.task_coordinator_node:main",
+            "pallet_executor = robot_decision.pallet_task_executor:main",
+            "box_executor = robot_decision.box_task_executor:main",
+            "bag_executor = robot_decision.bag_task_executor:main",
         ],
     },
 )
