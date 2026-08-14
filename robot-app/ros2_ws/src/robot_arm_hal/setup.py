@@ -14,6 +14,7 @@ setup(
         ("share/" + PACKAGE_NAME, ["package.xml"]),
         ("share/" + PACKAGE_NAME + "/urdf", glob("urdf/*.xacro")),
         ("share/" + PACKAGE_NAME + "/config", glob("config/*.yaml")),
+        ("share/" + PACKAGE_NAME + "/launch", glob("launch/*.launch.py")),
     ],
     install_requires=["setuptools", "paho-mqtt>=2.0"],
     zip_safe=True,
