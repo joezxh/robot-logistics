@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>robot_arm_hal</name>
+  <version>0.1.0</version>
+  <description>HAL abstraction for forklift and gripper drivers (SIM/REAL dual-mode)</description>
+  <maintainer email="robot-logic@local">robot-logic</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>controller_manager</depend>
+  <depend>hardware_interface</depend>
+  <depend>realtime_tools</depend>
+  <exec_depend>paho-mqtt</exec_depend>
+  <depend>ament_copyright</depend>
+  <depend>ament_flake8</depend>
+  <depend>ament_pep257</depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
