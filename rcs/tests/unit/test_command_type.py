@@ -1,7 +1,7 @@
 """Test CommandType enum alignment with shared/contracts/command.schema.json."""
 from __future__ import annotations
 
-from rcs.rcs.state.command import CommandType
+from rcs.state.command import CommandType
 import json
 from pathlib import Path
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import pytest
 
-from rcs.rcs.devices import ForkliftSpec, DualArmLoaderSpec
-from rcs.rcs.devices.base import DeviceModel
+from rcs.devices import ForkliftSpec, DualArmLoaderSpec
+from rcs.devices.base import DeviceModel
 
 
 def test_forklift_num_joints():

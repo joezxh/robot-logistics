@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import pytest
 
-from rcs.rcs.controllers.dual_arm_loader import DualArmLoaderController
-from rcs.rcs.devices import DualArmLoaderSpec
-from rcs.rcs.state.command import Command, CommandType
-from rcs.rcs.state.joint import JointState
-from rcs.rcs.state.profile import DeviceProfile, Limits, Morphology
+from rcs.controllers.dual_arm_loader import DualArmLoaderController
+from rcs.devices import DualArmLoaderSpec
+from rcs.state.command import Command, CommandType
+from rcs.state.joint import JointState
+from rcs.state.profile import DeviceProfile, Limits, Morphology
 
 
 @pytest.fixture

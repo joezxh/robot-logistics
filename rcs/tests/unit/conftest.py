@@ -7,7 +7,7 @@ at import time to accept the extra fields and store them as instance attributes.
 """
 from __future__ import annotations
 
-from rcs.rcs.state.command import Command
+from rcs.state.command import Command
 
 if "task_type" not in Command.__dataclass_fields__:
     _orig_init = Command.__init__
