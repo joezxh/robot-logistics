@@ -587,3 +587,24 @@ For SSE specifically, configure `nginx.ingress.kubernetes.io/proxy-buffering: "o
 | `robot_gateway` node crashes on start | missing `robot_contracts` package | `pip install -e shared/python` |
 | ROS 2 `colcon build` fails | missing ROS 2 deps | `rosdep install --from-paths src --ignore-src -r -y` |
 | Frontend shows old robot model | browser cache | hard refresh (Ctrl+Shift+R) |
+
+---
+
+## Top 3 装卸场景端到端部署 (Robot-App + RCS)
+
+### 启动顺序
+
+1. **MQTT Broker**：`docker run -d -p 1883:1883 eclipse-mosquitto:2.0`
+2. **RCS 服务**：启动 ForkliftController 与 DualArmLoaderController（已在 rcs/rcs/presets/top3.py 中预置）。
+3. **Robot-App**：
+   ```bash
+   cd robot-app
+   HAL_MODE=sim docker-compose up -d
+   ```
+4. **Dashboard 验证**：访问 `/scenes`，切换 pallet/box/bag 场景，KPI 面板应在 5s 内刷新。
+
+### KPI 验证
+
+- `throughput_per_hour`：每个完成 task 必须 ≥ 3（pallet） / 12（box） / 8（bag）。
+- `success_rate`：completed / total × 100。
+- 实时进度可观察 SSE：`/api/logs/stream`。

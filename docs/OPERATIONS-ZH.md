@@ -574,3 +574,32 @@ Mosquitto broker（`mosquitto` 服务）承载 command/state/alert/telemetry 四
 | `robot_gateway` 节点启动崩溃 | 缺少 `robot_contracts` 包 | `pip install -e shared/python` |
 | ROS 2 `colcon build` 失败 | 缺少 ROS 2 依赖 | `rosdep install --from-paths src --ignore-src -r -y` |
 | 前端显示旧机器人模型 | 浏览器缓存 | 强制刷新（Ctrl+Shift+R） |
+
+---
+
+## Top 3 装卸场景端到端部署（Robot-App + RCS）
+
+### 启动顺序
+
+1. **MQTT Broker**：`docker run -d -p 1883:1883 eclipse-mosquitto:2.0`
+2. **RCS 服务**：启动 ForkliftController 与 DualArmLoaderController（已在 rcs/rcs/presets/top3.py 中预置）。
+3. **Robot-App**：
+   ```bash
+   cd robot-app
+   HAL_MODE=sim docker-compose up -d
+   ```
+4. **Dashboard 验证**：访问 `/scenes`，切换 pallet/box/bag 场景，KPI 面板应在 5s 内刷新。
+
+### KPI 验证
+
+- `throughput_per_hour`：每个完成 task 必须 ≥ 3（pallet） / 12（box） / 8（bag）。
+- `success_rate`：completed / total × 100。
+- 实时进度可观察 SSE：`/api/logs/stream`。
+
+### 故障排查
+
+| 现象 | 可能原因 | 解决方法 |
+| --- | --- | --- |
+| Forklift 不响应命令 | 未订阅 `rcs/forklift-01/command` MQTT topic | 检查 bridge 日志 |
+| Gripper 一直出力不释放（force 异常） | 调整 `gripper_monitor.max_force_n` 阈值 |  |
+| ROS 2 桥接节点启动失败 | 未执行 `colcon build` 或未 `source install/setup.bash` | 重新构建并 source |
