@@ -8,6 +8,7 @@
       <p class="subtitle">{{ t.subtitle }}</p>
       <span class="badge">{{ t.badge }}</span>
       <span class="grow"></span>
+      <router-link to="/scenes" class="iconbtn" title="场景仿真">🚛 场景仿真</router-link>
       <UserMenu />
       <button class="iconbtn" @click="paletteOpen = true" :title="t.hotkey_help">⌘K</button>
       <button class="iconbtn" @click="toggleLang" title="language">🌐</button>
