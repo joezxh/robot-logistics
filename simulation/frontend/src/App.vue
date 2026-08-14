@@ -1,113 +1,24 @@
 <template>
   <div id="app">
-    <header class="topbar">
-      <div class="brand">
-        <span class="logo">🤖</span>
-        <h1>{{ t.title }}</h1>
-      </div>
-      <p class="subtitle">{{ t.subtitle }}</p>
-      <span class="badge">{{ t.badge }}</span>
-      <span class="grow"></span>
-      <router-link to="/scenes" class="iconbtn" title="场景仿真">🚛 场景仿真</router-link>
-      <UserMenu />
-      <button class="iconbtn" @click="paletteOpen = true" :title="t.hotkey_help">⌘K</button>
-      <button class="iconbtn" @click="toggleLang" title="language">🌐</button>
-      <button class="iconbtn" @click="themeToggle" title="theme">🌓</button>
-      <StatusBar />
-      <a class="docs" href="/api" target="_blank">{{ t.api }}</a>
-      <a class="docs" href="/metrics" target="_blank">{{ t.metrics }}</a>
-    </header>
-
-    <main :class="{ 'has-drawer': drawerDevice }">
-      <DashboardGrid />
-
-      <section class="timeline">
-        <TaskTimeline />
-      </section>
-
-      <section class="scene" :data-caption="t.scene_caption">
-        <WarehouseScene ref="sceneRef" />
-      </section>
-
-      <aside v-if="drawerDevice" class="drawer">
-        <DeviceDrawer :device-id="drawerDevice" @close="drawerDevice = ''" />
-      </aside>
-
-      <section class="panel">
-        <RightTabs />
-      </section>
-    </main>
-
-    <CommandPalette v-if="paletteOpen" @close="paletteOpen = false" @pick-device="onPickDevice" />
-
-    <KpiZoom />
-    <ToastHost />
-    <OnboardOverlay />
-    <TaskDrawer />
-    <LoginOverlay />
-    <HelpOverlay />
+    <RouterView />
   </div>
 </template>
 
 <script setup lang="ts">
-import DashboardGrid from './dashboard/DashboardGrid.vue'
-import TaskQueueChart from './dashboard/TaskQueue.vue'
-import KpiPanel from './dashboard/Kpi.vue'
-import AlertPanel from './dashboard/Alerts.vue'
-import TaskTimeline from './dashboard/TaskTimeline.vue'
-import TaskCreateForm from './panel/TaskCreate.vue'
-import RollbackPanel from './panel/Rollback.vue'
-import LogViewer from './panel/LogViewer.vue'
-import WarehouseScene from './three/WarehouseScene.vue'
-import DeviceDrawer from './dashboard/DeviceDrawer.vue'
-import CommandPalette from './components/CommandPalette.vue'
-import KpiZoom from './dashboard/KpiZoom.vue'
-import ToastHost from './components/ToastHost.vue'
-import OnboardOverlay from './components/OnboardOverlay.vue'
-import TaskDrawer from './dashboard/TaskDrawer.vue'
-import LoginOverlay from './components/LoginOverlay.vue'
-import UserMenu from './components/UserMenu.vue'
-import StatusBar from './components/StatusBar.vue'
-import HelpOverlay from './components/HelpOverlay.vue'
-import RightTabs from './panel/RightTabs.vue'
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useI18n } from './i18n'
-import { useTheme } from './theme'
-import { useAuth } from './composables/auth'
+import { onMounted, onUnmounted } from 'vue'
 import { startTaskWatcher } from './composables/taskWatcher'
 
-const { t, toggle: toggleLang } = useI18n()
-const { toggle: themeToggle } = useTheme()
-
-const drawerDevice = ref<string>('')
-const paletteOpen = ref(false)
-const sceneRef = ref<InstanceType<typeof import('./three/WarehouseScene.vue').default> | null>(null)
-
-function openDrawer(id: string) {
-  drawerDevice.value = id
-  sceneRef.value?.follow?.(id)
-}
-function onPickDevice(id: string) {
-  drawerDevice.value = id
-  paletteOpen.value = false
-  sceneRef.value?.follow?.(id)
-}
-
-function refreshNow() {
-  window.dispatchEvent(new CustomEvent('robot-logic:refresh'))
-}
-
+// Global keyboard listener (Ctrl+K palette, Ctrl+R refresh, Esc close drawers)
 function onKey(e: KeyboardEvent) {
   const mod = e.ctrlKey || e.metaKey
   if (mod && e.key.toLowerCase() === 'k') {
     e.preventDefault()
-    paletteOpen.value = !paletteOpen.value
+    window.dispatchEvent(new CustomEvent('robot-logic:toggle-palette'))
   } else if (mod && e.key.toLowerCase() === 'r') {
     e.preventDefault()
-    refreshNow()
+    window.dispatchEvent(new CustomEvent('robot-logic:refresh'))
   } else if (e.key === 'Escape') {
-    if (paletteOpen.value) { paletteOpen.value = false; return }
-    if (drawerDevice.value) { drawerDevice.value = ''; return }
+    window.dispatchEvent(new CustomEvent('robot-logic:close-drawers'))
   }
 }
 
