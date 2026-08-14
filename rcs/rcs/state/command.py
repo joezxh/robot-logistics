@@ -14,6 +14,7 @@ class CommandType(str, Enum):
     HOME = "home"
     ESTOP = "estop"
     RECOVER = "recover"
+    EXECUTE_TASK = "execute_task"
 
 
 @dataclass
