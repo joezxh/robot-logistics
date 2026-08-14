@@ -91,7 +91,7 @@
         "string",
         "null"
       ],
-      "description": "Task type for execute_task commands: goto, dock, pick_box, place_box, transport, hug_close, hug_release, home_all"
+      "description": "Task type for execute_task commands. Pallet/forklift: extend_fork, lift_fork, move_to, drop_pallet, pick_pallet. Loader: open_grip, close_grip, hug_grasp, dual_arm_sync. AGV/stacker: goto, dock, home_all."
     },
     "parameters": {
       "type": [

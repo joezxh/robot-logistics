@@ -1,303 +1,250 @@
-### Task 1: TaskCoordinator FSM
+# Task 1 Brief — scene_presets.py
 
-**Files:**
-- Create: `robot-app/ros2_ws/src/robot_decision/robot_decision/task_coordinator.py`
-- Test: `robot-app/ros2_ws/src/robot_decision/tests/test_task_coordinator.py`
+## Project Context
 
-**Interfaces:**
-- Consumes: `TaskCommandMsg` (from `robot_msgs.contracts`)
-- Produces: `phase: str` property, `on_phase_change` callback, executor dispatch decisions
+工程 `d:\projects\robot-logic\` 是物流装卸机器人系统。当前任务是为文档 `docs/装卸场景与机器人适配选型.md` 第 3.7 节选出的 **Top 3 装卸场景**（托盘 / 箱装 / 袋装）实现完整仿真模块。本 Task 是仿真模块的 **数据层基石** —— 后续 Task 2 的 `Runtime.load_scene()` 会读取本文件。
 
-- [ ] **Step 1: Write the failing test**
+## Files
 
-```python
-"""Tests for TaskCoordinator — pure Python FSM, no rclpy."""
-import time
-import pytest
-from robot_decision.task_coordinator import TaskCoordinator
+- **Create**: `d:\projects\robot-logic\simulation\backend\services\scene_presets.py`
 
+## Requirements（verbatim from plan）
 
-class FakeExecutor:
-    def __init__(self, succeeds=True):
-        self.calls = []
-        self._succeeds = succeeds
-
-    def execute(self, phase, params):
-        self.calls.append((phase, params))
-
-    def stop(self):
-        self.calls.append(("stop",))
-
-
-class TestTaskCoordinatorTransitions:
-    def _make(self):
-        received = []
-        coord = TaskCoordinator(on_phase_change=lambda p: received.append(p))
-        return coord, received
-
-    def test_initial_phase_is_idle(self):
-        coord, _ = self._make()
-        assert coord.phase == "idle"
-
-    def test_goto_triggers_navigating(self):
-        coord, received = self._make()
-        base = FakeExecutor()
-        coord.set_executor("base", base)
-        coord.on_task_command(task_type="goto", parameters={"target_pose": {"x": 1, "y": 2, "yaw": 0}})
-        assert coord.phase == "navigating"
-        assert "navigating" in received
-
-    def test_pick_box_full_sequence(self):
-        coord, received = self._make()
-        base = FakeExecutor()
-        arm = FakeExecutor()
-        hug = FakeExecutor()
-        coord.set_executor("base", base)
-        coord.set_executor("arm", arm)
-        coord.set_executor("hug", hug)
-        coord.on_task_command(task_type="pick_box", parameters={
-            "target_pose": {"x": 1, "y": 0, "yaw": 0},
-            "hug_params": {"pressure_target": 50.0, "approach_speed": 0.3, "close_speed": 0.1},
-        })
-        assert coord.phase == "navigating"
-        coord.advance_phase()  # navigating → docking
-        assert coord.phase == "docking"
-        coord.advance_phase()  # docking → approaching
-        assert coord.phase == "approaching"
-        coord.advance_phase()  # approaching → hugging
-        assert coord.phase == "hugging"
-        coord.advance_phase()  # hugging → lifting
-        assert coord.phase == "lifting"
-
-    def test_abort_from_any_phase(self):
-        coord, _ = self._make()
-        coord.set_executor("base", FakeExecutor())
-        for phase in ["navigating", "docking", "hugging", "lifting", "transporting"]:
-            coord._phase = phase
-            coord.abort("test abort")
-            assert coord.phase == "aborting"
-
-    def test_abort_returns_to_idle(self):
-        coord, _ = self._make()
-        coord.set_executor("base", FakeExecutor())
-        coord._phase = "navigating"
-        coord.abort("test")
-        coord.advance_phase()  # aborting → idle
-        assert coord.phase == "idle"
-
-    def test_invalid_task_type_raises(self):
-        coord, _ = self._make()
-        with pytest.raises(ValueError, match="unknown task_type"):
-            coord.on_task_command(task_type="fly_away", parameters={})
-
-    def test_home_all_returns_to_idle_after_retreat(self):
-        coord, _ = self._make()
-        coord.set_executor("base", FakeExecutor())
-        coord.set_executor("arm", FakeExecutor())
-        coord.on_task_command(task_type="home_all", parameters={})
-        # home_all goes through retreating then idle
-        assert coord.phase in ("retreating", "idle")
-
-    def test_phase_timeout_triggers_abort(self):
-        coord, _ = self._make()
-        coord.set_executor("base", FakeExecutor())
-        coord._phase_timeouts["navigating"] = 0.0  # immediate timeout
-        coord._phase_start_time = time.monotonic() - 1.0
-        coord._phase = "navigating"
-        coord.check_timeouts()
-        assert coord.phase == "aborting"
-
-    def test_get_phase_returns_current(self):
-        coord, _ = self._make()
-        assert coord.get_phase() == "idle"
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `cd robot-app/ros2_ws/src/robot_decision && python -m pytest tests/test_task_coordinator.py -v`
-Expected: FAIL with "ModuleNotFoundError: No module named 'robot_decision.task_coordinator'"
-
-- [ ] **Step 3: Write minimal implementation**
+文件路径 `simulation/backend/services/scene_presets.py`：
 
 ```python
-"""TaskCoordinator — layered state machine for dual-arm loading tasks.
+"""Scene preset data for the Top 3 loading scenarios.
 
-Pure Python (no rclpy) so it can be unit-tested in isolation.
-The ROS 2 integration node (task_coordinator_node.py) wraps this class.
+This module is intentionally framework-free (no FastAPI / Pydantic) so it can
+be reused by both the runtime and any future CLI tooling.
 """
 from __future__ import annotations
 
-import logging
-import time
-from typing import Any, Callable
+from typing import TypedDict
 
-logger = logging.getLogger(__name__)
 
-# 9 action phases + ABORTING
-PHASES = (
-    "idle", "navigating", "docking", "approaching", "hugging",
-    "lifting", "transporting", "placing", "retreating", "aborting",
-)
+class SiteSpec(TypedDict):
+    id: str
+    kind: str  # "dock" | "warehouse"
+    name: str
+    x: float
+    y: float
+    z: float
+    width: float
+    height: float
+    depth: float
+    rotation: float
+    color: str
 
-# Valid transitions: from_phase -> set(to_phases)
-_VALID_TRANSITIONS: dict[str, set[str]] = {
-    "idle":         {"navigating"},
-    "navigating":   {"docking", "aborting"},
-    "docking":      {"approaching", "aborting"},
-    "approaching":  {"hugging", "aborting"},
-    "hugging":      {"lifting", "aborting"},
-    "lifting":      {"transporting", "aborting"},
-    "transporting": {"placing", "aborting"},
-    "placing":      {"retreating", "aborting"},
-    "retreating":   {"idle", "aborting"},
-    "aborting":     {"idle"},
+
+class DeviceSpec(TypedDict):
+    device_id: str
+    device_type: str  # "pallet_forklift" | "loading_robot" | "agv" | "stacker"
+    name: str
+    x: float
+    z: float
+    speed: float
+
+
+class TaskSpec(TypedDict):
+    type: str  # "pallet_fork" | "box_unload" | "bag_unload" | "agv_transport" | "warehouse_storage"
+    description: str
+    priority: int  # 1..4
+    device_id: str
+
+
+class KPIDefinition(TypedDict):
+    label: str
+    key: str
+    unit: str
+    target: str
+
+
+class ScenePreset(TypedDict):
+    name: str
+    label: str
+    description: str
+    sites: list[SiteSpec]
+    devices: list[DeviceSpec]
+    tasks: list[TaskSpec]
+    kpi_definitions: list[KPIDefinition]
+
+
+PALLET_SCENE: ScenePreset = {
+    "name": "pallet",
+    "label": "托盘单元（欧/美/田/川）",
+    "description": "Top 3 第 1 名：托盘搬运。D 复合 + C 叉型，最成熟场景。",
+    "sites": [
+        {"id": "dock-01", "kind": "dock", "name": "集装箱月台",
+         "x": -6.0, "y": 0.0, "z": 4.0, "width": 6.0, "height": 0.6, "depth": 4.0,
+         "rotation": 0.0, "color": "#5eb0ff"},
+        {"id": "warehouse-01", "kind": "warehouse", "name": "仓库 1",
+         "x": 6.0, "y": 0.0, "z": -2.0, "width": 4.0, "height": 3.0, "depth": 3.0,
+         "rotation": 0.0, "color": "#58c47e"},
+        {"id": "warehouse-02", "kind": "warehouse", "name": "仓库 2（备用）",
+         "x": 6.0, "y": 0.0, "z": 3.0, "width": 4.0, "height": 3.0, "depth": 3.0,
+         "rotation": 0.0, "color": "#58c47e"},
+    ],
+    "devices": [
+        {"device_id": "forklift-01", "device_type": "pallet_forklift",
+         "name": "托盘叉车 1", "x": -3.0, "z": 2.0, "speed": 0.6},
+        {"device_id": "forklift-02", "device_type": "pallet_forklift",
+         "name": "托盘叉车 2", "x": -3.0, "z": -2.0, "speed": 0.6},
+        {"device_id": "agv-01", "device_type": "agv",
+         "name": "托盘 AGV", "x": 0.0, "z": 0.0, "speed": 1.0},
+    ],
+    "tasks": [
+        {"type": "pallet_fork", "description": "取托盘 1", "priority": 3, "device_id": "forklift-01"},
+        {"type": "pallet_fork", "description": "取托盘 2", "priority": 3, "device_id": "forklift-02"},
+        {"type": "agv_transport", "description": "运托盘入库", "priority": 3, "device_id": "agv-01"},
+    ],
+    "kpi_definitions": [
+        {"label": "单托盘节拍", "key": "pallet_cycle_seconds", "unit": "s", "target": "≤ 12"},
+        {"label": "叉车插入成功率", "key": "fork_insert_success_rate", "unit": "%", "target": "≥ 98"},
+        {"label": "AGV 对接精度", "key": "agv_dock_precision_mm", "unit": "mm", "target": "±5"},
+        {"label": "吞吐量", "key": "throughput_per_hour", "unit": "托盘/h", "target": "≥ 5"},
+    ],
 }
 
-# Task type → entry phase mapping
-_TASK_ENTRY: dict[str, str] = {
-    "goto":       "navigating",
-    "pick_box":   "navigating",
-    "place_box":  "navigating",
-    "home_all":   "retreating",
-    "transport":  "transporting",
-    "dock":       "docking",
-    "hug_close":  "hugging",
-    "hug_release": "placing",
+
+BOX_SCENE: ScenePreset = {
+    "name": "box",
+    "label": "箱装（瓦楞/塑料箱）",
+    "description": "Top 3 第 2 名：电商箱装。D 复合 + B 夹爪。",
+    "sites": [
+        {"id": "dock-01", "kind": "dock", "name": "集装箱月台",
+         "x": -6.0, "y": 0.0, "z": 4.0, "width": 6.0, "height": 0.6, "depth": 4.0,
+         "rotation": 0.0, "color": "#5eb0ff"},
+        {"id": "warehouse-01", "kind": "warehouse", "name": "立体库入口",
+         "x": 6.0, "y": 0.0, "z": 0.0, "width": 5.0, "height": 4.0, "depth": 4.0,
+         "rotation": 0.0, "color": "#58c47e"},
+    ],
+    "devices": [
+        {"device_id": "loader-01", "device_type": "loading_robot",
+         "name": "箱装夹爪机器人", "x": -3.0, "z": 2.0, "speed": 0.8},
+        {"device_id": "agv-01", "device_type": "agv",
+         "name": "箱装 AGV 1", "x": 2.0, "z": -2.0, "speed": 1.2},
+        {"device_id": "agv-02", "device_type": "agv",
+         "name": "箱装 AGV 2", "x": 2.0, "z": 2.0, "speed": 1.2},
+        {"device_id": "stacker-01", "device_type": "stacker",
+         "name": "立体库堆垛机", "x": 6.0, "z": 0.0, "speed": 0.7},
+    ],
+    "tasks": [
+        {"type": "box_unload", "description": "箱装卸 1", "priority": 3, "device_id": "loader-01"},
+        {"type": "box_unload", "description": "箱装卸 2", "priority": 3, "device_id": "loader-01"},
+        {"type": "agv_transport", "description": "运箱装 1", "priority": 3, "device_id": "agv-01"},
+        {"type": "agv_transport", "description": "运箱装 2", "priority": 3, "device_id": "agv-02"},
+        {"type": "warehouse_storage", "description": "立体库入库", "priority": 2, "device_id": "stacker-01"},
+    ],
+    "kpi_definitions": [
+        {"label": "单件节拍", "key": "box_cycle_seconds", "unit": "s", "target": "≤ 5"},
+        {"label": "抓取成功率", "key": "grip_success_rate", "unit": "%", "target": "≥ 99.5"},
+        {"label": "压溃率", "key": "crush_rate", "unit": "%", "target": "0"},
+        {"label": "吞吐量", "key": "throughput_per_min", "unit": "件/min", "target": "≥ 12"},
+    ],
 }
 
-# Phase → executor name mapping
-_PHASE_EXECUTOR: dict[str, str] = {
-    "navigating":   "base",
-    "transporting": "base",
-    "retreating":   "base",
-    "docking":      "arm",
-    "approaching":  "arm",
-    "hugging":      "hug",
-    "lifting":      "arm",
-    "placing":      "arm",
+
+BAG_SCENE: ScenePreset = {
+    "name": "bag",
+    "label": "袋装（编织/牛皮袋 ≤50kg）",
+    "description": "Top 3 第 3 名：袋装卸。D 复合 + B 夹爪（防滑齿）。",
+    "sites": [
+        {"id": "dock-01", "kind": "dock", "name": "集装箱月台",
+         "x": -6.0, "y": 0.0, "z": 4.0, "width": 6.0, "height": 0.6, "depth": 4.0,
+         "rotation": 0.0, "color": "#5eb0ff"},
+        {"id": "warehouse-01", "kind": "warehouse", "name": "立体库",
+         "x": 6.0, "y": 0.0, "z": 0.0, "width": 4.0, "height": 4.0, "depth": 3.0,
+         "rotation": 0.0, "color": "#58c47e"},
+        {"id": "pallet-area", "kind": "warehouse", "name": "吨袋暂存区",
+         "x": 0.0, "y": 0.0, "z": -5.0, "width": 3.0, "height": 0.5, "depth": 3.0,
+         "rotation": 0.0, "color": "#c4a76c"},
+    ],
+    "devices": [
+        {"device_id": "loader-01", "device_type": "loading_robot",
+         "name": "袋装夹爪机器人", "x": -3.0, "z": 2.0, "speed": 0.8},
+        {"device_id": "agv-01", "device_type": "agv",
+         "name": "袋装 AGV", "x": 2.0, "z": 0.0, "speed": 1.1},
+        {"device_id": "stacker-01", "device_type": "stacker",
+         "name": "立体库堆垛机", "x": 6.0, "z": 0.0, "speed": 0.7},
+    ],
+    "tasks": [
+        {"type": "bag_unload", "description": "袋装卸 1", "priority": 3, "device_id": "loader-01"},
+        {"type": "bag_unload", "description": "袋装卸 2", "priority": 3, "device_id": "loader-01"},
+        {"type": "agv_transport", "description": "运袋装入库", "priority": 3, "device_id": "agv-01"},
+        {"type": "warehouse_storage", "description": "立体库入库", "priority": 2, "device_id": "stacker-01"},
+    ],
+    "kpi_definitions": [
+        {"label": "抓取成功率", "key": "grip_success_rate", "unit": "%", "target": "≥ 98"},
+        {"label": "破袋率", "key": "bag_break_rate", "unit": "%", "target": "≤ 0.5"},
+        {"label": "传送带对接精度", "key": "conveyor_dock_precision_mm", "unit": "mm", "target": "±30"},
+        {"label": "吞吐量", "key": "throughput_per_min", "unit": "袋/min", "target": "≥ 8"},
+    ],
 }
 
-_DEFAULT_TIMEOUTS: dict[str, float] = {
-    "navigating": 60.0,
-    "docking": 30.0,
-    "approaching": 20.0,
-    "hugging": 15.0,
-    "lifting": 15.0,
-    "transporting": 60.0,
-    "placing": 15.0,
-    "retreating": 20.0,
+
+SCENE_PRESETS: dict[str, ScenePreset] = {
+    "pallet": PALLET_SCENE,
+    "box": BOX_SCENE,
+    "bag": BAG_SCENE,
 }
 
 
-class TaskCoordinator:
-    """Layered FSM coordinating base + arms + hug for loading tasks."""
+def list_scene_names() -> list[str]:
+    return list(SCENE_PRESETS.keys())
 
-    def __init__(
-        self,
-        *,
-        on_phase_change: Callable[[str], None] | None = None,
-        phase_timeouts: dict[str, float] | None = None,
-    ) -> None:
-        self._phase = "idle"
-        self._executors: dict[str, Any] = {}
-        self._on_phase_change = on_phase_change
-        self._current_task_type: str = ""
-        self._current_params: dict[str, Any] = {}
-        self._phase_start_time: float = time.monotonic()
-        self._phase_timeouts: dict[str, float] = dict(_DEFAULT_TIMEOUTS)
-        if phase_timeouts:
-            self._phase_timeouts.update(phase_timeouts)
 
-    @property
-    def phase(self) -> str:
-        return self._phase
-
-    def get_phase(self) -> str:
-        return self._phase
-
-    def set_executor(self, name: str, executor: Any) -> None:
-        self._executors[name] = executor
-
-    def _transition(self, new_phase: str) -> None:
-        allowed = _VALID_TRANSITIONS.get(self._phase, set())
-        if new_phase not in allowed:
-            raise RuntimeError(
-                f"invalid transition {self._phase!r} → {new_phase!r}"
-            )
-        old = self._phase
-        self._phase = new_phase
-        self._phase_start_time = time.monotonic()
-        logger.info("coordinator: %s → %s", old, new_phase)
-        if self._on_phase_change:
-            self._on_phase_change(new_phase)
-
-    def on_task_command(self, *, task_type: str, parameters: dict[str, Any]) -> None:
-        if task_type not in _TASK_ENTRY:
-            raise ValueError(f"unknown task_type {task_type!r}; expected one of {tuple(_TASK_ENTRY)}")
-        self._current_task_type = task_type
-        self._current_params = parameters
-        entry = _TASK_ENTRY[task_type]
-        if self._phase != "idle":
-            self._transition("aborting")
-            self._transition("idle")
-        self._transition(entry)
-        self._dispatch_current_phase()
-
-    def advance_phase(self) -> None:
-        """Advance to the next phase in the normal flow."""
-        forward_map: dict[str, str] = {
-            "navigating": "docking",
-            "docking": "approaching",
-            "approaching": "hugging",
-            "hugging": "lifting",
-            "lifting": "transporting",
-            "transporting": "placing",
-            "placing": "retreating",
-            "retreating": "idle",
-            "aborting": "idle",
-        }
-        next_phase = forward_map.get(self._phase)
-        if next_phase:
-            self._transition(next_phase)
-            if self._phase not in ("idle", "aborting"):
-                self._dispatch_current_phase()
-
-    def abort(self, reason: str = "") -> None:
-        logger.warning("abort requested from phase=%s: %s", self._phase, reason)
-        for exe in self._executors.values():
-            if hasattr(exe, "stop"):
-                exe.stop()
-        if self._phase not in ("idle", "aborting"):
-            self._transition("aborting")
-
-    def check_timeouts(self) -> None:
-        if self._phase in ("idle", "aborting"):
-            return
-        timeout = self._phase_timeouts.get(self._phase)
-        if timeout and (time.monotonic() - self._phase_start_time) > timeout:
-            self.abort(f"phase {self._phase} timed out after {timeout}s")
-
-    def _dispatch_current_phase(self) -> None:
-        exe_name = _PHASE_EXECUTOR.get(self._phase)
-        if not exe_name:
-            return
-        executor = self._executors.get(exe_name)
-        if executor is None:
-            logger.warning("no executor %r for phase %s", exe_name, self._phase)
-            return
-        if hasattr(executor, "execute"):
-            executor.execute(self._phase, self._current_params)
+def get_scene(name: str) -> ScenePreset:
+    if name not in SCENE_PRESETS:
+        raise KeyError(f"unknown scene: {name!r}; available: {list_scene_names()}")
+    return SCENE_PRESETS[name]
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+## Acceptance Steps
 
-Run: `cd robot-app/ros2_ws/src/robot_decision && python -m pytest tests/test_task_coordinator.py -v`
-Expected: 9 passed
-
-- [ ] **Step 5: Commit**
+1. **Step 1**: 创建上述文件（verbatim 写入）。
+2. **Step 2**: 验证 Python 可解析：
 
 ```bash
-git add robot-app/ros2_ws/src/robot_decision/robot_decision/task_coordinator.py
-git add robot-app/ros2_ws/src/robot_decision/tests/test_task_coordinator.py
-git commit -m "feat(decision): add TaskCoordinator FSM for dual-arm loading tasks"
+cd "d:/projects/robot-logic/simulation/backend" && python -c "from backend.services.scene_presets import SCENE_PRESETS; print(list(SCENE_PRESETS.keys()))"
 ```
+
+期望输出：`['pallet', 'box', 'bag']`
+
+3. **Step 3**: 提交 commit：
+
+```bash
+cd "d:/projects/robot-logic"
+git add simulation/backend/services/scene_presets.py
+git -c user.name="cursor" -c user.email="cursor@local" commit -m "feat(scenes): add scene_presets data module for Top 3 loading scenes"
+```
+
+## Self-Review Checklist
+
+- [ ] 文件路径正确：`simulation/backend/services/scene_presets.py`（不是 `simulation/backend/services/scene_preset.py`）
+- [ ] 包含 docstring + `from __future__ import annotations`
+- [ ] 5 个 TypedDict：`SiteSpec` / `DeviceSpec` / `TaskSpec` / `KPIDefinition` / `ScenePreset`
+- [ ] 3 个常量：`PALLET_SCENE` / `BOX_SCENE` / `BAG_SCENE`
+- [ ] 字典 `SCENE_PRESETS` 含全部 3 个场景
+- [ ] 辅助函数 `list_scene_names()` / `get_scene(name)`
+- [ ] `get_scene` 对未知名抛 `KeyError`
+- [ ] Pallet 场景含 `pallet_forklift` 设备类型
+- [ ] Python 解析无错，输出 3 个场景名
+
+## Global Constraints (binding)
+
+- 后端风格：Python 3.11+ / TypedDict 模式 / docstring 在文件顶部
+- 严禁依赖 FastAPI / Pydantic（保持 framework-free）
+- 中文 label / description 使用全角标点
+- 仅 commit 这一个文件（不要顺手改其他文件）
+
+## Report Contract
+
+将完整报告写入 `d:\projects\robot-logic\.superpowers\sdd\task-1-report.md`，内容包含：
+1. 状态：DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED
+2. commit hash（7 位）
+3. Step 2 验证命令的实际输出
+4. 自检清单的勾选状态
+5. concerns（如有）
+
+返回内容仅含：状态 + commit hash（7 位）+ 一行测试结果 + concerns。
