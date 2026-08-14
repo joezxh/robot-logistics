@@ -1,0 +1,29 @@
+FROM osrf/ros:humble-desktop
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-pip \
+        mosquitto \
+        mosquitto-clients \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+COPY requirements.txt /workspace/requirements.txt
+RUN pip3 install --no-cache-dir -r /workspace/requirements.txt
+
+# Source ROS2 in every shell
+RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
+
+# Build ros2_ws
+COPY ros2_ws/src /workspace/ros2_ws/src
+WORKDIR /workspace/ros2_ws
+RUN /opt/ros/humble/bin/rosdep install --from-paths src --ignore-src -r -y || true
+RUN /opt/ros/humble/bin/colcon build --packages-select \
+        robot_arm_hal \
+        robot_decision \
+        robot_perception \
+        mqtt_bridge \
+    --symlink-install
+
+WORKDIR /workspace
+CMD ["bash", "-c", "source /opt/ros/humble/setup.bash && source /workspace/ros2_ws/install/setup.bash && bash"]

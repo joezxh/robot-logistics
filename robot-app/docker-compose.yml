@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    restart: unless-stopped
+
+  robot_app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ros2
+    depends_on:
+      - mosquitto
+    environment:
+      - HAL_MODE=sim
+      - MQTT_BROKER_HOST=mosquitto
+      - MQTT_BROKER_PORT=1883
+    volumes:
+      - ./ros2_ws/src:/workspace/ros2_ws/src
+    stdin_open: true
+    tty: true

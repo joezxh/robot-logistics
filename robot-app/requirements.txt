@@ -1,15 +1,5 @@
-# Python dependencies for the robot-side application.
-#
-# ROS 2 packages themselves are resolved by rosdep/colcon; this file covers the
-# pip-installable extras the gateway needs.
-
-# MQTT client for the RCS <-> robot bridge.
-paho-mqtt>=1.6,<3.0
-
-# Optional but recommended: enables strict wire-contract validation in
-# robot_gateway.contract. Without it the gateway falls back to json + dataclass
-# checks, which is weaker but still functional.
-pydantic>=2.4,<3.0
-
-# Shared wire contracts (topics + payload models), installed from the repo.
--e ../shared/python
+paho-mqtt>=2.0.0
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+numpy>=1.24.0
+PyYAML>=6.0
