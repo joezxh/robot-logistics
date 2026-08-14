@@ -25,6 +25,8 @@ class Command:
     target_joints: list[float] | None = None
     speed_scale: float = 1.0
     constraints: dict | None = None
+    task_type: str | None = None
+    parameters: dict | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -34,4 +36,6 @@ class Command:
             "target_joints": list(self.target_joints) if self.target_joints else None,
             "speed_scale": self.speed_scale,
             "constraints": self.constraints,
+            "task_type": self.task_type,
+            "parameters": self.parameters,
         }
