@@ -1,0 +1,11 @@
+mqtt_to_ros:
+  "rcs/forklift-01/command": "/forklift/command"
+  "rcs/forklift-01/status": "/forklift/status"
+  "rcs/forklift-02/command": "/forklift/command"
+  "rcs/loader-01/command": "/gripper/command"
+  "rcs/loader-01/status": "/gripper/status"
+
+ros_to_mqtt:
+  "/forklift/joint_states": "rcs/forklift-01/joint_states"
+  "/forklift/command": "rcs/forklift-01/command"
+  "/gripper/wrench": "rcs/loader-01/wrench"
