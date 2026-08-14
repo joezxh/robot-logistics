@@ -92,7 +92,10 @@ class SiteUpdateRequest(BaseModel):
 
 class DeviceCreateRequest(BaseModel):
     device_id: str = Field(..., min_length=1, max_length=64)
-    device_type: str = Field(..., pattern="^(container_robot|agv|stacker)$")
+    device_type: str = Field(
+        ...,
+        pattern="^(container_robot|loading_robot|agv|stacker|pallet_forklift)$",
+    )
     name: str = Field(..., min_length=1, max_length=128)
     x: float = 0.0
     z: float = 0.0
@@ -244,6 +247,46 @@ async def delete_site(site_id: str):
     except KeyError:
         raise HTTPException(status_code=404, detail=f"unknown site_id: {site_id}")
     return site.to_dict()
+
+
+@app.get("/api/scenes", dependencies=[])
+async def list_scenes():
+    """List available scene presets plus currently active scene name."""
+    from backend.services.scene_presets import list_scene_names
+    return {
+        "available": list_scene_names(),
+        "current": runtime.current_scene,
+    }
+
+
+@app.post("/api/scenes/load/{name}", dependencies=[Depends(rate_limit_dep)])
+async def load_scene(name: str):
+    """Reset runtime and apply the named scene preset."""
+    try:
+        result = runtime.load_scene(name)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return result
+
+
+@app.get("/api/scenes/current", dependencies=[])
+async def current_scene():
+    """Return the active scene preset (or 404 if none loaded)."""
+    from backend.services.scene_presets import get_scene
+    if runtime.current_scene is None:
+        raise HTTPException(status_code=404, detail="no scene is currently active")
+    return get_scene(runtime.current_scene)
+
+
+@app.get("/api/scenes/{name}/kpi", dependencies=[])
+async def scene_kpi(name: str):
+    """Compute KPI snapshot for the named scene."""
+    from backend.services.scene_presets import get_scene
+    try:
+        get_scene(name)  # validate name
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return runtime._scene_kpi(name)
 
 
 @app.post("/api/devices/register", dependencies=[Depends(rate_limit_dep)])
