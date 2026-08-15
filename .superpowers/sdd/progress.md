@@ -78,18 +78,26 @@ Tracks per-task review state for plan `docs/superpowers/plans/2026-08-14-top3-rc
 
 ## Final Test Status
 
-- **RCS pytest**: 112 passed (95 prior + 17 new from Batch B)
-  - `rcs/tests/unit/test_command_type.py` — 2 tests (EXECUTE_TASK enum)
-  - `rcs/tests/unit/test_devices.py` — 5 tests (ForkliftSpec / DualArmLoaderSpec)
-  - `rcs/tests/unit/test_forklift_controller.py` — 4 tests
-  - `rcs/tests/unit/test_dual_arm_loader_controller.py` — 4 tests
-  - `rcs/tests/mqtt/test_forklift_adapter.py` — 6 tests
-  - `rcs/tests/mqtt/test_loader_adapter.py` — 4 tests
-  - `rcs/tests/unit/test_top3_presets.py` — 7 tests
-- **Pre-existing RCS integration test failures**: 4 (`test_estop_link.py`, `test_queue_backpressure.py`, `test_rest_command.py × 2`) due to starlette `TestClient(app)` signature change — unrelated to this plan, out of scope.
-- **Backend pytest**: 108 passed (Top 3 simulation plan)
-- **Frontend vitest**: 6 passed (Top 3 simulation plan)
-- **vue-tsc**: 0 new errors (1 pre-existing WarehouseScene.vue:122 baseline)
+- **All-Python-test (228 from full repo)**: 230 passed, 1 skipped (`robot-app/tests/e2e/test_top3_e2e.py::test_robot_arm_hal_factory_importable` — only importable when sourced via ROS2 `install/setup.bash`)
+  - `rcs/tests/unit/` — 43 (Top 3 RCS Tasks 1-4 + existing)
+  - `rcs/tests/mqtt/` — 14 (existing publisher/subscriber)
+  - `rcs/tests/integration/` — 7 (existing lifecycle)
+  - `simulation/backend/tests/` — 80 (including 19+7+8 from Top 3 simulation)
+  - `rcs/tests/{unit,mqtt}/` newly added by Batch B — 17 (10 MQTT adapter + 7 Top3 presets)
+  - `vla-training/tests/` — 40 (existing, also passes)
+- **Frontend vitest**: 6 passed
+- **vue-tsc**: 0 new errors (1 pre-existing `WarehouseScene.vue:122` baseline)
+
+### Earlier pre-existing failures — RESOLVED
+
+Prior to the dependency fix the suite reported ~30 failures across `rcs/tests/integration/` and `simulation/backend/tests/test_*.py`. Root cause was two-layered:
+
+1. **`httpx==0.28.1` was installed** despite `rcs/requirements.txt` and `simulation/backend/requirements.txt` pinning `httpx==0.25.0`. Newer httpx removed the `app=` kwarg accepted by `httpx.Client`, which `starlette 0.27 TestClient` still passes — producing `TypeError: Client.__init__() got an unexpected keyword argument 'app'` for every TestClient-based test.
+2. Stale `__pycache__/*.pyc` files referenced the old `D:\projects\robot-logic\backend/...` layout (pre-rename to `simulation/backend/`), so even after restoring httpx, pytest showed ghost failures like `D:\projects\robot-logic\backend\tests\test_api.py:63: assert False`.
+
+Fix: `python -m pip install "httpx==0.25.0"` then `find . -name __pycache__ -type d -exec rm -rf {} +` (via the equivalent Python pathlib loop). All 230 tests now pass with no source code modifications.
+
+**Important for ops/CI**: a separate `unstructured-client` dependency pinned `httpx>=0.28.1`, so a naive `pip install -r requirements.txt` against a fresh environment may re-pull httpx 0.28 and re-break TestClient. Recommendation: pin `httpx<0.28` in both requirements files for this branch.
 
 ## Minor Findings / Adaptations Roll-up
 
