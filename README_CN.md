@@ -4,7 +4,7 @@
 [![rcs](https://img.shields.io/badge/rcs-FastAPI-009688)](rcs/)
 [![sim](https://img.shields.io/badge/sim-FastAPI%2BVue-42A5F5)](simulation/)
 [![ros2](https://img.shields.io/badge/ros2-Humble-222)](robot-app/)
-[![vla](https://img.shields.io/badge/vla-training-skeleton-orange)](vla-training/)
+[![vla](https://img.shields.io/badge/vla-training%20%7C%20distillation-blue)](vla-training/)
 [![license](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
 > 🌐 **Language / 语言**：[English](README.md) · [中文](README_CN.md)
@@ -18,7 +18,7 @@
 - **仿真侧（simulation）** 运行一个 FastAPI 后端（业务编排/调度）与 Vue 前端。
 - **机器人侧（robot-app）** 运行 ROS2，包含网关、决策、感知与硬件抽象层（HAL）包。
 - **RCS（机器人控制系统）** 是协调仿真与机器人之间的运动控制与状态同步的独立（或内嵌）服务。
-- **VLA 训练（vla-training）** 是一个微调流水线骨架，用于训练/适配机器人策略模型。
+- **VLA 训练（vla-training）** 是微调流水线，支持模型适配器注册表（Hy-Embodied-0.5-VLA）、LoRA 微调、知识蒸馏、评估与推理导出。
 - **共享层（shared）** 通过 JSON Schema + Python 包定义 MQTT 主题与负载契约，确保各端契约一致。
 
 机器人侧始终通过 **MQTT** 与仿真/RCS 桥接。
@@ -33,20 +33,22 @@
 
 | 文档 | 说明 |
 | --- | --- |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 系统架构：依赖关系图与通信矩阵。 |
-| [`docs/API.md`](docs/API.md) | HTTP（REST/WebSocket）+ MQTT 接口参考。 |
-| [`docs/OPERATIONS.md`](docs/OPERATIONS.md) | 部署与运维指南（Docker、k8s、CI）。 |
-| [`docs/OPERATIONS-ZH.md`](docs/OPERATIONS-ZH.md) | 运维部署指南（中文版）。 |
-| [`docs/robot-algorithm-design.md`](docs/robot-algorithm-design.md) | 机器人算法设计总览。 |
+| [`docs/technical/ARCHITECTURE.md`](docs/technical/ARCHITECTURE.md) | 系统架构：依赖关系图与通信矩阵。 |
+| [`docs/technical/API.md`](docs/technical/API.md) | HTTP（REST/WebSocket）+ MQTT 接口参考。 |
+| [`docs/technical/OPERATIONS.md`](docs/technical/OPERATIONS.md) | 部署与运维指南（Docker、k8s、CI）。 |
+| [`docs/technical/OPERATIONS-ZH.md`](docs/technical/OPERATIONS-ZH.md) | 运维部署指南（中文版）。 |
+| [`docs/algorithm/robot-algorithm-design.md`](docs/algorithm/robot-algorithm-design.md) | 机器人算法设计总览。 |
 | [`docs/机器人智能仓储物流系统_完整设计文档.md`](docs/机器人智能仓储物流系统_完整设计文档.md) | 完整系统设计文档。 |
 | [`docs/物流装卸机器人算法系统设计.md`](docs/物流装卸机器人算法系统设计.md) | 物流装卸机器人算法系统设计。 |
 | [`docs/集装箱机器人与散货机器人_技术规格书.md`](docs/集装箱机器人与散货机器人_技术规格书.md) | 集装箱/散货/双臂AGV/实验室装卸机器人技术规格书（含采购附录）。 |
+| [`docs/装卸场景与机器人适配选型.md`](docs/装卸场景与机器人适配选型.md) | 装卸场景分析与机器人适配选型。 |
 
 ### 算法设计（`docs/algorithm/`）
 
 | 文档 | 说明 |
 | --- | --- |
 | [`docs/algorithm/README.md`](docs/algorithm/README.md) | 算法模块索引。 |
+| [`docs/algorithm/robot-algorithm-design.md`](docs/algorithm/robot-algorithm-design.md) | 机器人算法设计（整合版）。 |
 | [`docs/algorithm/01-overview.md`](docs/algorithm/01-overview.md) | 总览。 |
 | [`docs/algorithm/02-motion-planning.md`](docs/algorithm/02-motion-planning.md) | 运动规划。 |
 | [`docs/algorithm/03-perception.md`](docs/algorithm/03-perception.md) | 感知。 |
@@ -86,11 +88,40 @@
 
 ### 工程记录（`docs/superpowers/`）
 
+#### 设计规格（`specs/`）
+
+| 文档 | 说明 |
+| --- | --- |
+| [`2026-07-23-robot-logic-prototype-design.md`](docs/superpowers/specs/2026-07-23-robot-logic-prototype-design.md) | 原型设计规格。 |
+| [`2026-07-23-robot-logic-phase5-design.md`](docs/superpowers/specs/2026-07-23-robot-logic-phase5-design.md) | Phase 5 设计规格。 |
+| [`2026-07-24-rcs-1-motion-control-design.md`](docs/superpowers/specs/2026-07-24-rcs-1-motion-control-design.md) | RCS-1 运动控制设计。 |
+| [`2026-08-07-four-subproject-split-design.md`](docs/superpowers/specs/2026-08-07-four-subproject-split-design.md) | 四子工程拆分设计。 |
+| [`2026-08-09-e2e-motion-chain-design.md`](docs/superpowers/specs/2026-08-09-e2e-motion-chain-design.md) | 端到端运动链路设计。 |
+| [`2026-08-09-loading-robot-dual-arm-agv-design.md`](docs/superpowers/specs/2026-08-09-loading-robot-dual-arm-agv-design.md) | 装卸机器人双臂 AGV 设计。 |
+| [`2026-08-09-phase2-perception-navigation-design.md`](docs/superpowers/specs/2026-08-09-phase2-perception-navigation-design.md) | Phase 2 感知与导航设计。 |
+| [`2026-08-09-technology-roadmap-phase1-design.md`](docs/superpowers/specs/2026-08-09-technology-roadmap-phase1-design.md) | 技术路线图 Phase 1 设计。 |
+| [`2026-08-14-top3-rcs-robotapp-design.md`](docs/superpowers/specs/2026-08-14-top3-rcs-robotapp-design.md) | Top-3 RCS 与 robot-app 设计。 |
+| [`2026-08-14-top3-simulation-design.md`](docs/superpowers/specs/2026-08-14-top3-simulation-design.md) | Top-3 仿真设计。 |
+
+#### 计划与报告（`plans/`）
+
+| 文档 | 说明 |
+| --- | --- |
+| [`2026-07-23-robot-logic-prototype.md`](docs/superpowers/plans/2026-07-23-robot-logic-prototype.md) | 原型实施计划。 |
+| [`2026-07-24-phase5-m3-gazebo-moveit-report.md`](docs/superpowers/plans/2026-07-24-phase5-m3-gazebo-moveit-report.md) | Phase 5 Gazebo/MoveIt 报告。 |
+| [`2026-07-24-rcs-1-motion-control.md`](docs/superpowers/plans/2026-07-24-rcs-1-motion-control.md) | RCS-1 运动控制计划。 |
+| [`2026-08-09-e2e-motion-chain.md`](docs/superpowers/plans/2026-08-09-e2e-motion-chain.md) | 端到端运动链路实施计划。 |
+| [`2026-08-09-loading-robot-dual-arm-agv.md`](docs/superpowers/plans/2026-08-09-loading-robot-dual-arm-agv.md) | 双臂 AGV 实施计划。 |
+| [`2026-08-09-phase1-dual-arm-implementation.md`](docs/superpowers/plans/2026-08-09-phase1-dual-arm-implementation.md) | Phase 1 双臂实施计划。 |
+| [`2026-08-09-phase2-perception-navigation.md`](docs/superpowers/plans/2026-08-09-phase2-perception-navigation.md) | Phase 2 感知与导航计划。 |
+| [`2026-08-14-top3-rcs-robotapp-plan.md`](docs/superpowers/plans/2026-08-14-top3-rcs-robotapp-plan.md) | Top-3 RCS 与 robot-app 计划。 |
+| [`2026-08-14-top3-simulation-plan.md`](docs/superpowers/plans/2026-08-14-top3-simulation-plan.md) | Top-3 仿真计划。 |
+
+#### 交接说明
+
 | 路径 | 说明 |
 | --- | --- |
-| [`docs/superpowers/specs/`](docs/superpowers/specs/) | 设计规格（原型、RCS 运动控制、双臂 AGV、端到端链路等）。 |
-| [`docs/superpowers/instructions/`](docs/superpowers/instructions/) | 交接说明（如 `rcs-1-handoff.md`）。 |
-| [`docs/superpowers/plans/`](docs/superpowers/plans/) | 阶段/实施计划与报告。 |
+| [`docs/superpowers/instructions/rcs-1-handoff.md`](docs/superpowers/instructions/rcs-1-handoff.md) | RCS-1 交接说明。 |
 
 ---
 
@@ -142,11 +173,10 @@ bash scripts/verify_split.sh --no-mqtt  # 同上，但跳过实时代理回环�
 rcs/                     RCS 机器人控制系统（独立 + 内嵌）
 simulation/              仿真后端 + Vue 前端 + ROS2 工作空间
 robot-app/               机器人侧 ROS2 包（网关、决策、感知、HAL）
-vla-training/            VLA 微调流水线（骨架）
+vla-training/            VLA 微调流水线（模型适配器 + 知识蒸馏）
 shared/                  MQTT 主题 + 负载契约（JSON Schema + Python 包）
 deploy/                  docker-compose + k8s 清单
-scripts/                 构建 / 验证辅助脚本
-docs/                    API、运维、设计规格
+docs/                    架构、API、运维、算法、论文研读、设计规格
 ```
 
-详见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) 了解系统结构，[`docs/API.md`](docs/API.md) 了解接口契约。
+详见 [`docs/technical/ARCHITECTURE.md`](docs/technical/ARCHITECTURE.md) 了解系统结构，[`docs/technical/API.md`](docs/technical/API.md) 了解接口契约。

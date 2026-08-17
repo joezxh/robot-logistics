@@ -23,7 +23,7 @@ independent sub-projects plus a shared contract layer:
 | [`rcs/`](rcs/) | **Robot Control System** — device registry, control loop (up to 1 kHz), kinematics, trajectory planning, simulated HAL, REST + WebSocket, and an MQTT adapter. Runs standalone *or* embedded in the simulation backend. |
 | [`simulation/`](simulation/) | **Logistics loading/unloading simulation** — FastAPI orchestration backend, Vue 3 + Three.js dashboard, Gazebo/MoveIt ROS 2 packages. |
 | [`robot-app/`](robot-app/) | **Robot-side application** — ROS 2 packages (gateway, decision, perception, arm HAL, message contracts) that talk to RCS over MQTT. |
-| [`vla-training/`](vla-training/) | **VLA model training** — data collection/conversion, LoRA fine-tuning, evaluation, inference export (skeleton; does not download weights). |
+| [`vla-training/`](vla-training/) | **VLA model training** — model adapter registry (Hy-Embodied-0.5-VLA), LoRA fine-tuning, knowledge distillation, evaluation, inference export. |
 | [`shared/`](shared/) | **Communication contracts** — MQTT topic + payload definitions shared by `rcs` and `robot-app`. |
 
 The simulation backend and RCS communicate over HTTP (embedded mode) or over an
@@ -40,20 +40,22 @@ All design docs, specs, algorithm notes, and paper write-ups live under
 
 | Document | Description |
 | --- | --- |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System architecture: dependency map & communication matrix. |
-| [`docs/API.md`](docs/API.md) | HTTP (REST/WebSocket) + MQTT interface reference. |
-| [`docs/OPERATIONS.md`](docs/OPERATIONS.md) | Deployment & operations guide (Docker, k8s, CI). |
-| [`docs/OPERATIONS-ZH.md`](docs/OPERATIONS-ZH.md) | 运维部署指南（中文版）。 |
-| [`docs/robot-algorithm-design.md`](docs/robot-algorithm-design.md) | Robot algorithm design overview. |
+| [`docs/technical/ARCHITECTURE.md`](docs/technical/ARCHITECTURE.md) | System architecture: dependency map & communication matrix. |
+| [`docs/technical/API.md`](docs/technical/API.md) | HTTP (REST/WebSocket) + MQTT interface reference. |
+| [`docs/technical/OPERATIONS.md`](docs/technical/OPERATIONS.md) | Deployment & operations guide (Docker, k8s, CI). |
+| [`docs/technical/OPERATIONS-ZH.md`](docs/technical/OPERATIONS-ZH.md) | 运维部署指南（中文版）。 |
+| [`docs/algorithm/robot-algorithm-design.md`](docs/algorithm/robot-algorithm-design.md) | Robot algorithm design overview. |
 | [`docs/机器人智能仓储物流系统_完整设计文档.md`](docs/机器人智能仓储物流系统_完整设计文档.md) | 完整系统设计文档（中文）。 |
 | [`docs/物流装卸机器人算法系统设计.md`](docs/物流装卸机器人算法系统设计.md) | 物流装卸机器人算法系统设计（中文）。 |
 | [`docs/集装箱机器人与散货机器人_技术规格书.md`](docs/集装箱机器人与散货机器人_技术规格书.md) | 集装箱/散货/双臂AGV/实验室装卸机器人技术规格书（含采购附录）。 |
+| [`docs/装卸场景与机器人适配选型.md`](docs/装卸场景与机器人适配选型.md) | 装卸场景分析与机器人适配选型（中文）。 |
 
 ### Algorithm design (`docs/algorithm/`)
 
 | Document | Description |
 | --- | --- |
 | [`docs/algorithm/README.md`](docs/algorithm/README.md) | Algorithm module index. |
+| [`docs/algorithm/robot-algorithm-design.md`](docs/algorithm/robot-algorithm-design.md) | Robot algorithm design (consolidated). |
 | [`docs/algorithm/01-overview.md`](docs/algorithm/01-overview.md) | Overview. |
 | [`docs/algorithm/02-motion-planning.md`](docs/algorithm/02-motion-planning.md) | Motion planning. |
 | [`docs/algorithm/03-perception.md`](docs/algorithm/03-perception.md) | Perception. |
@@ -93,11 +95,40 @@ Each paper has an English version and a Chinese version (`-CN`).
 
 ### Engineering records (`docs/superpowers/`)
 
+#### Design specs (`specs/`)
+
+| Document | Description |
+| --- | --- |
+| [`2026-07-23-robot-logic-prototype-design.md`](docs/superpowers/specs/2026-07-23-robot-logic-prototype-design.md) | Prototype design spec. |
+| [`2026-07-23-robot-logic-phase5-design.md`](docs/superpowers/specs/2026-07-23-robot-logic-phase5-design.md) | Phase 5 design spec. |
+| [`2026-07-24-rcs-1-motion-control-design.md`](docs/superpowers/specs/2026-07-24-rcs-1-motion-control-design.md) | RCS-1 motion control design. |
+| [`2026-08-07-four-subproject-split-design.md`](docs/superpowers/specs/2026-08-07-four-subproject-split-design.md) | Four sub-project split design. |
+| [`2026-08-09-e2e-motion-chain-design.md`](docs/superpowers/specs/2026-08-09-e2e-motion-chain-design.md) | End-to-end motion chain design. |
+| [`2026-08-09-loading-robot-dual-arm-agv-design.md`](docs/superpowers/specs/2026-08-09-loading-robot-dual-arm-agv-design.md) | Loading robot dual-arm AGV design. |
+| [`2026-08-09-phase2-perception-navigation-design.md`](docs/superpowers/specs/2026-08-09-phase2-perception-navigation-design.md) | Phase 2 perception & navigation design. |
+| [`2026-08-09-technology-roadmap-phase1-design.md`](docs/superpowers/specs/2026-08-09-technology-roadmap-phase1-design.md) | Technology roadmap Phase 1 design. |
+| [`2026-08-14-top3-rcs-robotapp-design.md`](docs/superpowers/specs/2026-08-14-top3-rcs-robotapp-design.md) | Top-3 RCS & robot-app design. |
+| [`2026-08-14-top3-simulation-design.md`](docs/superpowers/specs/2026-08-14-top3-simulation-design.md) | Top-3 simulation design. |
+
+#### Plans & reports (`plans/`)
+
+| Document | Description |
+| --- | --- |
+| [`2026-07-23-robot-logic-prototype.md`](docs/superpowers/plans/2026-07-23-robot-logic-prototype.md) | Prototype implementation plan. |
+| [`2026-07-24-phase5-m3-gazebo-moveit-report.md`](docs/superpowers/plans/2026-07-24-phase5-m3-gazebo-moveit-report.md) | Phase 5 Gazebo/MoveIt report. |
+| [`2026-07-24-rcs-1-motion-control.md`](docs/superpowers/plans/2026-07-24-rcs-1-motion-control.md) | RCS-1 motion control plan. |
+| [`2026-08-09-e2e-motion-chain.md`](docs/superpowers/plans/2026-08-09-e2e-motion-chain.md) | E2E motion chain implementation plan. |
+| [`2026-08-09-loading-robot-dual-arm-agv.md`](docs/superpowers/plans/2026-08-09-loading-robot-dual-arm-agv.md) | Dual-arm AGV implementation plan. |
+| [`2026-08-09-phase1-dual-arm-implementation.md`](docs/superpowers/plans/2026-08-09-phase1-dual-arm-implementation.md) | Phase 1 dual-arm implementation plan. |
+| [`2026-08-09-phase2-perception-navigation.md`](docs/superpowers/plans/2026-08-09-phase2-perception-navigation.md) | Phase 2 perception & navigation plan. |
+| [`2026-08-14-top3-rcs-robotapp-plan.md`](docs/superpowers/plans/2026-08-14-top3-rcs-robotapp-plan.md) | Top-3 RCS & robot-app plan. |
+| [`2026-08-14-top3-simulation-plan.md`](docs/superpowers/plans/2026-08-14-top3-simulation-plan.md) | Top-3 simulation plan. |
+
+#### Hand-off instructions
+
 | Path | Description |
 | --- | --- |
-| [`docs/superpowers/specs/`](docs/superpowers/specs/) | Design specs (prototype, RCS motion control, dual-arm AGV, e2e chain, etc.). |
-| [`docs/superpowers/instructions/`](docs/superpowers/instructions/) | Hand-off instructions (e.g. `rcs-1-handoff.md`). |
-| [`docs/superpowers/plans/`](docs/superpowers/plans/) | Phase/implementation plans & reports. |
+| [`docs/superpowers/instructions/rcs-1-handoff.md`](docs/superpowers/instructions/rcs-1-handoff.md) | RCS-1 hand-off instructions. |
 
 ---
 
@@ -151,15 +182,14 @@ bash scripts/verify_split.sh --no-mqtt  # same, skipping the live-broker round t
 rcs/                     RCS robot control system (standalone + embedded)
 simulation/              simulation backend + Vue frontend + ROS2 workspace
 robot-app/               robot-side ROS2 packages (gateway, decision, perception, HAL)
-vla-training/            VLA fine-tuning pipeline (skeleton)
+vla-training/            VLA fine-tuning pipeline (model adapters + distillation)
 shared/                  MQTT topic + payload contracts (JSON Schema + Python pkg)
 deploy/                  docker-compose + k8s manifests
-scripts/                 build / verify helper scripts
-docs/                    API, operations, design specs
+docs/                    architecture, API, operations, algorithm, paper studies, design specs
 ```
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the dependency map and
-communication matrix, and [`docs/API.md`](docs/API.md) for the HTTP/MQTT
+See [`docs/technical/ARCHITECTURE.md`](docs/technical/ARCHITECTURE.md) for the dependency map and
+communication matrix, and [`docs/technical/API.md`](docs/technical/API.md) for the HTTP/MQTT
 interface reference.
 
 ---
