@@ -37,4 +37,8 @@ def test_sim_renderer_returns_dict():
     assert "rgb" in result
     assert "depth" in result
     assert isinstance(result["rgb"], np.ndarray)
+    assert isinstance(result["depth"], np.ndarray)
     assert result["rgb"].dtype == np.uint8
+    assert result["depth"].dtype == np.float32
+    assert result["rgb"].shape == (240, 320, 3)
+    assert result["depth"].shape == (240, 320, 1)
