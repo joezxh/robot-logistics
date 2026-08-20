@@ -105,19 +105,25 @@ class CameraSetWrapper(gym.Wrapper):
 
     def _render_frames(self) -> dict:
         if self._renderer is None:
-            return {
+            frames: dict = {
                 self.RGB_KEY: np.zeros(
                     (self.height, self.width, self.color_dim), dtype=np.uint8
                 ),
-                self.DEPTH_KEY: np.zeros(
-                    (self.height, self.width, 1), dtype=np.float32
-                ) if self.include_depth else np.array([[[0.0]]]),
             }
+            if self.include_depth:
+                frames[self.DEPTH_KEY] = np.zeros(
+                    (self.height, self.width, 1), dtype=np.float32
+                )
+            return frames
         result = self._renderer.render()
-        return {
+        frames = {
             self.RGB_KEY: result.get("rgb", np.zeros((self.height, self.width, self.color_dim), dtype=np.uint8)),
-            self.DEPTH_KEY: result.get("depth", np.zeros((self.height, self.width, 1), dtype=np.float32)),
         }
+        if self.include_depth:
+            frames[self.DEPTH_KEY] = result.get(
+                "depth", np.zeros((self.height, self.width, 1), dtype=np.float32)
+            )
+        return frames
 
 
 class TaskWrapper(gym.Wrapper):
