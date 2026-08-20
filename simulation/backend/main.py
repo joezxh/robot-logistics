@@ -177,6 +177,12 @@ app = FastAPI(
 if rcs is not None:
     app.include_router(rcs.router(), prefix="/api/rcs")
 
+from backend.routers import rcs_env as _rcs_env_router  # noqa: E402
+from backend.routers.warehouse import router as _warehouse_router
+
+app.include_router(_rcs_env_router.router)
+app.include_router(_warehouse_router)
+
 
 @app.get("/", dependencies=[])
 async def root():
