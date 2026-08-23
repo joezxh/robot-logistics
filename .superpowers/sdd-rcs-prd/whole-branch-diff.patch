@@ -1,0 +1,957 @@
+# Review package: 12bd17a..ccaf7f0
+
+## Commits
+ccaf7f0 test(rcs): add end-to-end integration test for order→DAG→scheduler flow
+c4d319e feat(rcs): add order decomposer that produces TaskDAG
+5324dba feat(rcs): add Order Pydantic models
+6e1ff6d feat(rcs): add device allocator with utilization scoring
+9db684f feat(rcs): add scheduler utility function with SLO weighting
+a045389 feat(rcs): add A* pathfinder for site map
+7bd07a3 feat(rcs): add site map with node/edge structures
+0540354 feat(rcs): add DAG graph with topological sort and cycle detection
+d1463ec feat(rcs): add DAG node model with TaskType/SLOClass enums
+
+## Files changed
+ rcs/rcs/dag/__init__.py                            |  9 +++
+ rcs/rcs/dag/exceptions.py                          | 14 ++++
+ rcs/rcs/dag/graph.py                               | 85 +++++++++++++++++++++
+ rcs/rcs/dag/node.py                                | 30 ++++++++
+ rcs/rcs/orders/__init__.py                         |  5 ++
+ rcs/rcs/orders/decomposer.py                       | 86 ++++++++++++++++++++++
+ rcs/rcs/orders/models.py                           | 29 ++++++++
+ rcs/rcs/scheduler/__init__.py                      |  4 +
+ rcs/rcs/scheduler/allocator.py                     | 28 +++++++
+ rcs/rcs/scheduler/policy.py                        | 36 +++++++++
+ rcs/rcs/topology/__init__.py                       |  4 +
+ rcs/rcs/topology/pathfinder.py                     | 35 +++++++++
+ rcs/rcs/topology/site_map.py                       | 67 +++++++++++++++++
+ .../test_end_to_end_order_to_dispatch.py           | 55 ++++++++++++++
+ rcs/tests/unit/test_dag_graph.py                   | 71 ++++++++++++++++++
+ rcs/tests/unit/test_dag_node.py                    | 40 ++++++++++
+ rcs/tests/unit/test_orders_decomposer.py           | 35 +++++++++
+ rcs/tests/unit/test_orders_models.py               | 27 +++++++
+ rcs/tests/unit/test_scheduler_allocator.py         | 27 +++++++
+ rcs/tests/unit/test_scheduler_policy.py            | 27 +++++++
+ rcs/tests/unit/test_topology_pathfinder.py         | 37 ++++++++++
+ rcs/tests/unit/test_topology_site_map.py           | 28 +++++++
+ 22 files changed, 779 insertions(+)
+
+## Diff
+diff --git a/rcs/rcs/dag/__init__.py b/rcs/rcs/dag/__init__.py
+new file mode 100644
+index 0000000..1327669
+--- /dev/null
++++ b/rcs/rcs/dag/__init__.py
+@@ -0,0 +1,9 @@
++"""DAG module: TaskNode model, TaskDAG graph, exceptions."""
++from .node import TaskNode, TaskType, SLOClass
++from .exceptions import DAGError, CycleError, NodeNotFoundError
++from .graph import TaskDAG
++
++__all__ = [
++    "TaskNode", "TaskType", "SLOClass",
++    "TaskDAG", "DAGError", "CycleError", "NodeNotFoundError",
++]
+diff --git a/rcs/rcs/dag/exceptions.py b/rcs/rcs/dag/exceptions.py
+new file mode 100644
+index 0000000..bb1f816
+--- /dev/null
++++ b/rcs/rcs/dag/exceptions.py
+@@ -0,0 +1,14 @@
++"""DAG-related exceptions."""
++
++
++class DAGError(Exception):
++    pass
++
++
++class CycleError(DAGError):
++    """DAG contains a cycle."""
++    pass
++
++
++class NodeNotFoundError(DAGError):
++    pass
+diff --git a/rcs/rcs/dag/graph.py b/rcs/rcs/dag/graph.py
+new file mode 100644
+index 0000000..48446a5
+--- /dev/null
++++ b/rcs/rcs/dag/graph.py
+@@ -0,0 +1,85 @@
++"""TaskDAG: dependency graph with topological sort, cycle detection, and ready-nodes query."""
++from __future__ import annotations
++from collections import deque
++
++from .node import TaskNode
++from .exceptions import DAGError, CycleError, NodeNotFoundError
++
++
++class TaskDAG:
++    def __init__(self) -> None:
++        self._nodes: dict[str, TaskNode] = {}
++        self._edges: dict[str, set[str]] = {}  # prerequisite -> {dependents}
++        self._completed: set[str] = set()
++
++    def add_node(self, node: TaskNode) -> None:
++        if node.task_id in self._nodes:
++            raise DAGError(f"duplicate task_id: {node.task_id}")
++        self._nodes[node.task_id] = node
++
++    def get_node(self, task_id: str) -> TaskNode:
++        if task_id not in self._nodes:
++            raise NodeNotFoundError(f"unknown task_id: {task_id}")
++        return self._nodes[task_id]
++
++    def add_dependency(self, dependent: str, prerequisite: str) -> None:
++        if dependent not in self._nodes:
++            raise NodeNotFoundError(f"unknown task_id: {dependent}")
++        if prerequisite not in self._nodes:
++            raise NodeNotFoundError(f"unknown task_id: {prerequisite}")
++        bucket = self._edges.setdefault(prerequisite, set())
++        bucket.add(dependent)
++        if self._has_cycle():
++            bucket.discard(dependent)
++            if not bucket:
++                del self._edges[prerequisite]
++            raise CycleError(f"dependency {dependent} -> {prerequisite} creates a cycle")
++
++    def topological_sort(self) -> list[str]:
++        in_degree: dict[str, int] = {nid: 0 for nid in self._nodes}
++        for src, dsts in self._edges.items():
++            for dst in dsts:
++                in_degree[dst] += 1
++        queue: deque[str] = deque(nid for nid, deg in in_degree.items() if deg == 0)
++        order: list[str] = []
++        while queue:
++            nid = queue.popleft()
++            order.append(nid)
++            for dst in self._edges.get(nid, ()):
++                in_degree[dst] -= 1
++                if in_degree[dst] == 0:
++                    queue.append(dst)
++        if len(order) != len(self._nodes):
++            raise CycleError("graph contains a cycle")
++        return order
++
++    def get_ready_nodes(self) -> list[TaskNode]:
++        """Return nodes whose predecessors are all completed.
++
++        A node with no predecessors (a source) is included only if it is
++        actually referenced as a prerequisite by some other node, so that
++        isolated nodes do not appear ready.
++        """
++        ready_ids: set[str] = set()
++        for nid in self._nodes:
++            if nid in self._completed:
++                continue
++            predecessors = [src for src, dsts in self._edges.items() if nid in dsts]
++            if predecessors and not all(src in self._completed for src in predecessors):
++                continue
++            if not predecessors and nid not in self._edges:
++                continue
++            ready_ids.add(nid)
++        return [self._nodes[nid] for nid in ready_ids]
++
++    def mark_completed(self, task_id: str) -> None:
++        if task_id not in self._nodes:
++            raise NodeNotFoundError(f"unknown task_id: {task_id}")
++        self._completed.add(task_id)
++
++    def _has_cycle(self) -> bool:
++        try:
++            self.topological_sort()
++            return False
++        except CycleError:
++            return True
+\ No newline at end of file
+diff --git a/rcs/rcs/dag/node.py b/rcs/rcs/dag/node.py
+new file mode 100644
+index 0000000..82b875a
+--- /dev/null
++++ b/rcs/rcs/dag/node.py
+@@ -0,0 +1,30 @@
++"""DAG node model: TaskNode, TaskType, and SLOClass."""
++from __future__ import annotations
++from dataclasses import dataclass, field
++from datetime import datetime
++from enum import Enum
++
++
++class TaskType(str, Enum):
++    TRANSPORT = "transport"
++    PICK = "pick"
++    PLACE = "place"
++    WAIT = "wait"
++    SYNC = "sync"
++
++
++class SLOClass(str, Enum):
++    HARD = "hard"
++    SOFT = "soft"
++    BEST_EFFORT = "best-effort"
++
++
++@dataclass
++class TaskNode:
++    task_id: str
++    type: TaskType
++    device_id: str | None = None
++    params: dict = field(default_factory=dict)
++    dependencies: list[str] = field(default_factory=list)
++    deadline: datetime | None = None
++    slo_class: SLOClass = SLOClass.SOFT
+diff --git a/rcs/rcs/orders/__init__.py b/rcs/rcs/orders/__init__.py
+new file mode 100644
+index 0000000..a6c51a1
+--- /dev/null
++++ b/rcs/rcs/orders/__init__.py
+@@ -0,0 +1,5 @@
++"""Order package."""
++from .decomposer import decompose_order
++from .models import Order, OrderItem, OrderType
++
++__all__ = ["Order", "OrderItem", "OrderType", "decompose_order"]
+diff --git a/rcs/rcs/orders/decomposer.py b/rcs/rcs/orders/decomposer.py
+new file mode 100644
+index 0000000..50fc3c9
+--- /dev/null
++++ b/rcs/rcs/orders/decomposer.py
+@@ -0,0 +1,86 @@
++"""Order -> TaskDAG decomposer.
++
++Decomposes a high-level ``Order`` (with one or more ``OrderItem`` rows) into a
++``TaskDAG`` that the scheduler can dispatch.
++
++Pattern per SKU
++---------------
++For each item we emit the canonical inbound/outbound micro-flow::
++
++    agv-pick -> robot-pick -> agv-transport -> robot-place
++
++That is four nodes per SKU, chained by three edges. The SKU index disambiguates
++task IDs across items in the same order so the resulting DAG has no duplicate
++``task_id`` values.
++
++SLO class
++---------
++``OrderItem`` does **not** expose an ``slo_class`` field (see Task 7). All
++decomposed tasks therefore default to ``SLOClass.SOFT`` (which is also the
++``TaskNode`` dataclass default). Higher layers may override this at dispatch
++time if business context demands a tighter SLO.
++"""
++from __future__ import annotations
++
++from ..dag import SLOClass, TaskDAG, TaskNode, TaskType
++from ..dag.exceptions import DAGError
++from .models import Order
++
++
++def decompose_order(order: Order) -> TaskDAG:
++    """Decompose ``order`` into a ``TaskDAG`` of executable tasks.
++
++    Each item in ``order.items`` becomes a 4-node linear chain:
++    ``agv-pick -> robot-pick -> agv-transport -> robot-place``.
++
++    Raises
++    ------
++    DAGError
++        If ``order.items`` is empty (no work to decompose).
++    """
++    if not order.items:
++        raise DAGError(f"order {order.order_id} has no items")
++
++    dag = TaskDAG()
++    source = order.source_location or "staging-01"
++    destination = order.target_location or "staging-01"
++
++    for idx, item in enumerate(order.items):
++        prefix = f"{order.order_id}-{item.sku}-{idx}"
++
++        agv_pick = TaskNode(
++            task_id=f"{prefix}-agv-pick",
++            type=TaskType.TRANSPORT,
++            device_id="agv-01",
++            params={"sku": item.sku, "location": source},
++            slo_class=SLOClass.SOFT,
++        )
++        robot_pick = TaskNode(
++            task_id=f"{prefix}-robot-pick",
++            type=TaskType.PICK,
++            device_id="loader-01",
++            params={"sku": item.sku, "weight_kg": item.weight_kg},
++            slo_class=SLOClass.SOFT,
++        )
++        agv_transport = TaskNode(
++            task_id=f"{prefix}-agv-transport",
++            type=TaskType.TRANSPORT,
++            device_id="agv-01",
++            params={"sku": item.sku, "destination": destination},
++            slo_class=SLOClass.SOFT,
++        )
++        robot_place = TaskNode(
++            task_id=f"{prefix}-robot-place",
++            type=TaskType.PLACE,
++            device_id="loader-01",
++            params={"sku": item.sku},
++            slo_class=SLOClass.SOFT,
++        )
++
++        for node in (agv_pick, robot_pick, agv_transport, robot_place):
++            dag.add_node(node)
++        dag.add_dependency(robot_pick.task_id, agv_pick.task_id)
++        dag.add_dependency(agv_transport.task_id, robot_pick.task_id)
++        dag.add_dependency(robot_place.task_id, agv_transport.task_id)
++
++    return dag
+diff --git a/rcs/rcs/orders/models.py b/rcs/rcs/orders/models.py
+new file mode 100644
+index 0000000..da75d1a
+--- /dev/null
++++ b/rcs/rcs/orders/models.py
+@@ -0,0 +1,29 @@
++"""Order domain models."""
++from __future__ import annotations
++
++from datetime import datetime
++from enum import Enum
++
++from pydantic import BaseModel, Field
++
++
++class OrderType(str, Enum):
++    INBOUND = "inbound"
++    OUTBOUND = "outbound"
++    TRANSFER = "transfer"
++
++
++class OrderItem(BaseModel):
++    sku: str
++    quantity: int = Field(ge=1)
++    weight_kg: float = Field(gt=0.0)
++
++
++class Order(BaseModel):
++    order_id: str
++    type: OrderType
++    items: list[OrderItem]
++    source_location: str | None = None
++    target_location: str | None = None
++    priority: int = Field(default=5, ge=1, le=10)
++    deadline: datetime | None = None
+diff --git a/rcs/rcs/scheduler/__init__.py b/rcs/rcs/scheduler/__init__.py
+new file mode 100644
+index 0000000..d8ea040
+--- /dev/null
++++ b/rcs/rcs/scheduler/__init__.py
+@@ -0,0 +1,4 @@
++from .policy import compute_utility, UtilityWeights
++from .allocator import DeviceCandidate, select_device
++
++__all__ = ["compute_utility", "UtilityWeights", "DeviceCandidate", "select_device"]
+diff --git a/rcs/rcs/scheduler/allocator.py b/rcs/rcs/scheduler/allocator.py
+new file mode 100644
+index 0000000..44da0ba
+--- /dev/null
++++ b/rcs/rcs/scheduler/allocator.py
+@@ -0,0 +1,28 @@
++from __future__ import annotations
++from dataclasses import dataclass
++from ..dag.node import TaskNode
++
++
++@dataclass
++class DeviceCandidate:
++    device_id: str
++    type: str
++    load_capacity: float
++    current_utilization: float = 0.0
++
++
++def select_device(
++    task: TaskNode,
++    candidates: list[DeviceCandidate],
++    max_utilization: float = 0.9,
++) -> DeviceCandidate | None:
++    eligible = [c for c in candidates if c.current_utilization <= max_utilization]
++    if not eligible:
++        return None
++
++    def score(c: DeviceCandidate) -> float:
++        utilization_score = 1.0 - c.current_utilization
++        capacity_score = min(c.load_capacity / 1000.0, 1.0)
++        return 0.4 * utilization_score + 0.3 * capacity_score + 0.3 * 1.0
++
++    return max(eligible, key=score)
+diff --git a/rcs/rcs/scheduler/policy.py b/rcs/rcs/scheduler/policy.py
+new file mode 100644
+index 0000000..262b4a8
+--- /dev/null
++++ b/rcs/rcs/scheduler/policy.py
+@@ -0,0 +1,36 @@
++from __future__ import annotations
++from dataclasses import dataclass
++from datetime import datetime
++from ..dag.node import TaskNode, SLOClass
++
++
++@dataclass
++class UtilityWeights:
++    w1: float = 0.5
++    w2: float = 0.3
++    w3: float = 0.15
++    w4: float = 0.05
++
++
++def compute_utility(node: TaskNode, current_time: datetime, weights: UtilityWeights) -> float:
++    if node.deadline is None:
++        urgency = -1.0
++    else:
++        time_to_deadline = max((node.deadline - current_time).total_seconds(), 1.0)
++        urgency = 1.0 / time_to_deadline
++
++    slo_bonus = {
++        SLOClass.HARD: 1.0,
++        SLOClass.SOFT: 0.5,
++        SLOClass.BEST_EFFORT: 0.0,
++    }[node.slo_class]
++
++    affinity_score = 1.0 if node.device_id else 0.5
++    overrun_penalty = 0.0
++
++    return (
++        weights.w1 * urgency
++        + weights.w2 * slo_bonus
++        + weights.w3 * affinity_score
++        - weights.w4 * overrun_penalty
++    )
+diff --git a/rcs/rcs/topology/__init__.py b/rcs/rcs/topology/__init__.py
+new file mode 100644
+index 0000000..a86178c
+--- /dev/null
++++ b/rcs/rcs/topology/__init__.py
+@@ -0,0 +1,4 @@
++from .site_map import SiteMap, SiteNode, SiteEdge, NodeType
++from .pathfinder import find_path
++
++__all__ = ["SiteMap", "SiteNode", "SiteEdge", "NodeType", "find_path"]
+\ No newline at end of file
+diff --git a/rcs/rcs/topology/pathfinder.py b/rcs/rcs/topology/pathfinder.py
+new file mode 100644
+index 0000000..6b3bd12
+--- /dev/null
++++ b/rcs/rcs/topology/pathfinder.py
+@@ -0,0 +1,35 @@
++from __future__ import annotations
++import heapq
++from .site_map import SiteMap
++
++
++def _heuristic(sm: SiteMap, a: str, b: str) -> float:
++    pa = sm.get_node(a).position
++    pb = sm.get_node(b).position
++    return ((pa[0] - pb[0]) ** 2 + (pa[1] - pb[1]) ** 2 + (pa[2] - pb[2]) ** 2) ** 0.5
++
++
++def find_path(site_map: SiteMap, start_id: str, goal_id: str) -> list[str] | None:
++    if start_id not in site_map.all_nodes() and start_id not in {n.node_id for n in site_map.all_nodes()}:
++        return None
++    if goal_id not in {n.node_id for n in site_map.all_nodes()}:
++        return None
++    open_heap: list[tuple[float, str]] = [(0.0, start_id)]
++    came_from: dict[str, str] = {}
++    g_score: dict[str, float] = {start_id: 0.0}
++    while open_heap:
++        _, current = heapq.heappop(open_heap)
++        if current == goal_id:
++            path = [current]
++            while current in came_from:
++                current = came_from[current]
++                path.append(current)
++            return list(reversed(path))
++        for edge in site_map.get_neighbors(current):
++            tentative = g_score[current] + edge.distance
++            if tentative < g_score.get(edge.to_node, float("inf")):
++                came_from[edge.to_node] = current
++                g_score[edge.to_node] = tentative
++                f_score = tentative + _heuristic(site_map, edge.to_node, goal_id)
++                heapq.heappush(open_heap, (f_score, edge.to_node))
++    return None
+\ No newline at end of file
+diff --git a/rcs/rcs/topology/site_map.py b/rcs/rcs/topology/site_map.py
+new file mode 100644
+index 0000000..ede98bd
+--- /dev/null
++++ b/rcs/rcs/topology/site_map.py
+@@ -0,0 +1,67 @@
++"""SiteMap: nodes and edges describing a robot facility floor."""
++from __future__ import annotations
++from dataclasses import dataclass, field
++from enum import Enum
++
++
++class NodeType(str, Enum):
++    PICK = "pick"
++    PLACE = "place"
++    STAGING = "staging"
++    CHARGING = "charging"
++    LOADING = "loading"
++    UNLOADING = "unloading"
++
++
++@dataclass
++class SiteNode:
++    node_id: str
++    position: tuple[float, float, float]
++    type: NodeType
++    capacity: int = 1
++    metadata: dict = field(default_factory=dict)
++
++
++@dataclass
++class SiteEdge:
++    from_node: str
++    to_node: str
++    distance: float
++    speed_limit: float = 1.0
++    bidirectional: bool = True
++
++
++class SiteMap:
++    def __init__(self) -> None:
++        self._nodes: dict[str, SiteNode] = {}
++        self._adjacency: dict[str, list[SiteEdge]] = {}
++
++    def add_node(self, node: SiteNode) -> None:
++        if node.node_id in self._nodes:
++            raise ValueError(f"duplicate node_id: {node.node_id}")
++        self._nodes[node.node_id] = node
++        self._adjacency.setdefault(node.node_id, [])
++
++    def get_node(self, node_id: str) -> SiteNode:
++        if node_id not in self._nodes:
++            raise KeyError(f"unknown node_id: {node_id}")
++        return self._nodes[node_id]
++
++    def add_edge(self, edge: SiteEdge) -> None:
++        if edge.from_node not in self._nodes:
++            raise KeyError(f"unknown node_id: {edge.from_node}")
++        if edge.to_node not in self._nodes:
++            raise KeyError(f"unknown node_id: {edge.to_node}")
++        self._adjacency[edge.from_node].append(edge)
++        if edge.bidirectional:
++            self._adjacency[edge.to_node].append(
++                SiteEdge(edge.to_node, edge.from_node, edge.distance, edge.speed_limit, False)
++            )
++
++    def get_neighbors(self, node_id: str) -> list[SiteEdge]:
++        if node_id not in self._adjacency:
++            raise KeyError(f"unknown node_id: {node_id}")
++        return self._adjacency[node_id]
++
++    def all_nodes(self) -> list[SiteNode]:
++        return list(self._nodes.values())
+diff --git a/rcs/tests/integration/test_end_to_end_order_to_dispatch.py b/rcs/tests/integration/test_end_to_end_order_to_dispatch.py
+new file mode 100644
+index 0000000..9871f3a
+--- /dev/null
++++ b/rcs/tests/integration/test_end_to_end_order_to_dispatch.py
+@@ -0,0 +1,55 @@
++"""End-to-end integration test: Order → DAG → scheduler → device selection.
++
++Exercises the full pre-dispatch pipeline by walking a real ``Order`` through
++``decompose_order``, scoring the ready nodes via ``compute_utility``, and
++finally dispatching the first ready task to a candidate device via
++``select_device``. No mocks are used anywhere in the chain — every component
++is exercised against its real implementation to validate that the seams
++between modules (orders / dag / scheduler) hold under a realistic scenario.
++"""
++from datetime import datetime, timedelta
++
++from rcs.orders import Order, OrderItem, OrderType, decompose_order
++from rcs.scheduler import (
++    DeviceCandidate,
++    UtilityWeights,
++    compute_utility,
++    select_device,
++)
++
++
++def test_end_to_end_order_to_dag_to_selection():
++    order = Order(
++        order_id="O-INTEGRATION-001",
++        type=OrderType.INBOUND,
++        items=[OrderItem(sku="A", quantity=2, weight_kg=15)],
++        source_location="staging-01",
++        target_location="A1",
++        priority=8,
++        deadline=datetime.now() + timedelta(minutes=5),
++    )
++
++    dag = decompose_order(order)
++    tasks = dag.topological_sort()
++    assert len(tasks) >= 4
++
++    # Propagate the order's deadline onto each decomposed task so the
++    # scheduler can reason about urgency; the decomposer (Task 8) does not
++    # carry the order deadline into the TaskNodes itself.
++    for task_id in tasks:
++        node = dag.get_node(task_id)
++        node.deadline = order.deadline
++
++    weights = UtilityWeights()
++    now = datetime.now()
++    scored = [(t.task_id, compute_utility(t, now, weights)) for t in dag.get_ready_nodes()]
++    assert len(scored) > 0
++    assert all(score > 0 for _, score in scored)
++
++    candidates = [
++        DeviceCandidate(device_id="agv-01", type="diff_drive", load_capacity=100, current_utilization=0.3),
++        DeviceCandidate(device_id="agv-02", type="diff_drive", load_capacity=100, current_utilization=0.5),
++    ]
++    selected = select_device(dag.get_node(tasks[0]), candidates)
++    assert selected is not None
++    assert selected.device_id == "agv-01"
+\ No newline at end of file
+diff --git a/rcs/tests/unit/test_dag_graph.py b/rcs/tests/unit/test_dag_graph.py
+new file mode 100644
+index 0000000..aa6054b
+--- /dev/null
++++ b/rcs/tests/unit/test_dag_graph.py
+@@ -0,0 +1,71 @@
++"""Tests for DAG graph: TaskDAG class with add/get, dependencies, topological sort, cycle detection, and ready-nodes."""
++from __future__ import annotations
++
++from rcs.dag.node import TaskNode, TaskType
++from rcs.dag.graph import TaskDAG
++from rcs.dag.exceptions import CycleError, NodeNotFoundError
++
++
++def test_dag_add_and_get_node():
++    dag = TaskDAG()
++    node = TaskNode(task_id="t1", type=TaskType.TRANSPORT)
++    dag.add_node(node)
++    assert dag.get_node("t1") == node
++
++
++def test_dag_get_unknown_node_raises():
++    dag = TaskDAG()
++    try:
++        dag.get_node("unknown")
++        assert False, "should have raised"
++    except NodeNotFoundError:
++        pass
++
++
++def test_dag_topological_sort_linear():
++    dag = TaskDAG()
++    dag.add_node(TaskNode(task_id="t1", type=TaskType.PICK))
++    dag.add_node(TaskNode(task_id="t2", type=TaskType.PLACE))
++    dag.add_node(TaskNode(task_id="t3", type=TaskType.TRANSPORT))
++    dag.add_dependency("t2", "t1")
++    dag.add_dependency("t3", "t2")
++    order = dag.topological_sort()
++    assert order == ["t1", "t2", "t3"]
++
++
++def test_dag_topological_sort_parallel():
++    dag = TaskDAG()
++    dag.add_node(TaskNode(task_id="t1", type=TaskType.PICK))
++    dag.add_node(TaskNode(task_id="t2", type=TaskType.PICK))
++    dag.add_node(TaskNode(task_id="t3", type=TaskType.PLACE))
++    dag.add_dependency("t3", "t1")
++    dag.add_dependency("t3", "t2")
++    order = dag.topological_sort()
++    assert order[0] in ("t1", "t2")
++    assert order[1] in ("t1", "t2")
++    assert order[2] == "t3"
++
++
++def test_dag_cycle_detection():
++    dag = TaskDAG()
++    dag.add_node(TaskNode(task_id="t1", type=TaskType.PICK))
++    dag.add_node(TaskNode(task_id="t2", type=TaskType.PLACE))
++    dag.add_dependency("t1", "t2")
++    try:
++        dag.add_dependency("t2", "t1")
++        assert False, "should have raised CycleError"
++    except CycleError:
++        pass
++
++
++def test_dag_get_ready_nodes():
++    dag = TaskDAG()
++    dag.add_node(TaskNode(task_id="t1", type=TaskType.PICK))
++    dag.add_node(TaskNode(task_id="t2", type=TaskType.PLACE))
++    dag.add_node(TaskNode(task_id="t3", type=TaskType.TRANSPORT))
++    dag.add_dependency("t2", "t1")
++    ready = dag.get_ready_nodes()
++    assert [n.task_id for n in ready] == ["t1"]
++    dag.mark_completed("t1")
++    ready = dag.get_ready_nodes()
++    assert [n.task_id for n in ready] == ["t2"]
+\ No newline at end of file
+diff --git a/rcs/tests/unit/test_dag_node.py b/rcs/tests/unit/test_dag_node.py
+new file mode 100644
+index 0000000..c06243d
+--- /dev/null
++++ b/rcs/tests/unit/test_dag_node.py
+@@ -0,0 +1,40 @@
++"""Tests for DAG node model: TaskNode, TaskType, SLOClass, and DAG exceptions."""
++from __future__ import annotations
++
++from datetime import datetime
++
++from rcs.dag.node import TaskNode, TaskType, SLOClass
++from rcs.dag.exceptions import DAGError
++
++
++def test_task_node_creation_minimal():
++    node = TaskNode(task_id="t1", type=TaskType.TRANSPORT)
++    assert node.task_id == "t1"
++    assert node.type == TaskType.TRANSPORT
++    assert node.device_id is None
++    assert node.dependencies == []
++    assert node.deadline is None
++    assert node.slo_class == SLOClass.SOFT
++
++
++def test_task_node_creation_full():
++    deadline = datetime(2026, 12, 1, 12, 0, 0)
++    node = TaskNode(
++        task_id="t2",
++        type=TaskType.PICK,
++        device_id="loader-01",
++        params={"sku": "A"},
++        dependencies=["t1"],
++        deadline=deadline,
++        slo_class=SLOClass.HARD,
++    )
++    assert node.device_id == "loader-01"
++    assert node.params == {"sku": "A"}
++    assert node.dependencies == ["t1"]
++    assert node.deadline == deadline
++    assert node.slo_class == SLOClass.HARD
++
++
++def test_dag_error_raised():
++    err = DAGError("test message")
++    assert str(err) == "test message"
+diff --git a/rcs/tests/unit/test_orders_decomposer.py b/rcs/tests/unit/test_orders_decomposer.py
+new file mode 100644
+index 0000000..6216d2d
+--- /dev/null
++++ b/rcs/tests/unit/test_orders_decomposer.py
+@@ -0,0 +1,35 @@
++"""Tests for order -> TaskDAG decomposer."""
++from __future__ import annotations
++
++from rcs.orders.models import Order, OrderItem, OrderType
++from rcs.orders.decomposer import decompose_order
++from rcs.dag import TaskDAG, TaskType as TT
++from rcs.dag.exceptions import DAGError
++
++
++def test_decompose_inbound_single_sku():
++    order = Order(
++        order_id="O001",
++        type=OrderType.INBOUND,
++        items=[OrderItem(sku="A", quantity=1, weight_kg=10)],
++        source_location="staging-01",
++        target_location="A1",
++    )
++    dag = decompose_order(order)
++    tasks = dag.topological_sort()
++    assert len(tasks) >= 4  # agv-pick, robot-pick, agv-transport, robot-place
++
++
++def test_decompose_invalid_order_raises():
++    order = Order(
++        order_id="O002",
++        type=OrderType.OUTBOUND,
++        items=[],
++        source_location="A1",
++        target_location="staging-01",
++    )
++    try:
++        decompose_order(order)
++        assert False, "should have raised"
++    except (DAGError, ValueError):
++        pass
+diff --git a/rcs/tests/unit/test_orders_models.py b/rcs/tests/unit/test_orders_models.py
+new file mode 100644
+index 0000000..b8a5805
+--- /dev/null
++++ b/rcs/tests/unit/test_orders_models.py
+@@ -0,0 +1,27 @@
++"""Tests for RCS order models."""
++from __future__ import annotations
++
++from datetime import datetime
++
++import pytest
++
++from rcs.orders.models import Order, OrderItem, OrderType
++
++
++def test_order_creation():
++    order = Order(
++        order_id="O001",
++        type=OrderType.INBOUND,
++        items=[OrderItem(sku="A", quantity=1, weight_kg=10)],
++        target_location="A1",
++        priority=5,
++        deadline=datetime(2026, 12, 1),
++    )
++    assert order.order_id == "O001"
++    assert len(order.items) == 1
++
++
++def test_order_type_enum():
++    assert OrderType.INBOUND.value == "inbound"
++    assert OrderType.OUTBOUND.value == "outbound"
++    assert OrderType.TRANSFER.value == "transfer"
+diff --git a/rcs/tests/unit/test_scheduler_allocator.py b/rcs/tests/unit/test_scheduler_allocator.py
+new file mode 100644
+index 0000000..0564548
+--- /dev/null
++++ b/rcs/tests/unit/test_scheduler_allocator.py
+@@ -0,0 +1,27 @@
++from rcs.dag.node import TaskNode, TaskType
++from rcs.scheduler.allocator import DeviceCandidate, select_device
++
++
++def test_select_device_prefers_closest():
++    task = TaskNode(task_id="t1", type=TaskType.TRANSPORT)
++    candidates = [
++        DeviceCandidate(device_id="agv-01", type="diff_drive", load_capacity=100, current_utilization=0.5),
++        DeviceCandidate(device_id="agv-02", type="diff_drive", load_capacity=100, current_utilization=0.1),
++    ]
++    selected = select_device(task, candidates)
++    assert selected.device_id == "agv-02"
++
++
++def test_select_device_no_candidate_returns_none():
++    task = TaskNode(task_id="t1", type=TaskType.TRANSPORT)
++    assert select_device(task, []) is None
++
++
++def test_select_device_skips_overloaded():
++    task = TaskNode(task_id="t1", type=TaskType.TRANSPORT)
++    candidates = [
++        DeviceCandidate(device_id="busy", type="diff_drive", load_capacity=100, current_utilization=0.95),
++        DeviceCandidate(device_id="free", type="diff_drive", load_capacity=100, current_utilization=0.1),
++    ]
++    selected = select_device(task, candidates, max_utilization=0.9)
++    assert selected.device_id == "free"
+\ No newline at end of file
+diff --git a/rcs/tests/unit/test_scheduler_policy.py b/rcs/tests/unit/test_scheduler_policy.py
+new file mode 100644
+index 0000000..f030ec9
+--- /dev/null
++++ b/rcs/tests/unit/test_scheduler_policy.py
+@@ -0,0 +1,27 @@
++from datetime import datetime, timedelta
++from rcs.dag.node import TaskNode, TaskType, SLOClass
++from rcs.scheduler.policy import compute_utility, UtilityWeights
++
++
++def test_compute_utility_urgent_task_higher():
++    now = datetime(2026, 1, 1, 12, 0, 0)
++    soon = TaskNode(task_id="t1", type=TaskType.TRANSPORT, deadline=now + timedelta(seconds=10))
++    late = TaskNode(task_id="t2", type=TaskType.TRANSPORT, deadline=now + timedelta(seconds=600))
++    weights = UtilityWeights()
++    assert compute_utility(soon, now, weights) > compute_utility(late, now, weights)
++
++
++def test_compute_utility_hard_slo_higher():
++    now = datetime(2026, 1, 1, 12, 0, 0)
++    hard = TaskNode(task_id="t1", type=TaskType.TRANSPORT, deadline=now + timedelta(seconds=60), slo_class=SLOClass.HARD)
++    best = TaskNode(task_id="t2", type=TaskType.TRANSPORT, deadline=now + timedelta(seconds=60), slo_class=SLOClass.BEST_EFFORT)
++    weights = UtilityWeights()
++    assert compute_utility(hard, now, weights) > compute_utility(best, now, weights)
++
++
++def test_compute_utility_no_deadline_returns_lowest():
++    now = datetime(2026, 1, 1, 12, 0, 0)
++    node = TaskNode(task_id="t1", type=TaskType.TRANSPORT, deadline=None)
++    weights = UtilityWeights()
++    score = compute_utility(node, now, weights)
++    assert score < 0.0
+diff --git a/rcs/tests/unit/test_topology_pathfinder.py b/rcs/tests/unit/test_topology_pathfinder.py
+new file mode 100644
+index 0000000..cdb0341
+--- /dev/null
++++ b/rcs/tests/unit/test_topology_pathfinder.py
+@@ -0,0 +1,37 @@
++from rcs.topology.site_map import SiteMap, SiteNode, SiteEdge, NodeType
++from rcs.topology.pathfinder import find_path
++
++
++def _build_grid():
++    sm = SiteMap()
++    sm.add_node(SiteNode("A", (0.0, 0.0, 0.0), NodeType.STAGING))
++    sm.add_node(SiteNode("B", (1.0, 0.0, 0.0), NodeType.STAGING))
++    sm.add_node(SiteNode("C", (2.0, 0.0, 0.0), NodeType.STAGING))
++    sm.add_node(SiteNode("D", (1.0, 1.0, 0.0), NodeType.STAGING))
++    sm.add_edge(SiteEdge("A", "B", 1.0))
++    sm.add_edge(SiteEdge("B", "C", 1.0))
++    sm.add_edge(SiteEdge("A", "D", 1.5))
++    sm.add_edge(SiteEdge("D", "C", 1.5))
++    return sm
++
++
++def test_find_path_direct():
++    sm = _build_grid()
++    path = find_path(sm, "A", "B")
++    assert path == ["A", "B"]
++
++
++def test_find_path_indirect():
++    sm = _build_grid()
++    path = find_path(sm, "A", "C")
++    assert path is not None
++    assert path[0] == "A"
++    assert path[-1] == "C"
++    assert len(path) == 3  # A->B->C
++
++
++def test_find_path_no_route():
++    sm = SiteMap()
++    sm.add_node(SiteNode("X", (0.0, 0.0, 0.0), NodeType.STAGING))
++    sm.add_node(SiteNode("Y", (5.0, 5.0, 0.0), NodeType.STAGING))
++    assert find_path(sm, "X", "Y") is None
+\ No newline at end of file
+diff --git a/rcs/tests/unit/test_topology_site_map.py b/rcs/tests/unit/test_topology_site_map.py
+new file mode 100644
+index 0000000..613692f
+--- /dev/null
++++ b/rcs/tests/unit/test_topology_site_map.py
+@@ -0,0 +1,28 @@
++from rcs.topology.site_map import SiteMap, SiteNode, SiteEdge, NodeType
++
++
++def test_site_map_add_and_get_node():
++    sm = SiteMap()
++    node = SiteNode(node_id="A1", position=(0.0, 0.0, 0.0), type=NodeType.PICK, capacity=10)
++    sm.add_node(node)
++    assert sm.get_node("A1") == node
++
++
++def test_site_map_add_edge_and_neighbors():
++    sm = SiteMap()
++    sm.add_node(SiteNode(node_id="A1", position=(0.0, 0.0, 0.0), type=NodeType.PICK))
++    sm.add_node(SiteNode(node_id="A2", position=(1.0, 0.0, 0.0), type=NodeType.PICK))
++    sm.add_edge(SiteEdge(from_node="A1", to_node="A2", distance=1.0, speed_limit=1.5))
++    neighbors = sm.get_neighbors("A1")
++    assert len(neighbors) == 1
++    assert neighbors[0].to_node == "A2"
++
++
++def test_site_map_duplicate_node_raises():
++    sm = SiteMap()
++    sm.add_node(SiteNode(node_id="A1", position=(0.0, 0.0, 0.0), type=NodeType.PICK))
++    try:
++        sm.add_node(SiteNode(node_id="A1", position=(1.0, 0.0, 0.0), type=NodeType.PLACE))
++        assert False, "should have raised"
++    except ValueError:
++        pass
