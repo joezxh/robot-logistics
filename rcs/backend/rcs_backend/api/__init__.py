@@ -1,14 +1,12 @@
 """API router registry.
 
-Task 1 stubs all six router names so `rcs_backend.main` can import this
-package without ImportError. Tasks 11-16 replace each stub with the real
-router (re-imported from the submodule via this package's __init__.py).
+Task 1 stubs all six router names. Tasks 11-16 each edit THIS file to replace
+their stub with the real re-export (same pattern as Task 11 below).
 """
 from fastapi import APIRouter
+from rcs_backend.api.topology_shell import router as topology_shell
 
-# Stub routers — Tasks 11-16 will replace these with the real routers
-# (each task will modify THIS file to do the re-export).
-topology_shell = APIRouter()
+# Stubs replaced by Tasks 12, 13, 14, 15, 16 respectively
 topology_grid = APIRouter()
 topology_import = APIRouter()
 topology_export = APIRouter()
@@ -16,6 +14,7 @@ topology_templates = APIRouter()
 orders = APIRouter()
 
 __all__ = [
-    "topology_shell", "topology_grid", "topology_import",
-    "topology_export", "topology_templates", "orders",
+    "topology_shell", "topology_grid",
+    "topology_import", "topology_export",
+    "topology_templates", "orders",
 ]
