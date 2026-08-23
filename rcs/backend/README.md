@@ -30,3 +30,26 @@ docker run -p 8100:8100 rcs-backend
 | `RCS_DB_PATH` | `/tmp/rcs.db` | SQLite 路径 |
 | `RCS_SERVICE_URL` | `http://127.0.0.1:8101` | rcs/rcs 子项目 URL |
 | `RCS_EMBEDDED` | `0` | 是否嵌入式（1=导入 rcs 子项目） |
+
+## REST API
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | `/health` | 健康检查 |
+| GET | `/api/rcs/topology/shell` | 列出所有 shell |
+| GET | `/api/rcs/topology/shell/{site_id}` | 获取 shell |
+| PUT | `/api/rcs/topology/shell/{site_id}` | 保存 shell（自动校验） |
+| GET | `/api/rcs/topology/grid/{site_id}` | 获取 grid |
+| PUT | `/api/rcs/topology/grid/{site_id}` | 保存 grid |
+| POST | `/api/rcs/topology/import/dxf` | 解析上传的 DXF |
+| POST | `/api/rcs/topology/import/dxf/{site_id}` | 上传 + 保存 |
+| POST | `/api/rcs/topology/export/dxf` | 导出 DXF（需 ezdxf） |
+| POST | `/api/rcs/topology/export/dxf/{site_id}` | 导出已存 shell |
+| GET | `/api/rcs/topology/templates` | 列出 6 场景模板 |
+| GET | `/api/rcs/topology/templates/{scenario_id}` | 获取单个模板 |
+| POST | `/api/rcs/orders` | 创建订单（202） |
+| GET | `/api/rcs/orders/{order_id}` | 获取订单状态 |
+
+## 6 场景 ID
+
+`ecommerce`, `manufacturing`, `cold_chain`, `port`, `reverse_logistics`, `multi_floor`
