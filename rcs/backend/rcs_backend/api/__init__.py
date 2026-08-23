@@ -5,9 +5,9 @@ their stub with the real re-export (same pattern as Task 11 below).
 """
 from fastapi import APIRouter
 from rcs_backend.api.topology_shell import router as topology_shell
+from rcs_backend.api.topology_grid import router as topology_grid
 
-# Stubs replaced by Tasks 12, 13, 14, 15, 16 respectively
-topology_grid = APIRouter()
+# Stubs replaced by Tasks 13, 14, 15, 16 respectively
 topology_import = APIRouter()
 topology_export = APIRouter()
 topology_templates = APIRouter()
