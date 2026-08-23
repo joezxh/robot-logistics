@@ -76,3 +76,30 @@ services:
     depends_on:
       rcs:
         condition: service_started
+
+  rcs-backend:
+    build:
+      context: .
+      dockerfile: rcs/backend/Dockerfile
+    container_name: rcs-backend
+    ports:
+      - "8102:8102"
+    environment:
+      RCS_API_KEY: "${RCS_API_KEY:-}"
+      RCS_STORAGE: "${RCS_STORAGE:-memory}"
+      RCS_DB_PATH: "/data/rcs.db"
+      RCS_EMBEDDED: "${RCS_EMBEDDED:-0}"
+      RCS_SERVICE_URL: "http://rcs:8100"
+    volumes:
+      - rcs-data:/data
+    depends_on:
+      - broker
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8102/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  rcs-data:
