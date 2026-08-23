@@ -53,3 +53,8 @@ vla-training/tests/_tmp_collect/
 # OS
 .DS_Store
 Thumbs.db
+
+# Logistics research corpus (PDF→markdown knowledge base, 388 MB)
+# Intentionally excluded from version control. Re-import via the dedicated
+# repo `robot-logistics-knowledge-base` if/when needed.
+docs/logitics/
