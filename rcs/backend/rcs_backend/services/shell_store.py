@@ -26,6 +26,17 @@ class MemoryShellStore:
         return list(self._data.keys())
 
 
+_default_memory_store: MemoryShellStore | None = None
+
+
+def default_memory_store() -> MemoryShellStore:
+    """Module-level shared singleton so multiple routers hit the same store."""
+    global _default_memory_store
+    if _default_memory_store is None:
+        _default_memory_store = MemoryShellStore()
+    return _default_memory_store
+
+
 class SqliteShellStore:
     def __init__(self, conn: aiosqlite.Connection) -> None:
         self._conn = conn

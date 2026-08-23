@@ -3,16 +3,14 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Depends
 from rcs_backend.config import get_settings, Settings
 from rcs_backend.models.floor_shell import FloorShell
-from rcs_backend.services.shell_store import MemoryShellStore
+from rcs_backend.services.shell_store import MemoryShellStore, default_memory_store
 from rcs_backend.topology.validate import validate_shell
 
 router = APIRouter()
 
-_store = MemoryShellStore()
-
 
 def _get_store() -> MemoryShellStore:
-    return _store
+    return default_memory_store()
 
 
 @router.get("/shell", summary="List all stored shells")
