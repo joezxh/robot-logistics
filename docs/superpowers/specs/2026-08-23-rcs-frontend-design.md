@@ -970,3 +970,245 @@ class StateFrame(BaseModel):
 - `rcs/rcs/topology/site_map.py` — 站点地图
 - `rcs/rcs/topology/pathfinder.py` — A* 路径规划
 - **参考工程**：`D:\projects\github\warehouse_theatre_3d` — 4 层数据模型 + DXF 解析 + Three.js 渲染的设计灵感来源；功能移植到 RCS（不引入运行时依赖）
+
+---
+
+## 13. v2.2 增量：统一后端工程 + 6 场景物流地图
+
+> **变更说明**：根据用户 2026-08-23 反馈，spec v2.2 在 v2.1 基础上引入两项关键变更：
+> 1. **统一后端工程**：新建 `rcs/backend/` 与 `simulation/backend/` 并列，承接 `rcs/rcs/` 的领域逻辑 + DXF/标线/模板
+> 2. **6 场景物流地图**：前端场景组件化，覆盖电商/制造/冷链/港口/退货/多层 6 类典型仓储物流场景
+
+### 13.1 后端工程结构（v2.2 调整）
+
+```
+rcs/
+├── rcs/                    # 现有（不变）：核心控制逻辑（service / registry / control / loop / dispatch）
+│   ├── service.py          #   FastAPI router（/registry / command / state / estop / ws_*）
+│   ├── registry.py
+│   ├── control.py
+│   ├── loop.py
+│   ├── dispatch.py
+│   ├── devices/
+│   ├── controllers/
+│   ├── hal/
+│   ├── mqtt/
+│   └── config.py
+├── backend/                # NEW v2.2：扩展层后端，REST API + 拓扑领域逻辑
+│   ├── pyproject.toml      #   flit/poetry，依赖 fastapi/pydantic/ezdxf
+│   ├── main.py             #   create_app() — 挂载所有 router
+│   ├── api/                #   REST 端点
+│   │   ├── topology.py           # SiteMap CRUD + A*（v1 已有，迁移）
+│   │   ├── topology_shell.py     # floor_shell CRUD
+│   │   ├── topology_grid.py      # site_grid CRUD
+│   │   ├── topology_import.py    # DXF 上传 + 解析
+│   │   ├── topology_export.py    # DXF 导出（ezdxf 可选）
+│   │   ├── topology_templates.py # 6 场景预置蓝图
+│   │   └── orders.py             # 订单 CRUD（迁移）
+│   ├── topology/           # 纯函数库（领域逻辑）
+│   │   ├── dxf_parser.py        # DXF ASCII 解析（移植 wx3D parseDXF）
+│   │   ├── dxf_to_shell.py      # DXF → floor_shell 转换
+│   │   ├── validate.py          # 蓝图校验
+│   │   ├── markings.py          # 地面标线生成
+│   │   └── templates.py         # 6 场景默认蓝图
+│   ├── models/             # Pydantic 模型
+│   │   ├── floor_shell.py       # WallSegment/Zone/Facility/Dock/Corridor
+│   │   └── site_grid.py         # SiteGrid/Cell
+│   └── Dockerfile
+├── frontend/               # NEW v2.2：独立前端工程（Vite + Vue 3 + TS）
+│   ├── package.json
+│   ├── vite.config.ts      #   /api/rcs → :8100, /api → :8000
+│   ├── src/
+│   │   ├── types/floorShell.ts
+│   │   ├── stores/scenario.ts  # 当前场景类型 + 配置
+│   │   ├── views/SiteMapView.vue
+│   │   ├── components/map/
+│   │   │   ├── DeviceMap2D.vue
+│   │   │   ├── DeviceMap3D.vue
+│   │   │   ├── ShellScene.ts
+│   │   │   ├── DevicePool.ts
+│   │   │   ├── DxfOverlay.vue
+│   │   │   └── scenarios/      # 6 场景组件
+│   │   │       ├── EcommerceScenario.vue
+│   │   │       ├── ManufacturingScenario.vue
+│   │   │       ├── ColdChainScenario.vue
+│   │   │       ├── PortLogisticsScenario.vue
+│   │   │       ├── ReverseLogisticsScenario.vue
+│   │   │       └── MultiFloorScenario.vue
+│   │   └── api/topologyShell.ts
+│   └── Dockerfile
+└── tests/
+```
+
+### 13.2 rcs/rcs/ 与 rcs/backend/ 的边界
+
+| 关注点 | rcs/rcs/（保持不变） | rcs/backend/（v2.2 新增） |
+|--------|---------------------|---------------------------|
+| **定位** | 控制核心（设备命令/状态机） | 扩展层（业务/拓扑/订单） |
+| **入口** | `app.py:create_app()`（独立模式） | `main.py:create_app()`（与 simulation 集成） |
+| **HTTP** | `/registry`, `/command`, `/state`, `/estop`, `ws_*` | `/api/rcs/topology`, `/api/rcs/orders` |
+| **依赖** | fastapi/uvicorn/paho-mqtt | fastapi/pydantic/ezdxf（可选） |
+| **修改** | **禁止修改**（保持向后兼容） | 自由扩展 |
+| **集成方式** | simulation/backend/embedded=True | frontend 通过 /api/rcs 代理访问 |
+
+> **关键约束**：`rcs/backend/` 通过 HTTP 客户端调用 `rcs/rcs/` 的现有端点（命令下发 / 状态查询），**不直接 import** rcs/rcs 内部模块。
+
+### 13.3 6 场景物流地图规格
+
+#### 13.3.1 场景配置矩阵
+
+| 场景 ID | Zone 类型 | 视觉主题 | 关键交互 | 告警类型 |
+|---------|----------|---------|---------|---------|
+| `ecommerce` | flow_rack / high_rack / mezzanine / automated / temp / temp_bagged / returns | 暖色 (#f59e0b) | 库存热力图 / 拣货路径 / 波次分布 | 缺货 / 积压 |
+| `manufacturing` | production_line / wip_buffer / parts_storage / staging | 工业 (#64748b) | 产线节拍 / 物料配送 / WIP 状态 | 缺料 / 停线 |
+| `cold_chain` | cold_zone / frozen_zone / ambient_zone / loading_bay | 冷色 (#3b82f6) | 温湿度监控 / 批次追踪 / 合规标识 | 温度超限 / 湿度超限 |
+| `port` | container_yard / loading_bay / customs_area / staging | 海港 (#0ea5e9) | 堆场布局 / 海关监管 / 多式联运 | 海关滞留 / 集装箱卡滞 |
+| `reverse_logistics` | returns_received / qc_staging / reshelving / disposal | 警告 (#ef4444) | 决策流程 / 再上架比例 / 退货原因 | 退货激增 / 报废超标 |
+| `multi_floor` | floor_1 / floor_2 / floor_3 / elevator_shaft | 中性 (#475569) | 楼层切换 / 电梯联动 / 跨层路径 | 电梯故障 |
+
+#### 13.3.2 扩展 Zone 类型
+
+```ts
+// types/floorShell.ts（v2.2 扩展）
+export type ZoneType =
+  // 电商/零售
+  | 'flow_rack' | 'high_rack' | 'mezzanine' | 'automated' | 'temp' | 'temp_bagged' | 'returns'
+  // 制造业
+  | 'production_line' | 'wip_buffer' | 'parts_storage' | 'staging'
+  // 冷链/医药
+  | 'cold_zone' | 'frozen_zone' | 'ambient_zone' | 'loading_bay'
+  // 港口
+  | 'container_yard' | 'customs_area'
+  // 退货
+  | 'returns_received' | 'qc_staging' | 'reshelving' | 'disposal'
+  // 多层
+  | 'floor_1' | 'floor_2' | 'floor_3' | 'elevator_shaft'
+
+export type Zone = {
+  id: string; ref: string; name?: string
+  type: ZoneType
+  x: number; z: number; w: number; d: number
+  siteNodeIds?: string[]
+  // v2.2 场景专属字段
+  temperature_range?: { min: number; max: number }   // 冷链
+  batch_tracking?: boolean                            // 医药
+  hazard_level?: 'none' | 'low' | 'medium' | 'high'  // 港口
+  customs_regulated?: boolean                         // 海关
+  current_load_pct?: number                           // 通用填充率 0-100
+}
+```
+
+#### 13.3.3 场景组件接口
+
+```ts
+// stores/scenario.ts
+export type ScenarioType =
+  | 'ecommerce' | 'manufacturing' | 'cold_chain'
+  | 'port' | 'reverse_logistics' | 'multi_floor'
+
+export interface ScenarioConfig {
+  zoneTypes: ZoneType[]                 // 允许显示的 Zone 类型
+  theme: 'warm' | 'cold' | 'industrial' | 'harbor' | 'warning' | 'neutral'
+  highlightColor: string                 // 主色调
+  alertTypes: AlertType[]               // 告警类型列表
+  panelComponent: Component            // 侧边属性面板组件
+  templateRef: string                  // 后端预置蓝图引用
+}
+```
+
+### 13.4 后端拓扑领域逻辑
+
+#### 13.4.1 `dxf_parser.py`（移植自 warehouse_theatre_3d）
+
+零依赖 ASCII 状态机，支持：
+- `LWPOLYLINE` / `LINE` / `CIRCLE` / `MTEXT` / `TEXT` / `HATCH`
+- 6 个标准图层：`FLOOR / WALLS / ZONES / FACILITIES / CORRIDORS / TEXT`
+- 坐标系转换：DXF +Y up → canvas +Y down
+
+#### 13.4.2 6 场景预置模板（`templates.py`）
+
+| 模板 ID | bounds (w×d) | Zones | Facilities | 备注 |
+|---------|--------------|-------|------------|------|
+| `ecommerce` | 160×100 | 8 | 12 | 移植 wx3D `DEFAULT_SHELL` |
+| `manufacturing` | 100×80 | 12 | 8 | 4 产线 + WIP + 配料区 |
+| `cold_chain` | 80×60 | 6 | 8 | 冷冻/冷藏/常温三温区 |
+| `port` | 200×150 | 10 | 12 | 集装箱堆场 + 海关 |
+| `reverse_logistics` | 60×40 | 5 | 4 | 退货接收 + 质检 + 决策 |
+| `multi_floor` | 80×60×4层 | 12 (4层×3) | 4 电梯 | 含 elevator_shaft 节点 |
+
+### 13.5 前端组件清单（v2.2 新增）
+
+**6 个场景组件**（`src/components/map/scenarios/`）：
+
+1. **`EcommerceScenario.vue`** — 货架布局热力图 + 拣货路径优化 + 订单波次分布 + ASRS 3D
+2. **`ManufacturingScenario.vue`** — 产线-仓储联动 + 物料配送路径动画 + WIP 状态面板
+3. **`ColdChainScenario.vue`** — 温湿度分区颜色编码 + 药品批次追踪 + 异常温区告警闪烁 + 合规标识
+4. **`PortLogisticsScenario.vue`** — 集装箱堆场 3D 堆叠 + 海关监管区高亮 + 多式联运衔接点 + 装卸作业状态
+5. **`ReverseLogisticsScenario.vue`** — 退货量趋势图 + 质检分拣决策流程 + 再上架/报废饼图 + 退货原因词云
+6. **`MultiFloorScenario.vue`** — 楼层切换器 + 电梯/坡道连接线 + 跨层 A* 路径 + 楼层独立色主题
+
+### 13.6 部署拓扑（v2.2 调整）
+
+```
+rcs-backend (:8100) ←── /api/rcs/* ──── frontend (:80)
+       │                                          ↑
+       │ REST 调用                                 │/api/*
+       ↓                                          │
+rcs/rcs/service.py                          simulation/backend (:8000)
+  (独立控制服务)                             (仿真 + 业务聚合)
+       ↑
+       │ RCS_EMBEDDED=0
+       │
+deploy/docker-compose.yml
+```
+
+### 13.7 与 v2.1 的差异
+
+| 章节 | v2.1 | v2.2 |
+|------|------|------|
+| 后端目录 | `simulation/backend/` (单一) | `rcs/backend/` 新增，与 `simulation/backend/` 并列 |
+| 前端目录 | （spec 中描述，未实际创建） | `rcs/frontend/` 独立工程 |
+| Zone 类型 | 8 类（电商为主） | 23 类（覆盖 6 场景） |
+| 预置模板 | 1（电商仓） | 6（电商/制造/冷链/港口/退货/多层） |
+| 场景组件 | 无 | 6 个 scenario 组件 + 场景配置 store |
+| DXF 解析 | 前端 + 后端各一份 | 后端 `rcs/backend/topology/dxf_parser.py` 单一权威源 |
+
+### 13.8 新增依赖
+
+**Python (`rcs/backend/pyproject.toml`):**
+- fastapi==0.104.0, uvicorn[standard]==0.24.0
+- pydantic==2.4.0, pydantic-settings==2.1.0
+- ezdxf>=1.1.0（**可选依赖**，缺失时 DXF 导出返回 503 + 友好提示）
+- robot-contracts>=1.1.0, aiosqlite>=0.19.0, numpy>=1.26.0
+
+**Node.js (`rcs/frontend/package.json`):**
+- vue@^3.4, vue-router@^4.3, pinia@^2.1
+- ant-design-vue@^3.2, vue-i18n@^9.13
+- echarts@^5.5, three@^0.165, three-stdlib@^2.30
+- @ant-design/icons-vue@^7, axios@^1.7, mqtt@^5.3, dayjs@^1.11
+- vite@^5.2, typescript@^5.4, vitest@^1.6, @vue/test-utils@^2.4, @types/three@^0.165
+
+### 13.9 实施阶段（v2.2 调整）
+
+| 阶段 | 内容 | 工作量 |
+|------|------|--------|
+| **Phase 1** | rcs/backend 骨架 + pyproject + main + Dockerfile | 2 天 |
+| **Phase 2** | 拓扑领域逻辑（dxf_parser / validate / markings / templates）| 5 天 |
+| **Phase 3** | API 端点（shell / grid / import / export / templates）| 4 天 |
+| **Phase 4** | rcs/frontend 骨架 + Vite + Docker | 2 天 |
+| **Phase 5** | 2D/3D 渲染层（DeviceMap2D / 3D / ShellScene / DevicePool / DxfOverlay）| 6 天 |
+| **Phase 6** | 6 场景组件（Ecommerce/Manufacturing/ColdChain/Port/Reverse/MultiFloor）| 10 天 |
+| **Phase 7** | deploy/docker-compose.yml 集成（新增 rcs-backend / rcs-frontend 服务）| 1 天 |
+| **Phase 8** | 测试 + spec 自检 + 文档更新 | 3 天 |
+
+**总计：约 33 天（含测试）**
+
+### 13.10 风险与缓解
+
+| 风险 | 缓解 |
+|------|------|
+| `rcs/rcs/` 与 `rcs/backend/` 命名冲突 | 后端包名用 `rcs_backend`（下划线），不与 `rcs` 包冲突 |
+| ezdxf 缺失导致导出失败 | 启动时检测，缺失则导出端点返回 503 + 友好提示 |
+| 6 场景视觉差异大 | 场景配置表驱动，主题色统一管理 |
+| Three.js 性能（多层 + 堆场）| Mesh 预算 ≤ 200，阴影仅地面接收 |
+| 多楼层 A* 跨层路径 | elevator_shaft 作为跨层 edge，特殊权重 |
