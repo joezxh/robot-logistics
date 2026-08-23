@@ -8,9 +8,9 @@ from rcs_backend.api.topology_shell import router as topology_shell
 from rcs_backend.api.topology_grid import router as topology_grid
 from rcs_backend.api.topology_import import router as topology_import
 from rcs_backend.api.topology_export import router as topology_export
+from rcs_backend.api.topology_templates import router as topology_templates
 
-# Stubs replaced by Tasks 15, 16 respectively
-topology_templates = APIRouter()
+# Stub replaced by Task 16
 orders = APIRouter()
 
 __all__ = [

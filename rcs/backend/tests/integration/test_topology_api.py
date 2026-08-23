@@ -183,3 +183,28 @@ def test_dxf_export_missing_ezdxf_returns_503(client):
 def test_dxf_export_saved_404(client):
     r = client.post("/api/rcs/topology/export/dxf/nonexistent-t14")
     assert r.status_code == 404
+
+
+# --- Task 15: topology_templates ---
+
+
+def test_templates_list(client):
+    r = client.get("/api/rcs/topology/templates")
+    assert r.status_code == 200
+    assert len(r.json()) == 6
+
+
+def test_templates_get_one(client):
+    r = client.get("/api/rcs/topology/templates/cold_chain")
+    assert r.status_code == 200
+    body = r.json()
+    zone_types = {z["type"] for z in body["shell"]["zones"]}
+    assert "cold_zone" in zone_types
+    # cold_chain template ships with alert_types + highlight_color in metadata
+    assert "alert_types" in body["metadata"]
+    assert "highlight_color" in body["metadata"]
+
+
+def test_templates_unknown_404(client):
+    r = client.get("/api/rcs/topology/templates/does_not_exist")
+    assert r.status_code == 404
