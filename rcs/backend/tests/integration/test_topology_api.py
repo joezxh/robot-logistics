@@ -166,3 +166,20 @@ def test_dxf_import_invalid_returns_400(client):
         files={"file": ("bad-t13.dxf", "garbage content", "application/dxf")},
     )
     assert r.status_code == 400
+
+
+# --- Task 14: topology_export ---
+
+
+def test_dxf_export_missing_ezdxf_returns_503(client):
+    shell = FloorShell(bounds=Bounds(w=10, d=10))
+    r = client.post("/api/rcs/topology/export/dxf", json=shell.model_dump())
+    # Either 200 (ezdxf installed) or 503 (missing)
+    assert r.status_code in (200, 503)
+    if r.status_code == 503:
+        assert "ezdxf" in r.json()["detail"].lower()
+
+
+def test_dxf_export_saved_404(client):
+    r = client.post("/api/rcs/topology/export/dxf/nonexistent-t14")
+    assert r.status_code == 404

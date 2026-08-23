@@ -7,9 +7,9 @@ from fastapi import APIRouter
 from rcs_backend.api.topology_shell import router as topology_shell
 from rcs_backend.api.topology_grid import router as topology_grid
 from rcs_backend.api.topology_import import router as topology_import
+from rcs_backend.api.topology_export import router as topology_export
 
-# Stubs replaced by Tasks 14, 15, 16 respectively
-topology_export = APIRouter()
+# Stubs replaced by Tasks 15, 16 respectively
 topology_templates = APIRouter()
 orders = APIRouter()
 
