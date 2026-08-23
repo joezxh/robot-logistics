@@ -1,15 +1,14 @@
 """Topology utilities — DXF parsing, validation, templates.
 
 Task 4 contributes `parse_dxf` / `DxfEntity` / `DxfDocument` (real).
-Tasks 5-8 each edit THIS file to replace their placeholder with the real
-re-export (same pattern as Task 4).
+Task 5 contributes `dxf_to_shell` (real).
+Tasks 6-8 each edit THIS file to replace their placeholder with the real
+re-export (same pattern as Task 4 and Task 5).
 """
 from rcs_backend.topology.dxf_parser import parse_dxf, DxfEntity, DxfDocument
+from rcs_backend.topology.dxf_to_shell import dxf_to_shell
 
-# Placeholders — replaced by Tasks 5, 6, 7, 8 respectively
-def dxf_to_shell(*args, **kwargs):
-    raise NotImplementedError("dxf_to_shell is added by Task 5")
-
+# Placeholders — replaced by Tasks 6, 7, 8 respectively
 def validate_shell(*args, **kwargs):
     raise NotImplementedError("validate_shell is added by Task 6")
 
