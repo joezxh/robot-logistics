@@ -80,6 +80,8 @@ robot-logic/
 │   │   │   │   ├── orders.ts           # 订单 REST 封装
 │   │   │   │   ├── tasks.ts            # 任务 DAG REST 封装
 │   │   │   │   ├── topology.ts         # 站点地图 REST 封装
+│   │   │   │   ├── topologyShell.ts    # floor_shell + site_grid 封装
+│   │   │   │   ├── dxf.ts              # DXF 导入/导出封装
 │   │   │   │   ├── simulator.ts        # 模拟订单生成器 API
 │   │   │   │   └── types.ts            # 与 shared/contracts 对齐的 TS 类型
 │   │   │   ├── stores/
@@ -87,6 +89,8 @@ robot-logic/
 │   │   │   │   ├── orders.ts           # 订单列表 + 当前选中
 │   │   │   │   ├── tasks.ts            # 任务 DAG + 进度
 │   │   │   │   ├── topology.ts         # 站点地图节点/边
+│   │   │   │   ├── floorShell.ts       # 建筑蓝图 + 标线
+│   │   │   │   ├── siteGrid.ts         # AGV 导航网格
 │   │   │   │   ├── alerts.ts           # 告警订阅（MQTT）
 │   │   │   │   ├── simulator.ts        # 模拟订单生成器状态
 │   │   │   │   ├── theme.ts            # 浅色/深色切换
@@ -114,9 +118,18 @@ robot-logic/
 │   │   │   │   │       ├── ShuttlePanel.vue  # 四向穿梭车
 │   │   │   │   │       └── ElevatorPanel.vue
 │   │   │   │   ├── map/
-│   │   │   │   │   ├── DeviceMap2D.vue      # 2D 站点地图（ECharts）
-│   │   │   │   │   ├── DeviceMap3D.vue      # 3D 机器人模型（Three.js）
-│   │   │   │   │   └── TopologyEditor.vue   # 节点/边拖拽编辑器
+│   │   │   │   │   ├── SiteMapView.vue      # 主视图（视图切换 + 图层控制）
+│   │   │   │   │   ├── DeviceMap2D.vue      # 2D 站点地图（ECharts + DXF 叠加）
+│   │   │   │   │   ├── DeviceMap3D.vue      # 3D 场景渲染（Three.js）
+│   │   │   │   │   ├── DxfOverlay.vue       # Canvas2D DXF 叠加层
+│   │   │   │   │   ├── ShellScene.ts        # Three.js 建筑场景（墙/区/月台/标线）
+│   │   │   │   │   ├── DevicePool.ts        # 设备位姿 Three.js 渲染器
+│   │   │   │   │   ├── PathLayer3D.ts       # 3D A* 路径管线
+│   │   │   │   │   ├── TopologyEditor.vue   # 节点/边拖拽编辑器
+│   │   │   │   │   ├── ShellEditor.vue      # floor_shell 建筑蓝图编辑器
+│   │   │   │   │   ├── GridEditor.vue       # site_grid AGV 网格编辑器
+│   │   │   │   │   ├── DxfImportDialog.vue  # DXF 导入对话框
+│   │   │   │   │   └── LayerPanel.vue       # 图层开关面板
 │   │   │   │   ├── charts/
 │   │   │   │   │   ├── SloGauge.vue         # SLO 仪表盘
 │   │   │   │   │   ├── TaskGantt.vue        # 任务甘特图（TaskDAG 时间线）
@@ -160,9 +173,20 @@ robot-logic/
 │   ├── backend/api/                    # 后端扩展（订单 / 任务 / 拓扑 REST）
 │   │   ├── orders.py                   # 订单 CRUD + 模拟生成
 │   │   ├── tasks.py                    # TaskDAG 查询接口
-│   │   ├── topology.py                 # 站点地图 CRUD
+│   │   ├── topology.py                 # 站点地图 (SiteMap) CRUD + A* 路径查询
+│   │   ├── topology_shell.py           # floor_shell 建筑蓝图 CRUD
+│   │   ├── topology_grid.py            # site_grid AGV 导航网格 CRUD
+│   │   ├── topology_import.py          # DXF 上传 + 解析
+│   │   ├── topology_export.py          # DXF 导出 (ezdxf 可选)
+│   │   ├── topology_templates.py       # 仓库模板生成（电商仓/港口/工厂）
 │   │   ├── simulator.py                # 模拟订单生成 API
 │   │   └── alerts_ws.py                # MQTT 告警 WebSocket 桥接（如需）
+│   ├── backend/topology/                # 拓扑领域逻辑（纯函数库）
+│   │   ├── dxf_parser.py               # DXF ASCII 解析器（Python 版）
+│   │   ├── dxf_to_shell.py             # DXF → floor_shell 转换
+│   │   ├── validate.py                 # 建筑蓝图校验（迁移 wx3D validate_shell）
+│   │   ├── markings.py                 # 地面标线生成（迁移 wx3D generate_markings）
+│   │   └── templates.py                # 默认场景蓝图
 │   └── simulator/                      # SimHAL 数据生成（沙盒模式）
 │       └── seed_devices.py             # 6 类设备默认配置
 ```
@@ -287,6 +311,13 @@ export const useOrdersStore = defineStore('orders', () => {
 | GET | `/api/rcs/topology` | 站点地图（节点 + 边） | 工程师 |
 | PUT | `/api/rcs/topology` | 保存站点地图 | 工程师 |
 | POST | `/api/rcs/topology/path` | A* 路径查询（src, dst） | 工程师 |
+| GET | `/api/rcs/topology/shell` | 建筑蓝图 floor_shell | 工程师 |
+| PUT | `/api/rcs/topology/shell` | 保存建筑蓝图 | 工程师 |
+| POST | `/api/rcs/topology/shell/from-template` | 应用预置模板（电商仓/港口/工厂） | 工程师 |
+| GET | `/api/rcs/topology/grid` | AGV 导航网格 site_grid | 工程师 |
+| PUT | `/api/rcs/topology/grid` | 保存 AGV 网格 | 工程师 |
+| POST | `/api/rcs/topology/import/dxf` | 上传 DXF 文件 → 返回预览 floor_shell（不直接保存） | 工程师 |
+| POST | `/api/rcs/topology/export/dxf` | 导出 floor_shell → DXF 下载（ezdxf 可选依赖） | 工程师 |
 | POST | `/api/rcs/simulator/generate` | 模拟订单生成（n, type, template） | 运营 / 工程师 |
 | GET | `/api/rcs/simulator/devices` | SimHAL 设备 seed 配置列表 | 运营 |
 
@@ -431,13 +462,246 @@ PRD §1.4 列出的核心场景要求覆盖：AGV、立库、装卸机器人、�
 | **四向穿梭车** | （新增 Morphology：`SHUTTLE`） | `move_rack`, `swap_level`, `charge`, `estop` | `ShuttlePanel.vue` | 网格坐标、货位状态、电池、网格地图热力图 |
 | **电梯** | （新增 Morphology：`ELEVATOR`） | `call`, `goto_floor`, `open_door`, `close_door` | `ElevatorPanel.vue` | 当前楼层、门状态、上下行、楼层队列 |
 
-> **后端扩展需求**：输送带、四向穿梭车、电梯目前在 `rcs/devices/` 与 `rcs/controllers/` 中**仅有基础 Pydantic 模型**或不存在完整控制器。详见 §10 "实施路径与后端扩展"。
+> **后端扩展需求**：输送带、四向穿梭车、电梯目前在 `rcs/devices/` 与 `rcs/controllers/` 中**仅有基础 Pydantic 模型**或不存在完整控制器。详见 §11 "实施路径与后端扩展"。
 >
 > **辅助设备说明**：`ForkliftController`（叉车）虽在后端实现，但作为"装卸场景辅助"，不单独列入 6 类核心设备面板；其 UI 复用 `ArmController` 类卡片 + 专属命令字段（extend/lift/move_to/pick/drop）。
 
-## 6. 部署方案
+---
 
-### 6.1 Docker Compose（推荐）
+## 6. 设施蓝图（DXF 叠加 + 3D 场景渲染）
+
+> **设计灵感**：参考 `D:\projects\github\warehouse_theatre_3d` 的 4 层数据模型（Layout Blueprint / AGV Grid / Warehouse Hierarchy / Three.js Renderer）。功能迁移到 RCS 前端实现，**不引入 wx3D 任何运行时依赖**。
+
+### 6.1 设计目标
+
+RCS 调度中枢面对的是**真实物流设施**（仓库、港口、工厂、月台），不仅需要"机器人点位拓扑"，还需要：
+
+1. **真实建筑平面图**：导入 DXF（DWG/R2018），按图层（WALLS / ZONES / FACILITIES / CORRIDORS / TEXT）渲染
+2. **3D 场景渲染**：在 Three.js 场景中渲染墙体、月台、通道、地面标线、设备位姿
+3. **数据单一源**：建筑蓝图 JSON（`floor_shell`）是前后端共用的权威源，DXF 仅作"预览+导入"
+4. **设备实时叠加**：机器人位姿（来自 WebSocket）渲染到 3D 场景中
+
+### 6.2 4 层数据模型（与 wx3D 对齐）
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ Layer 4: Layout Blueprint (RCS floor_shell)                     │
+│   walls / zones / facilities / docks / corridors / vehicles     │
+│   ↕ 与后端 SiteMap 双向同步                                          │
+├──────────────────────────────────────────────────────────────────┤
+│ Layer 3: AGV Navigation Grid (RCS site_grid)                    │
+│   cells (1m×1m) / blocked[] / preferred[] / agv_paths          │
+│   ↕ RCS A* pathfinder 输入                                          │
+├──────────────────────────────────────────────────────────────────┤
+│ Layer 2: Site Topology (RCS SiteMap) — 已有 ✅                     │
+│   SiteNode + SiteEdge（节点类型 + 距离 + 容量）                    │
+├──────────────────────────────────────────────────────────────────┤
+│ Layer 1: Renderer (Three.js r0.165)                             │
+│   ┌────────────┐  ┌────────────┐  ┌────────────┐               │
+│   │ shellScene │  │ devicePool │  │ pathLayer  │               │
+│   │  建筑墙体   │  │  机器人位姿 │  │ A* 路径线  │               │
+│   └────────────┘  └────────────┘  └────────────┘               │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### 6.3 `floor_shell` 数据结构（与 wx3D `wt_floor_shell` 对齐）
+
+```ts
+// types/floorShell.ts
+export interface FloorShell {
+  bounds: { w: number; d: number; h?: number }   // 建筑尺寸（米）
+  walls: WallSegment[]                            // 墙体（可分段，留出门口）
+  zones: Zone[]                                   // 功能区（货架区/暂存区/退货区等）
+  facilities: Facility[]                          // 设施（QC/打包/分拣/充电桩）
+  docks: Dock[]                                   // 月台（进货/出货）
+  corridors: Corridor[]                           // 通道（主/辅）
+  vehicles?: Vehicle[]                            // 卡车/集装箱（可选）
+  markings?: Marking[]                            // 地面标线（自动生成，可编辑）
+  metadata?: {                                    // DXF 导入信息
+    source?: 'manual' | 'dxf-import'
+    dxf_filename?: string
+    imported_at?: string
+  }
+}
+
+export type WallSegment = {
+  id: string
+  x0: number; z0: number; x1: number; z1: number
+  h: number                                       // 高度（米）
+  kind?: 'wall' | 'dock_bumper' | 'glass'         // 视觉材质
+}
+
+export type Zone = {
+  id: string; ref: string; name?: string
+  type: 'flow_rack' | 'high_rack' | 'mezzanine' | 'automated'
+      | 'temp' | 'temp_bagged' | 'returns' | 'staging'
+  x: number; z: number                            // 中心坐标
+  w: number; d: number                            // 尺寸（米）
+  siteNodeIds?: string[]                          // 关联的 SiteNode IDs
+}
+
+export type Facility = {
+  id: string; ref: string; name?: string
+  kind: 'qc' | 'sorting' | 'packing' | 'charger' | 'entrance' | 'inspection'
+  x: number; z: number; w: number; d?: number
+}
+
+export type Dock = {
+  id: string; ref: string
+  flow: 'inbound' | 'outbound'
+  x: number; z: number; rot: number
+}
+
+export type Corridor = {
+  id: string; x0: number; z0: number; x1: number; z1: number
+  main: boolean                                   // 主/辅通道
+  width?: number
+}
+```
+
+### 6.4 `site_grid` 数据结构（AGV 导航网格）
+
+```ts
+export interface SiteGrid {
+  bounds: { w: number; d: number }
+  cell_size: number                               // 网格精度（米，默认 1.0）
+  cells: Cell[]                                   // 仅存储非默认 cell
+}
+
+export type Cell = {
+  x: number; z: number                            // 网格坐标
+  type: 'free' | 'blocked' | 'preferred' | 'no_agv' | 'shuttle_only'
+  speed_scale?: number                            // 限速（0~1）
+}
+```
+
+**与 A* 的对接**：`find_path()` 输入 `(src, dst)` + `site_grid`，输出栅格化路径 → 3D 渲染。
+
+### 6.5 前端组件树
+
+```
+SiteMapView.vue (主视图，含视图切换器)
+├── ViewModeSwitcher              # 2D / 3D / 切面视图切换
+├── LayerPanel                    # 图层开关（墙/区/通道/标线/设备/路径）
+├── DeviceMap2D.vue (2D 拓扑 + ECharts + DXF 叠加)
+│   ├── DxfOverlay.vue            # Canvas2D 叠加层（从 parseDXF 输出绘制）
+│   ├── TopologyLayer.vue         # ECharts: SiteMap 节点+边
+│   ├── PathLayer.vue             # ECharts: A* 路径（动画）
+│   └── DeviceMarkers.vue         # ECharts: 设备当前位置
+├── DeviceMap3D.vue (3D 场景 + Three.js)
+│   ├── ShellScene.ts             # 墙体/区域/通道 Three.js Mesh 构建
+│   ├── DevicePool.ts             # 设备 GLTF/GLB 模型管理 + 位姿更新（WebSocket）
+│   ├── PathLayer3D.ts            # 3D A* 路径管线（TubeGeometry）
+│   ├── OrbitControls.ts          # 视角控制（左键旋转/右键平移/滚轮缩放）
+│   └── SkyDome.ts                # 工业具身风格天空盒 + 网格地面
+├── TopologyEditor.vue            # 拖拽编辑器（仅工程师角色可见）
+│   ├── NodePalette               # 左侧：节点类型面板
+│   ├── CanvasEditor              # 中间：拖拽画布
+│   └── PropertyInspector         # 右侧：选中节点/边的属性
+└── DxfImportDialog.vue           # DXF 导入对话框（工程师角色）
+```
+
+### 6.6 DXF 导入/导出
+
+#### 6.6.1 导入（前端 DXF → floor_shell）
+
+- **零依赖 ASCII 解析**：参考 wx3D 的 `parseDXF`（wt3d-vue.js:4956-5014 行）
+- **支持的 DXF 实体**：`LWPOLYLINE` / `LINE` / `CIRCLE` / `MTEXT` / `TEXT` / `HATCH`
+- **支持的图层**：`WALLS / ZONES / FACILITIES / CORRIDORS / TEXT`（与 wx3D 一致）
+- **DXF → floor_shell 映射规则**：
+  - `WALLS` 图层上的 LWPOLYLINE → `walls[]`
+  - `ZONES` 图层上的 LWPOLYLINE（闭合 + hatch）→ `zones[]`（按 hatch 颜色映射类型）
+  - `FACILITIES` 图层 → `facilities[]`（按颜色映射 kind）
+  - `CORRIDORS` 图层 → `corridors[]`
+  - `TEXT` 图层上的 `dock:XXX` MTEXT → `docks[]`
+- **冲突解决**：DXF 导入仅作**预览**，不直接覆盖 `floor_shell`；用户确认后才写入
+- **坐标系**：DXF +Y up → canvas +Y down（参考 wx3D `drawDxfOverlay` 行 5024-5051）
+
+#### 6.6.2 导出（floor_shell → DXF）
+
+- **后端可选依赖**：与 wx3D 一致，使用 `ezdxf`（Python）
+- **API**：`POST /api/rcs/topology/export/dxf?format=dxf` → 下载 `floor-shell.dxf`
+- **图层结构**：与 wx3D 一致（`FLOOR / WALLS / ZONES / FACILITIES / CORRIDORS / TEXT`）
+- **AutoCAD 脚本（可选）**：后端可生成 `.scr` 文件供 AutoCAD SCRIPT 命令导入（参考 wx3D `autocad_3d_script.scr`）
+
+### 6.7 3D 场景渲染要点
+
+| 维度 | 实现 |
+|------|------|
+| **几何** | `PlaneGeometry`(地面) + `BoxGeometry`(墙) + `ExtrudeGeometry`(月台) |
+| **材质** | `MeshStandardMaterial`(墙/区域) + `MeshBasicMaterial`(路径线) |
+| **灯光** | `HemisphereLight`(天光) + `DirectionalLight`(主光，模拟日光) |
+| **阴影** | `PCFSoftShadowMap`，仅地面接收阴影 |
+| **设备位姿** | WebSocket 10Hz 推送 `pose {x,y,z,qx,qy,qz,qw}` → `Object3D.position/quaternion` |
+| **地面标线** | 直接渲染到地面 PlaneGeometry 的纹理（性能优于独立 Mesh） |
+| **路径动画** | TubeGeometry + ShaderMaterial 流光效果（青色霓虹，参考主题） |
+| **性能预算** | ≤ 200 Mesh，10Hz 状态更新用 `requestAnimationFrame` 合并 |
+
+### 6.8 地面标线（Markings）
+
+按工业仓库标线标准自动生成（参考 wx3D `generateMarkings`）：
+
+| 类型 | 颜色 | 用途 |
+|------|------|------|
+| `zone_boundary`（A 类黄实线 80mm） | `#facc15` | 区域边界 |
+| `corridor_edge`（主通道黄实线 120mm） | `#facc15` | 主通道边缘 |
+| `corridor_edge_minor`（辅通道黄实线 60mm） | `#facc15` | 辅通道边缘 |
+| `safety_border`（C 类红实线 60mm） | `#ef4444` | 退货/异常区 |
+| `hazard_border`（D 类黄黑斜纹） | `#facc15` + 黑 | 充电桩/危险区 |
+| `facility_corner`（A 类黄色 L 标） | `#facc15` | 设施定位角标 |
+| `rack_outline`（G 类绿色虚线） | `#4ade80` | 货架定位 |
+
+### 6.9 与现有 `SiteMap` 的关系
+
+`SiteMap` 是**逻辑拓扑**（节点+边），`floor_shell` 是**物理布局**（米制坐标+区域），两者通过 `Zone.siteNodeIds` 关联：
+
+```
+SiteMap（逻辑）              floor_shell（物理）
+┌─────────────────┐        ┌─────────────────┐
+│ SiteNode         │  ←关联→  │ Zone            │
+│  - PICK          │        │  - flow_rack     │
+│  - PLACE         │        │  - high_rack     │
+│  - STAGING       │        │  - temp          │
+│  - CHARGING      │        │  - returns       │
+│  - LOADING       │        │  - automated     │
+│  - UNLOADING     │        │  Facility (charger) │
+└─────────────────┘        └─────────────────┘
+```
+
+### 6.10 后端扩展（实现 floor_shell + site_grid 持久化）
+
+| 模块 | 后端路径 | 描述 |
+|------|---------|------|
+| 蓝图 CRUD | `rcs/backend/api/topology_shell.py` | `GET/PUT /api/rcs/topology/shell` |
+| 网格 CRUD | `rcs/backend/api/topology_grid.py` | `GET/PUT /api/rcs/topology/grid` |
+| DXF 导入 | `rcs/backend/api/topology_import.py` | `POST /api/rcs/topology/import` (multipart) |
+| DXF 导出 | `rcs/backend/api/topology_export.py` | `POST /api/rcs/topology/export/dxf` |
+| DXF → shell 转换器 | `rcs/backend/topology/dxf_parser.py` | 复用 wx3D `parseDXF` 逻辑（Python 重新实现） |
+| 模板生成 | `rcs/backend/topology/templates.py` | `create_warehouse_template(scenario)` 类似 wx3D `create_ecommerce_warehouse` |
+| 校验器 | `rcs/backend/topology/validate.py` | 迁移 wx3D `validate_shell` |
+| 标线生成 | `rcs/backend/topology/markings.py` | 迁移 wx3D `generate_markings` |
+
+> **约束**：`rcs/backend/` 是与 `rcs/rcs/` 平行的命名空间，**不修改任何 `rcs/rcs/` 已有 Python 文件**。
+
+### 6.11 依赖项增量
+
+```jsonc
+// package.json 新增
+{
+  "three": "^0.165.0",                  // 3D 引擎
+  "@types/three": "^0.165.0",
+  "three-stdlib": "^2.30.0",           // OrbitControls / GLTFLoader 等官方扩展
+  "dxf-parser": "^1.1.2"               // 可选：优先用自研 parser 以匹配 wx3D 输出格式
+}
+```
+
+> **Python 后端可选依赖**：`ezdxf>=1.1.0`（与 wx3D 一致，导出 DXF 时按需导入）
+
+---
+
+## 7. 部署方案
+
+### 7.1 Docker Compose（推荐）
 
 ```yaml
 # rcs/docker-compose.yml
@@ -478,7 +742,7 @@ services:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
 ```
 
-### 6.2 开发模式
+### 7.2 开发模式
 
 ```bash
 cd rcs/frontend
@@ -496,7 +760,7 @@ server: {
 }
 ```
 
-### 6.3 前端 Dockerfile
+### 7.3 前端 Dockerfile
 
 ```dockerfile
 # rcs/frontend/Dockerfile
@@ -524,9 +788,9 @@ server {
 }
 ```
 
-## 7. 边界与依赖
+## 8. 边界与依赖
 
-### 7.1 依赖项
+### 8.1 依赖项
 
 | 包名 | 版本 | 用途 |
 |------|------|------|
@@ -538,29 +802,36 @@ server {
 | `@ant-design/icons-vue` | ^7 | 图标 |
 | `axios` | ^1.7 | HTTP 客户端 |
 | `echarts` | ^5.5 | 图表 / DAG / 甘特图 |
-| `three` | ^0.165 | 3D 渲染 |
-| `@types/three` | ^0.165 | TS 类型 |
+| `three` | ^0.165 | 3D 场景渲染（设施蓝图） |
+| `three-stdlib` | ^2.30 | OrbitControls / GLTFLoader 等官方扩展 |
 | `mqtt` | ^5.3 | MQTT 客户端（告警订阅） |
 | `dayjs` | ^1.11 | 时间处理 |
 | `vitest` | ^1.6 | 单元测试 |
 | `@vue/test-utils` | ^2.4 | 组件测试 |
 
-### 7.2 与现有代码的关系
+**后端可选依赖**（DXF 导出，按需安装）：
+
+| 包名 | 版本 | 用途 |
+|------|------|------|
+| `ezdxf` | ^1.1 | DXF 导出（Python）；缺失时 API 返回 503 + 友好提示 |
+
+### 8.2 与现有代码的关系
 
 - **不修改** `rcs/rcs/` 中任何 Python 文件（包括 `service.py`）
 - WebSocket 直接使用 `ws_overview` / `ws_device` 现有 endpoint
 - **新增后端模块**：`rcs/backend/api/`（订单 / 任务 / 拓扑 / 模拟器）；不与 `rcs/rcs/` 现有命名空间冲突
 - **类型契约** 与 `rcs/rcs/service.py` 的 Pydantic 模型手动同步
+- **参考工程** `warehouse_theatre_3d` 的设计模式被移植（4 层数据模型 / DXF 解析 / 标线生成），不引入其运行时依赖
 
-### 7.3 测试策略
+### 8.3 测试策略
 
 - 单元测试：`vitest` + `@vue/test-utils`，覆盖 stores 与工具函数
-- 组件测试：关键组件（RobotCard、StateBadge、DagGraph）的渲染快照
+- 组件测试：关键组件（RobotCard、StateBadge、DagGraph、ShellScene）的渲染快照
 - E2E（可选）：`playwright` 覆盖登录 → Dashboard → 创建订单 → 监控任务主路径
 
-## 8. 验收标准
+## 9. 验收标准
 
-### 8.1 功能验收
+### 9.1 功能验收
 
 #### Dashboard
 - [ ] 实时显示至少 6 类设备的代表设备状态（≥ 10 台），刷新频率 ≥ 10 Hz
@@ -582,9 +853,15 @@ server {
 - [ ] 任务详情：参数、设备、执行结果
 
 #### SiteMap
-- [ ] 2D 站点地图：节点 + 边的可视化编辑（拖拽）
-- [ ] A* 路径预览：选择起点终点后显示最短路径
-- [ ] 拓扑保存 / 加载
+- [ ] **2D 视图**：拓扑节点 + 边的可视化编辑（拖拽）
+- [ ] **3D 视图**：Three.js 场景渲染（墙体、月台、地面标线、设备位姿）
+- [ ] **DXF 叠加**：导入 DXF 文件后可预览建筑图层（WALLS / ZONES / FACILITIES / CORRIDORS）
+- [ ] **DXF 导出**：将 floor_shell 导出为 DXF R2018 格式下载
+- [ ] **A* 路径预览**：选择起点终点后显示最短路径（2D + 3D 双视图同步）
+- [ ] **AGV 网格**：可视化 site_grid，标注 blocked / preferred / shuttle_only 区域
+- [ ] **拓扑保存 / 加载**：SiteMap + floor_shell + site_grid 均可保存
+- [ ] **图层开关**：可独立显示/隐藏墙体、区域、通道、标线、设备、路径
+- [ ] **预设模板**：一键应用电商仓/港口/工厂预置蓝图
 
 #### Devices
 - [ ] 6 类设备全覆盖，每类有独立命令面板
@@ -603,31 +880,32 @@ server {
 - [ ] 语言切换：zh-CN / en-US / ja-JP
 - [ ] 角色切换：运营 / 工程师 / 运维
 
-### 8.2 性能指标
+### 9.2 性能指标
 
 - 首屏加载（深色主题）：Lighthouse Performance ≥ 80
 - 路由切换：< 200ms
 - WebSocket 推流 50 Hz 时 CPU 占用 < 30%（中等配置笔记本）
 - 打包体积：`dist/` gzip 后 ≤ 2 MB
 
-### 8.3 视觉验收
+### 9.3 视觉验收
 
 - 深色主题具备工业具身特征：金属拉丝背景 + 青色霓虹光晕 + 3D 机器人模型
 - 浅色主题具备玻璃拟态质感
 - 3 种语言界面排版不溢出、无未翻译键
 
-## 9. 实施里程碑
+## 10. 实施里程碑
 
 | 里程碑 | 时间 | 前端交付 |
 |--------|------|---------|
 | **M1（基础）** | 4 周 | 脚手架 + 主导航 + Dashboard + Devices + 主题/i18n + 角色权限 + Docker Compose |
 | **M2（订单/任务）** | 4 周 | Orders + Tasks + 模拟订单生成器 + 后端 API 实现 |
-| **M3（地图/告警）** | 3 周 | SiteMap 编辑器 + Alerts + MQTT 订阅 + 后端 API 实现 |
-| **M4（增强）** | 2 周 | 3D 装卸机器人 + 高级图表 + E2E 测试 |
+| **M3（地图/告警）** | 4 周 | SiteMap 编辑器（2D + DXF）+ Alerts + MQTT 订阅 + 后端 floor_shell/grid/DXF API 实现 |
+| **M4（3D 场景）** | 3 周 | Three.js 场景渲染 + 设备位姿叠加 + A* 3D 路径 + floor_shell 编辑器 |
+| **M5（增强）** | 2 周 | 高级图表 + E2E 测试 + 移动端适配（可选） |
 
-## 10. 实施路径与后端扩展
+## 11. 实施路径与后端扩展
 
-### 10.1 前端驱动的后端扩展
+### 11.1 前端驱动的后端扩展
 
 前端实现需要后端新增以下模块（M2/M3 阶段并行开发）：
 
@@ -635,11 +913,26 @@ server {
 |------|---------|------|
 | 订单 CRUD | `rcs/backend/api/orders.py` | 订单 REST 端点 + 持久化 |
 | TaskDAG 查询 | `rcs/backend/api/tasks.py` | 任务列表 + DAG 结构接口 |
-| 站点地图 | `rcs/backend/api/topology.py` | 拓扑 CRUD + A* 路径查询 |
+| 站点地图 | `rcs/backend/api/topology.py` | SiteMap 拓扑 CRUD + A* 路径查询 |
+| **建筑蓝图** | `rcs/backend/api/topology_shell.py` | floor_shell CRUD（含 markings 自动生成） |
+| **AGV 网格** | `rcs/backend/api/topology_grid.py` | site_grid CRUD |
+| **DXF 导入** | `rcs/backend/api/topology_import.py` | 上传 DXF → 解析 → 返回预览 floor_shell |
+| **DXF 导出** | `rcs/backend/api/topology_export.py` | floor_shell → DXF R2018（ezdxf 可选依赖） |
+| **预置模板** | `rcs/backend/api/topology_templates.py` | 电商仓/港口/工厂默认蓝图 |
 | 模拟器 | `rcs/backend/api/simulator.py` | 模拟订单生成 + SimHAL 设备 seed |
 | MQTT 告警桥接 | `rcs/backend/api/alerts_ws.py` | MQTT → WebSocket 桥接（如需） |
 
-### 10.2 设备形态扩展（输送带 / 穿梭车 / 电梯）
+### 11.1.1 拓扑领域逻辑（`rcs/backend/topology/`，纯函数库）
+
+| 模块 | 描述 | 参考来源 |
+|------|------|---------|
+| `dxf_parser.py` | DXF ASCII 解析器（LWPOLYLINE/LINE/CIRCLE/MTEXT/HATCH） | 移植自 `warehouse_theatre_3d/public/js/wt3d-vue.js` 的 `parseDXF`（Python 重写） |
+| `dxf_to_shell.py` | DXF entities → floor_shell 转换（按图层 + 颜色映射） | 新增（基于 wx3D 图层约定） |
+| `validate.py` | 建筑蓝图校验（边界 / 重叠 / 走廊宽度 / 大门位置） | 移植自 `warehouse_theatre_3d/layout_blueprint.py:validate_shell` |
+| `markings.py` | 地面标线生成（黄实线/红实线/黄黑/绿虚线） | 移植自 `warehouse_theatre_3d/layout_blueprint.py:generate_markings` |
+| `templates.py` | 默认场景蓝图（电商仓 160×100m / 港口 200×150m / 工厂 100×80m） | 移植自 `warehouse_theatre_3d/layout_blueprint.py:DEFAULT_SHELL` |
+
+### 11.2 设备形态扩展（输送带 / 穿梭车 / 电梯）
 
 PRD §1.4 列出的 6 类设备中，后端目前仅完整实现了 5 种（Arm/AGV/Stacker/Forklift/DualArmLoader）。**新增的 3 类设备**需要在后端扩展：
 
@@ -651,7 +944,7 @@ PRD §1.4 列出的 6 类设备中，后端目前仅完整实现了 5 种（Arm/
 
 > 详情见后续 writing-plans 阶段生成的实施计划。
 
-### 10.3 StateFrame 扩展
+### 11.3 StateFrame 扩展
 
 需要在 `rcs/state/state_stream.py:StateFrame` 中新增字段：
 ```python
@@ -663,7 +956,7 @@ class StateFrame(BaseModel):
 
 供前端甘特图实时进度展示使用。
 
-## 11. 引用文档
+## 12. 引用文档
 
 - `docs/superpowers/specs/2026-08-23-rcs-prd-design.md` — RCS PRD（业务需求来源）
 - `docs/superpowers/plans/2026-08-23-rcs-prd-implementation.md` — RCS 后端实施计划
@@ -676,3 +969,4 @@ class StateFrame(BaseModel):
 - `rcs/rcs/scheduler/allocator.py` — 设备分配器
 - `rcs/rcs/topology/site_map.py` — 站点地图
 - `rcs/rcs/topology/pathfinder.py` — A* 路径规划
+- **参考工程**：`D:\projects\github\warehouse_theatre_3d` — 4 层数据模型 + DXF 解析 + Three.js 渲染的设计灵感来源；功能移植到 RCS（不引入运行时依赖）
