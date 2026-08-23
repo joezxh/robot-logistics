@@ -19,8 +19,6 @@
     </header>
 
     <main :class="{ 'has-drawer': drawerDevice }">
-      <DashboardGrid />
-
       <section class="timeline">
         <TaskTimeline />
       </section>
@@ -50,7 +48,6 @@
 </template>
 
 <script setup lang="ts">
-import DashboardGrid from '../dashboard/DashboardGrid.vue'
 import TaskQueueChart from '../dashboard/TaskQueue.vue'
 import KpiPanel from '../dashboard/Kpi.vue'
 import AlertPanel from '../dashboard/Alerts.vue'

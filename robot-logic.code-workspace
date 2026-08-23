@@ -1,0 +1,30 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../github/warehouse_theatre_3d"
+		},
+		{
+			"path": "../github/robot-control-stack"
+		}
+	],
+	"settings": {
+		"python.defaultInterpreterPath": "python",
+		"python.analysis.extraPaths": [
+			"shared/python",
+			"simulation/backend",
+			"robot-app",
+			"vla-training/src"
+		],
+		"[python]": {
+			"editor.defaultFormatter": "charliermarsh.ruff",
+			"editor.formatOnSave": true
+		},
+		"files.exclude": {
+			"**/__pycache__": true,
+			"**/.pytest_cache": true
+		}
+	}
+}

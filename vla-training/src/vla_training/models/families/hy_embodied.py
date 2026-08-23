@@ -151,7 +151,7 @@ def _load_model_and_processor(config: Mapping[str, Any]) -> tuple[Any, Any]:
             "transformers is required; install vla-training/requirements.txt"
         ) from exc
 
-    model_kwargs: dict[str, Any] = {"trust_remote_code": trust_remote_code}
+    model_kwargs: dict[str, Any] = {"trust_remote_code": trust_remote}
     if load_in_4bit:
         try:
             from transformers import BitsAndBytesConfig
@@ -166,7 +166,7 @@ def _load_model_and_processor(config: Mapping[str, Any]) -> tuple[Any, Any]:
 
     try:
         model = AutoModelForVision2Seq.from_pretrained(base_model, **model_kwargs)
-        processor = AutoProcessor.from_pretrained(base_model, trust_remote_code=trust_remote_code)
+        processor = AutoProcessor.from_pretrained(base_model, trust_remote_code=trust_remote)
     except Exception as exc:
         raise ModelLoadError(
             f"failed to load Hy-Embodied checkpoint '{base_model}': {exc}. "

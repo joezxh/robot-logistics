@@ -1,0 +1,27 @@
+"""Root project configuration for the robot-logic monorepo.
+
+Mirrors ``robot-control-stack``'s unified build/quality conventions but adapted to
+a Python monorepo: a single tool-config entry point for lint/format/test so all
+four subprojects (``rcs``, ``robot-app``, ``vla-training``, ``simulation``) plus
+``shared`` are governed by one policy. The RCS equivalent is its top-level
+``Makefile`` + ``scikit-build-core`` + CMake ``FetchContent`` gate.
+"""
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = [".git", "node_modules", "**/build/**", "**/__pycache__/**"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501", "B008"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 100

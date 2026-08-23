@@ -1,8 +1,15 @@
-"""Device registry + controller/HAL singletons."""
+"""Device registry + controller/HAL singletons.
+
+RCS-aligned: the registry keys each device to a ``RobotType`` (unifying RCS stock
+arms with robot-logic logistics morphologies) so the control plane can be driven
+identically whether the backend is a simulation env or real hardware.
+"""
 from __future__ import annotations
 import json
 import os
 from typing import Iterable
+
+from robot_contracts import RobotType
 
 from .hal import DeviceHAL, SimHAL
 from .controllers import Controller, ArmController, AgvController, StackerController
@@ -95,6 +102,15 @@ class Registry:
     def get_hal(self) -> DeviceHAL:
         return self._hal
 
+    def robot_type(self, device_id: str) -> RobotType:
+        prof = self.get_profile(device_id)
+        return prof.robot_type or prof.morphology.to_robot_type()
+
+    def base_pose(self, device_id: str):
+        from robot_contracts import Pose
+
+        return self._hal.base_pose(device_id) if hasattr(self._hal, "base_pose") else Pose()
+
     def _reset_for_tests(self) -> None:
         self._profiles.clear()
         self._controllers.clear()
@@ -104,6 +120,14 @@ class Registry:
 
 def _profile_from_dict(d: dict) -> DeviceProfile:
     lim = d.get("limits", {})
+    rt = d.get("robot_type")
+    robot_type = RobotType(rt) if rt else None
+    bp = d.get("base_pose_in_world")
+    base_pose = None
+    if bp:
+        from robot_contracts import Pose
+
+        base_pose = Pose.from_dict(bp)
     return DeviceProfile(
         device_id=d["device_id"],
         morphology=Morphology(d["morphology"]),
@@ -119,6 +143,8 @@ def _profile_from_dict(d: dict) -> DeviceProfile:
         ),
         home_joints=d.get("home_joints", []),
         locked=d.get("locked", False),
+        robot_type=robot_type,
+        base_pose_in_world=base_pose,
     )
 
 

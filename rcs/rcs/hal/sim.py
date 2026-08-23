@@ -2,10 +2,13 @@
 
 Models each joint as a first-order lag toward the last commanded target.
 This is intentionally simple: the goal is to exercise the control loop
-end-to-end, not to simulate physics.
+end-to-end, not to simulate physics. It also exposes the device base pose in
+the world frame (RCS parity) for coordinate-frame conversions.
 """
 from __future__ import annotations
 import asyncio
+
+from robot_contracts import Pose
 
 from ..state.joint import JointState
 from ..state.profile import DeviceProfile
@@ -31,6 +34,10 @@ class SimHAL:
 
     def profile(self, device_id: str) -> DeviceProfile:
         return self._profiles[device_id]
+
+    def base_pose(self, device_id: str) -> Pose:
+        prof = self._profiles[device_id]
+        return prof.base_pose_in_world or Pose()
 
     async def read(self, device_id: str) -> JointState:
         if device_id not in self._state:

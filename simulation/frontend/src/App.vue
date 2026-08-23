@@ -71,7 +71,7 @@ onUnmounted(() => {
 * { box-sizing: border-box; }
 html, body, #app { margin: 0; padding: 0; height: 100%; font-family: -apple-system, "Segoe UI", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; background: var(--bg-app); color: var(--fg); transition: background 0.4s ease, color 0.4s ease; }
 body, .card, .topbar, .modal, .drawer, .dialog, .menu, .modal, .scene, .timeline, .hud, .dashboard, .panel, .palette { transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease; }
-.topbar { display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+.topbar { display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; flex-wrap: nowrap; }
 .brand { display: flex; align-items: center; gap: 8px; }
 .brand .logo { font-size: 20px; }
 .topbar h1 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: 0.3px; }
@@ -80,17 +80,14 @@ body, .card, .topbar, .modal, .drawer, .dialog, .menu, .modal, .scene, .timeline
 .topbar .badge { padding: 2px 10px; border-radius: 999px; background: var(--good); color: white; font-size: 11px; font-weight: 600; }
 .topbar .docs { font-size: 11px; color: var(--accent); text-decoration: none; padding: 4px 10px; border: 1px solid var(--border); border-radius: 4px; }
 .topbar .docs:hover { background: var(--bg-card-alt); }
-.topbar .iconbtn { background: var(--bg-card-alt); border: 1px solid var(--border); color: var(--fg); width: 32px; height: 28px; border-radius: 4px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; }
+.topbar .iconbtn { background: var(--bg-card-alt); border: 1px solid var(--border); color: var(--fg); width: auto; min-width: 32px; height: 28px; padding: 0 10px; border-radius: 4px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; text-decoration: none; }
 .topbar .iconbtn:hover { background: var(--bg-hover); }
 
-main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: minmax(440px, auto) 320px auto; gap: 12px; padding: 12px; height: calc(100% - 52px); }
-main.has-drawer { grid-template-columns: minmax(0, 1fr) 320px 360px; }
-.dashboard { grid-column: 1 / 2; grid-row: 1 / 2; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: stretch; min-height: 0; }
-.dashboard .stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.dashboard .stack > * { flex: 1 1 0; min-height: 0; }
-.scene { grid-column: 1 / 2; grid-row: 2 / 3; min-height: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 460px; grid-template-rows: minmax(440px, auto) 320px auto; gap: 12px; padding: 12px; height: calc(100% - 52px); }
+main.has-drawer { grid-template-columns: minmax(0, 1fr) 320px 460px; }
+.scene { grid-column: 1 / 2; grid-row: 1 / 2; min-height: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative; }
 .scene::before { content: attr(data-caption); position: absolute; top: 8px; left: 12px; font-size: 11px; color: var(--fg-soft); z-index: 1; pointer-events: none; }
-.timeline { grid-column: 1 / 2; grid-row: 3 / 4; min-height: 0; }
+.timeline { grid-column: 1 / 2; grid-row: 2 / 4; min-height: 0; }
 .drawer { grid-column: 2 / 3; grid-row: 1 / 4; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-y: auto; }
 .panel { grid-column: 3 / 4; grid-row: 1 / 4; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 main:not(.has-drawer) .panel { grid-column: 2 / 3; }

@@ -245,6 +245,8 @@ Atlas Robot in the DARPA Robotics Challenge Finals](https://www.cs.cmu.edu/~cga/
 
 ---
 
+
+
 ## 中文版
 
 本文档整理了机器人学领域的优质书籍、课程和其他学习资源，为希望深入了解该方向的读者提供一站式参考。
@@ -276,6 +278,8 @@ Atlas Robot in the DARPA Robotics Challenge Finals](https://www.cs.cmu.edu/~cga/
 - [ROS2 机器人操作系统导论](https://www.coursera.org/projects/ros2-intro) **Coursera**
 - [Duckietown 自动驾驶汽车](https://www.edx.org/learn/technology/eth-zurich-self-driving-cars-with-duckietown) **edX**
 
+
+
 ### 书籍
 
 - [概率机器人学（智能机器人与自主系统系列）](http://www.amazon.com/Probabilistic-Robotics-Intelligent-Autonomous-Agents/dp/0262201623/) :dollar:
@@ -296,6 +300,8 @@ Atlas Robot in the DARPA Robotics Challenge Finals](https://www.cs.cmu.edu/~cga/
 - [机器人学与人工智能中的行为树：导论](https://btirai.github.io/) [[pdf](https://arxiv.org/pdf/1709.00084)]
 - [自动化规划与执行](http://projects.laas.fr/planning/) [[pdf](http://projects.laas.fr/planning/book.pdf)]
 - [软件工程师的机器人学](https://www.manning.com/books/robotics-for-software-engineers) :dollar:
+
+
 
 ### 软件与库
 
@@ -372,6 +378,8 @@ Unity 机器人仿真开源包、教程与其他资源的中枢仓库，含 ROS 
 
 - [基于优化的 DARPA 机器人挑战赛决赛 Atlas 机器人控制器设计与实现](https://www.cs.cmu.edu/~cga/drc/ICHR15_0025_MS.pdf)
 
+
+
 ### 会议
 
 - [ACM/IEEE 人机交互国际会议（HRI）](http://ieeexplore.ieee.org/xpl/conhome.jsp?punumber=1040036)
@@ -386,6 +394,8 @@ Unity 机器人仿真开源包、教程与其他资源的中枢仓库，含 ROS 
 - [Robotica](http://www.ieee-ras.org/conferences-workshops/technically-sponsored/robotica)
 - [机器人学：科学与系统会议（RSS）](http://www.roboticsconference.org/)
 - [机器人学算法基础国际研讨会（WAFR）](http://www.wafr.org/)
+
+
 
 ### 期刊
 
@@ -404,6 +414,8 @@ Unity 机器人仿真开源包、教程与其他资源的中枢仓库，含 ROS 
 - [Robotics and Autonomous Systems](http://www.journals.elsevier.com/robotics-and-autonomous-systems)
 - [The International Journal of Robotics Research](http://www.ijrr.org/)
 
+
+
 ### 竞赛
 
 - [ICRA 机器人挑战赛](http://www.icra2017.org/conference/robot-challenges)
@@ -421,6 +433,8 @@ Unity 机器人仿真开源包、教程与其他资源的中枢仓库，含 ROS 
 - [Robotex](https://robotex.ee/en/) 欧洲最大机器人节
 - [First LEGO 联赛](https://www.firstlegoleague.org/)
 
+
+
 ### 企业
 
 - [Boston Dynamics](http://www.bostondynamics.com/) 机器人研发公司，制造了业界领先的 [Atlas](https://www.youtube.com/watch?v=rVlhMGQgDkY) 和 [Spot](https://www.youtube.com/watch?v=M8YjvHYbZ9w)
@@ -436,6 +450,8 @@ Unity 机器人仿真开源包、教程与其他资源的中枢仓库，含 ROS 
 - [Fetch Robotics](http://www.fetchrobotics.com/) 位于加州圣何塞的机器人初创公司，致力于电子商务履约与研发机器人
 - [Festo Robotics](https://www.festo.com/) 以仿生机器人闻名，如仿海鸥 SmartBird、水母、蝴蝶和袋鼠
 - [Neobotix](https://www.neobotix-robots.com/homepage) 工业、研究及定制移动机器人制造商
+
+
 
 ### 其他资源
 

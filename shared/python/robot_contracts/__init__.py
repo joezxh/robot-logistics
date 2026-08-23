@@ -40,8 +40,23 @@ from .payloads import (
     TelemetryPayload,
     TrackingErrorPayload,
 )
+from .kinematics import (
+    Pose,
+    RobotType,
+    GripperType,
+    RobotPlatform,
+    get_base_pose_in_world_coordinates,
+    to_pose_in_world_coordinates,
+    to_pose_in_robot_coordinates,
+)
+from .site_tcp import (
+    SiteTCPPose,
+    DEFAULT_SITE_PROFILES,
+    get_site_profile,
+    register_site_profile,
+)
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 __all__ = [
     "__version__",
@@ -74,4 +89,17 @@ __all__ = [
     "AlertEventEnum",
     "AlertPayload",
     "TelemetryPayload",
+    # kinematics (RCS-aligned primitives)
+    "Pose",
+    "RobotType",
+    "GripperType",
+    "RobotPlatform",
+    "get_base_pose_in_world_coordinates",
+    "to_pose_in_world_coordinates",
+    "to_pose_in_robot_coordinates",
+    # site TCP poses
+    "SiteTCPPose",
+    "DEFAULT_SITE_PROFILES",
+    "get_site_profile",
+    "register_site_profile",
 ]

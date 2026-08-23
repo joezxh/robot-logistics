@@ -1,4 +1,7 @@
-"""6-DOF arm controller: PD control in joint space + IK on move_l."""
+"""6-DOF arm controller: PD control in joint space + IK on move_l.
+
+支持从 ArmSpec 动态加载 DH 参数，不再硬编码。
+"""
 from __future__ import annotations
 import math
 import numpy as np
@@ -13,11 +16,10 @@ from ._common import CommandQueue, clip_to_limits, abs_max
 from ..planning import fk, ik
 from ..planning.trajectory import plan_trapezoidal, Trajectory
 from ..planning.interpolator import Interpolator
+from ..devices import get_arm_spec, ARM_6DOF_STANDARD
 
 
-# DH parameters in implementation order: (a, d, alpha, theta_offset).
-# Matches ARM_DH used in test_fk.py / test_ik.py. See rcs.planning.fk
-# for the parameter convention.
+# 向后兼容：保留 ARM_DH 作为默认值（与 ARM_6DOF_STANDARD 一致）
 ARM_DH = [
     (0.0,  0.10,  math.pi / 2, 0.0),
     (0.3,  0.0,   0.0,         0.0),
@@ -31,14 +33,16 @@ ARM_DH = [
 class ArmController(Controller):
     morphology = Morphology.ARM
 
-    def __init__(self, profile: DeviceProfile) -> None:
+    def __init__(self, profile: DeviceProfile, dh_params: list | None = None) -> None:
         super().__init__(profile)
+
+        # 优先使用传入的 DH 参数，否则尝试从 ArmSpec 加载
+        self._dh_params = dh_params or self._load_dh_from_profile(profile)
+
         # Note: spec calls for kp=80, kd=8 in absolute torque units (Nm/(rad,rad/s))
         # but that requires a torque-mode HAL; with our position-only SimHAL the
         # controller's own `self._q` (not HAL feedback) is fed back through PD,
-        # so for in-process convergence we use normalised per-tick gains. The
-        # values are documented in the spec; this re-scaled form is a unit-test
-        # adjustment to keep the step response stable in the SimHAL loop.
+        # so for in-process convergence we use normalised per-tick gains.
         self._kp = 0.3
         self._kd = 0.5
         self._q: list[float] = list(profile.home_joints)
@@ -46,6 +50,33 @@ class ArmController(Controller):
         self._last_target: list[float] = list(profile.home_joints)
         self._interp: Interpolator | None = None
         self._queue: CommandQueue = CommandQueue(maxsize=1024)
+
+    def _load_dh_from_profile(self, profile: DeviceProfile) -> list:
+        """从设备配置加载 DH 参数
+
+        优先级：
+        1. profile.extra['dh_params'] 自定义参数
+        2. profile.extra['arm_spec'] 从 ArmSpec 库获取
+        3. ARM_DH 默认值
+        """
+        extra = getattr(profile, "extra", None) or {}
+
+        # 1. 尝试从 ArmSpec 获取
+        arm_spec_name = extra.get("arm_spec")
+        if arm_spec_name:
+            try:
+                spec = get_arm_spec(arm_spec_name)
+                return spec.to_dh_list()
+            except KeyError:
+                pass
+
+        # 2. 尝试使用内联 DH 参数
+        inline_dh = extra.get("dh_params")
+        if inline_dh:
+            return inline_dh
+
+        # 3. 回退到默认 ARM_DH
+        return ARM_DH
 
     def on_command(self, cmd: Command) -> None:
         if self.state.mode in (ControllerMode.HALTED, ControllerMode.FAULT, ControllerMode.E_STOP):
@@ -62,9 +93,17 @@ class ArmController(Controller):
         elif cmd.type == CommandType.MOVE_L and cmd.target_pose is not None:
             T = np.eye(4)
             T[:3, 3] = cmd.target_pose.position
-            # orientation assumed identity if not provided; spec says q only for arm.
+            # 使用实例的 DH 参数进行 IK
             try:
-                q_sol = list(ik(self._q, ARM_DH, T, self.profile.limits.pos_lower, self.profile.limits.pos_upper))
+                q_sol = list(
+                    ik(
+                        self._q,
+                        self._dh_params,
+                        T,
+                        self.profile.limits.pos_lower,
+                        self.profile.limits.pos_upper,
+                    )
+                )
             except Exception as exc:
                 self.state.last_error = f"ik failed: {exc}"
                 return

@@ -17,6 +17,8 @@ from typing import Any, Mapping, Sequence
 
 logger = logging.getLogger(__name__)
 
+from ..config import get_by_path  # noqa: E402
+
 
 @dataclass
 class RolloutResult:
@@ -101,13 +103,84 @@ def evaluate_closed_loop(
 ) -> EvalReport:
     """Roll the policy out in the simulator and measure task success.
 
-    Skeleton: requires a stepping interface and a success predicate from the
-    ``simulation`` subproject.
+    RCS-aligned (mirrors RCS ``inference`` evaluation): the policy is wrapped by
+    ``robot-app.rcs_layer.vla.load_policy`` and stepped through the
+    ``simulation.rcs_env.SimEnv``; each task from ``robot-app.rcs_layer.tasks``
+    provides the success predicate. This is the metric that actually predicts
+    real-world behaviour -- offline MSE alone is not enough.
+
+    The function is import-safe: the sim/app packages are imported lazily so the
+    offline metrics keep working without them installed.
     """
-    raise NotImplementedError(
-        "closed-loop evaluation requires a simulator stepping interface; "
-        "see vla-training/README.md"
+    import numpy as np
+    import sys
+    from pathlib import Path
+
+    # 动态添加项目路径
+    project_root = Path(__file__).resolve().parents[4]
+    for subproject in ["simulation/backend", "robot-app"]:
+        p = str(project_root / subproject)
+        if p not in sys.path:
+            sys.path.insert(0, p)
+
+    from backend.rcs_env import SimEnv
+    from backend.rcs_env.envs.configs import get_config
+    from rcs_layer.vla import load_policy
+    from rcs_layer.tasks import get_task
+
+    robot_type_cfg = str(get_by_path(config or {}, "action.robot_type", "ARM"))
+    cfg = get_config(get_by_path(config or {}, "sim.config_name", "LogisticsArm"))
+    env0 = SimEnv(
+        robot_type=cfg.robot_type,
+        mjcf_path=cfg.mjcf_path,
+        logic_device_id=cfg.logic_device_id,
+        planner=cfg.planner,
     )
+    policy = load_policy(
+        get_by_path(config or {}, "eval.checkpoint", None),
+        action_dim=env0.engine.dof,
+    )
+
+    rollouts: list[RolloutResult] = []
+    for task_name in tasks:
+        task = get_task(task_name) if task_name in ("pallet", "box", "bag") else None
+        for ep in range(episodes_per_task):
+            env = SimEnv(
+                robot_type=cfg.robot_type,
+                mjcf_path=cfg.mjcf_path,
+                logic_device_id=cfg.logic_device_id,
+                planner=cfg.planner,
+            )
+            env.reset(seed=ep)
+            if task is not None:
+                task.reset()
+            obs, info = env.reset()
+            success = False
+            reason = "max_steps"
+            steps = 0
+            for step in range(max_steps):
+                action = policy(obs)
+                obs, reward, terminated, truncated, info = env.step(action)
+                steps = step
+                if task is not None and task.done(info):
+                    success = True
+                    reason = "task_done"
+                    break
+                if terminated or truncated:
+                    reason = "env_terminal"
+                    break
+            rollouts.append(
+                RolloutResult(
+                    episode_id=f"{task_name}_{ep}",
+                    success=success,
+                    steps=steps,
+                    termination_reason=reason,
+                )
+            )
+
+    num = len(rollouts)
+    success_rate = sum(r.success for r in rollouts) / num if num else 0.0
+    return EvalReport(success_rate=success_rate, num_rollouts=num, rollouts=rollouts)
 
 
 def summarize(report: EvalReport) -> str:

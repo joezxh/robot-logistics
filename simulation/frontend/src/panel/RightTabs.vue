@@ -12,9 +12,15 @@
         <span class="lbl">{{ tab.label }}</span>
       </button>
     </header>
-    <div class="body">
+    <div class="body" :class="{ overview: active === 'overview' }">
       <Transition name="fade" mode="out-in">
-        <TaskCreateForm v-if="active === 'create'" key="create" />
+        <div v-if="active === 'overview'" key="overview" class="overview-stack">
+          <DeviceStatus />
+          <SiteManager />
+          <TaskQueue />
+          <KpiPanel />
+        </div>
+        <TaskCreateForm v-else-if="active === 'create'" key="create" />
         <RollbackPanel v-else-if="active === 'rollback'" key="rollback" />
         <LogViewer v-else key="logs" />
       </Transition>
@@ -24,17 +30,22 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import DeviceStatus from '../dashboard/DeviceStatus.vue'
+import SiteManager from '../dashboard/SiteManager.vue'
+import TaskQueue from '../dashboard/TaskQueue.vue'
+import KpiPanel from '../dashboard/Kpi.vue'
 import TaskCreateForm from './TaskCreate.vue'
 import RollbackPanel from './Rollback.vue'
 import LogViewer from './LogViewer.vue'
 
 const tabs = [
+  { id: 'overview', icon: '📊', label: '概览' },
   { id: 'create', icon: '➕', label: '创建' },
   { id: 'rollback', icon: '↶', label: '回滚' },
   { id: 'logs', icon: '📜', label: '日志' },
 ] as const
 
-const active = ref<typeof tabs[number]['id']>('create')
+const active = ref<typeof tabs[number]['id']>('overview')
 </script>
 
 <style scoped>
@@ -80,7 +91,15 @@ const active = ref<typeof tabs[number]['id']>('create')
   padding: 12px;
   min-height: 0;
 }
+.body.overview { padding: 12px; }
+.overview-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.overview-stack > * { min-height: 0; }
 .body > * { background: transparent !important; border: none !important; padding: 0 !important; }
+.body.overview > .overview-stack { background: transparent !important; border: none !important; padding: 0 !important; }
 .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(4px); }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease, transform 0.18s ease; }
 </style>

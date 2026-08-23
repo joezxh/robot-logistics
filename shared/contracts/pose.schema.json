@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pose",
+  "description": "RCS-aligned 6D pose. Translation in meters (world frame: x forward, y left, z up). Quaternion stored as [x, y, z, w] (xyzw).",
+  "type": "object",
+  "properties": {
+    "translation": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "[x, y, z] in meters"
+    },
+    "quaternion_xyzw": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "[x, y, z, w] scalar-last quaternion"
+    }
+  },
+  "required": ["translation", "quaternion_xyzw"]
+}

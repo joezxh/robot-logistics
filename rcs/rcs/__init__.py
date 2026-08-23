@@ -12,6 +12,8 @@ from contextlib import asynccontextmanager
 from .registry import registry
 from .loop import ControlLoop
 from .service import rcs_router, bind_loop
+from .control import ControlMode, CartesianCommand, ee_pose_in_world
+from .state.pose import Pose6D, world_from_base_pose, robot_from_world_pose
 
 
 _loop: ControlLoop | None = None
@@ -66,4 +68,8 @@ class _RCSFacade:
 rcs = _RCSFacade()
 
 
-__all__ = ["lifespan", "router", "create_app", "rcs"]
+__all__ = [
+    "lifespan", "router", "create_app", "rcs",
+    "ControlMode", "CartesianCommand", "ee_pose_in_world",
+    "Pose6D", "world_from_base_pose", "robot_from_world_pose",
+]

@@ -12,3 +12,9 @@ pytest-asyncio==0.21.0
 httpx==0.25.0
 pydantic-settings==2.1.0
 paho-mqtt==1.6.1
+# RCS-aligned simulation layer (mirrors robot-control-stack python/rcs)
+gymnasium==0.29.1
+# Optional high-fidelity engine (RCS parity). Install to enable MuJoCo dynamics:
+# mujoco==3.1.6
+# Shared data contract (robot_contracts) must be installed from ../shared/python
+

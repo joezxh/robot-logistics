@@ -16,6 +16,8 @@ dependencies = [
     "pydantic-settings==2.1.0",
     "websockets==12.0",
     "paho-mqtt==1.6.1",
+    # Shared RCS-aligned data contract (install from ../shared/python)
+    "robot-contracts>=1.1.0",
 ]
 
 [project.optional-dependencies]
@@ -28,3 +30,8 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["rcs*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-q"

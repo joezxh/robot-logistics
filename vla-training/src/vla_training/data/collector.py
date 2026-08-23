@@ -19,6 +19,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Iterator
 
+import numpy as np
+
 from .types import Episode, Frame, SourceType
 
 logger = logging.getLogger(__name__)
@@ -96,21 +98,123 @@ class TrajectoryCollector(ABC):
 
 
 class SimulationCollector(TrajectoryCollector):
-    """Scripted or teleoperated rollouts inside the Gazebo simulation.
+    """Scripted or teleoperated rollouts inside the ``simulation`` Gym env.
 
-    Skeleton: wiring this up requires a scripted policy or teleop interface in
-    the ``simulation`` subproject that can be stepped deterministically.
+    RCS-aligned (mirrors RCS imitation/teleop demos): the expert can be either a
+    :class:`Policy` (robot-app ``rcs_layer.vla``) or a teleop device
+    (robot-app ``rcs_layer.teleop``). Both drive the ``simulation.rcs_env.SimEnv``
+    so demonstrations are collected in the *same* observation/action space the
+    trained policy will later run in -- closing the sim-to-real loop.
+
+    The module stays importable without the simulation/robot-app packages: the env
+    is constructed lazily inside :meth:`collect`, so a missing dependency raises a
+    clear error only when collection is actually run.
     """
 
-    def __init__(self, output_dir: str | Path, *, camera_names: list[str] | None = None) -> None:
+    def __init__(
+        self,
+        output_dir: str | Path,
+        *,
+        camera_names: list[str] | None = None,
+        config_name: str = "LogisticsArm",
+        max_steps: int = 200,
+        expert: str = "scripted",  # "scripted" | "teleop"
+        seed: int = 0,
+    ) -> None:
         super().__init__(output_dir)
         self.camera_names = camera_names or ["wrist_cam", "overhead_cam"]
+        self.config_name = config_name
+        self.max_steps = max_steps
+        self.expert = expert
+        self.seed = seed
+
+    def _build_env_and_expert(self):
+        """懒加载 simulation 和 robot-app 依赖"""
+        import sys
+        from pathlib import Path
+
+        # 动态添加 simulation/backend 路径
+        project_root = Path(__file__).resolve().parents[4]
+        sim_backend = project_root / "simulation" / "backend"
+        if str(sim_backend) not in sys.path:
+            sys.path.insert(0, str(sim_backend))
+
+        # 动态添加 robot-app 路径
+        robot_app = project_root / "robot-app"
+        if str(robot_app) not in sys.path:
+            sys.path.insert(0, str(robot_app))
+
+        from backend.rcs_env import SimEnv
+        from backend.rcs_env.envs.configs import get_config
+        from rcs_layer.vla import load_policy
+        from rcs_layer.teleop import KeyboardAdapter
+
+        cfg = get_config(self.config_name)
+        env = SimEnv(
+            robot_type=cfg.robot_type,
+            mjcf_path=cfg.mjcf_path,
+            logic_device_id=cfg.logic_device_id,
+            planner=cfg.planner,
+        )
+        env.reset(seed=self.seed)
+        if self.expert == "teleop":
+            expert = KeyboardAdapter()
+        else:
+            expert = load_policy(kind="scripted", action_dim=env.engine.dof)
+        return env, expert
 
     def collect(self, num_episodes: int, instruction: str) -> Iterator[Episode]:
-        raise NotImplementedError(
-            "SimulationCollector requires a scripted/teleop policy in the "
-            "simulation subproject; see vla-training/README.md"
+        env, expert = self._build_env_and_expert()
+        # optionally wrap with a task (robot-app) to mark episode success
+        try:
+            from robot_app.rcs_layer.tasks import get_task
+
+            task = get_task(instruction) if instruction in ("pallet", "box", "bag") else None
+        except Exception:
+            task = None
+        if task is not None:
+            task.reset()
+
+        for ep_idx in range(num_episodes):
+            obs, info = env.reset()
+            frames: list[Frame] = []
+            success = True
+            for step in range(self.max_steps):
+                if self.expert == "teleop":
+                    action = expert.get_action(obs)
+                else:
+                    action = expert(obs)
+                obs, reward, terminated, truncated, info = env.step(action)
+                frames.append(
+                    Frame(
+                        timestamp_ns=step,
+                        images={cam: f"sim/{cam}/{ep_idx}/{step}.png" for cam in self.camera_names},
+                        joint_positions=list(info.get("joints", [])),
+                        joint_velocities=[0.0] * env.engine.dof,
+                        action=list(np.asarray(action, dtype=float)),
+                        gripper=float(info.get("gripper", 0.0)),
+                    )
+                )
+                if task is not None and task.done(info):
+                    success = True
+                    break
+                if terminated or truncated:
+                    success = False
+                    break
+            yield self.save_episode(f"{self.config_name}_{ep_idx}", instruction, success, frames, task)
+
+    def save_episode(self, episode_id, instruction, success, frames, task) -> Episode:
+        ep = Episode(
+            episode_id=episode_id,
+            instruction=instruction,
+            source=SourceType.SIMULATION,
+            success=success,
+            metadata={"config_name": self.config_name, "expert": self.expert,
+                      "task": getattr(task, "name", None)},
+            frames=frames,
         )
+        self.save(ep)
+        return ep
 
 
 class MqttCollector(TrajectoryCollector):

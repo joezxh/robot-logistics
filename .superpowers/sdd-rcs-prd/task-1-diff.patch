@@ -1,0 +1,126 @@
+# Review package: 12bd17a..d1463ec
+
+## Commits
+d1463ec feat(rcs): add DAG node model with TaskType/SLOClass enums
+
+## Files changed
+ rcs/rcs/dag/__init__.py         |  5 +++++
+ rcs/rcs/dag/exceptions.py       | 14 ++++++++++++++
+ rcs/rcs/dag/node.py             | 30 ++++++++++++++++++++++++++++++
+ rcs/tests/unit/test_dag_node.py | 40 ++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 89 insertions(+)
+
+## Diff
+diff --git a/rcs/rcs/dag/__init__.py b/rcs/rcs/dag/__init__.py
+new file mode 100644
+index 0000000..66da85b
+--- /dev/null
++++ b/rcs/rcs/dag/__init__.py
+@@ -0,0 +1,5 @@
++"""DAG module: TaskNode model, exceptions."""
++from .node import TaskNode, TaskType, SLOClass
++from .exceptions import DAGError, CycleError, NodeNotFoundError
++
++__all__ = ["TaskNode", "TaskType", "SLOClass", "DAGError", "CycleError", "NodeNotFoundError"]
+diff --git a/rcs/rcs/dag/exceptions.py b/rcs/rcs/dag/exceptions.py
+new file mode 100644
+index 0000000..bb1f816
+--- /dev/null
++++ b/rcs/rcs/dag/exceptions.py
+@@ -0,0 +1,14 @@
++"""DAG-related exceptions."""
++
++
++class DAGError(Exception):
++    pass
++
++
++class CycleError(DAGError):
++    """DAG contains a cycle."""
++    pass
++
++
++class NodeNotFoundError(DAGError):
++    pass
+diff --git a/rcs/rcs/dag/node.py b/rcs/rcs/dag/node.py
+new file mode 100644
+index 0000000..82b875a
+--- /dev/null
++++ b/rcs/rcs/dag/node.py
+@@ -0,0 +1,30 @@
++"""DAG node model: TaskNode, TaskType, and SLOClass."""
++from __future__ import annotations
++from dataclasses import dataclass, field
++from datetime import datetime
++from enum import Enum
++
++
++class TaskType(str, Enum):
++    TRANSPORT = "transport"
++    PICK = "pick"
++    PLACE = "place"
++    WAIT = "wait"
++    SYNC = "sync"
++
++
++class SLOClass(str, Enum):
++    HARD = "hard"
++    SOFT = "soft"
++    BEST_EFFORT = "best-effort"
++
++
++@dataclass
++class TaskNode:
++    task_id: str
++    type: TaskType
++    device_id: str | None = None
++    params: dict = field(default_factory=dict)
++    dependencies: list[str] = field(default_factory=list)
++    deadline: datetime | None = None
++    slo_class: SLOClass = SLOClass.SOFT
+diff --git a/rcs/tests/unit/test_dag_node.py b/rcs/tests/unit/test_dag_node.py
+new file mode 100644
+index 0000000..c06243d
+--- /dev/null
++++ b/rcs/tests/unit/test_dag_node.py
+@@ -0,0 +1,40 @@
++"""Tests for DAG node model: TaskNode, TaskType, SLOClass, and DAG exceptions."""
++from __future__ import annotations
++
++from datetime import datetime
++
++from rcs.dag.node import TaskNode, TaskType, SLOClass
++from rcs.dag.exceptions import DAGError
++
++
++def test_task_node_creation_minimal():
++    node = TaskNode(task_id="t1", type=TaskType.TRANSPORT)
++    assert node.task_id == "t1"
++    assert node.type == TaskType.TRANSPORT
++    assert node.device_id is None
++    assert node.dependencies == []
++    assert node.deadline is None
++    assert node.slo_class == SLOClass.SOFT
++
++
++def test_task_node_creation_full():
++    deadline = datetime(2026, 12, 1, 12, 0, 0)
++    node = TaskNode(
++        task_id="t2",
++        type=TaskType.PICK,
++        device_id="loader-01",
++        params={"sku": "A"},
++        dependencies=["t1"],
++        deadline=deadline,
++        slo_class=SLOClass.HARD,
++    )
++    assert node.device_id == "loader-01"
++    assert node.params == {"sku": "A"}
++    assert node.dependencies == ["t1"]
++    assert node.deadline == deadline
++    assert node.slo_class == SLOClass.HARD
++
++
++def test_dag_error_raised():
++    err = DAGError("test message")
++    assert str(err) == "test message"

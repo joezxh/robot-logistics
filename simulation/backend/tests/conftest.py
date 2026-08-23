@@ -22,6 +22,11 @@ sys.path.insert(0, str(REPO_ROOT))
 MONOREPO_ROOT = Path(__file__).resolve().parents[3]
 if str(MONOREPO_ROOT) not in sys.path:
     sys.path.insert(0, str(MONOREPO_ROOT))
+# The shared contract package lives at `shared/python` (one level above the
+# simulation repo). Make it importable so the RCS-aligned layer can use it.
+SHARED_PY = MONOREPO_ROOT / "shared" / "python"
+if str(SHARED_PY) not in sys.path:
+    sys.path.insert(0, str(SHARED_PY))
 
 
 @pytest.fixture(scope="session", autouse=True)

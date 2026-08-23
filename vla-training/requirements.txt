@@ -32,5 +32,8 @@ tensorboard>=2.15
 # --- data collection off the live MQTT bus ---
 paho-mqtt>=1.6,<3.0
 
+# --- shared RCS-aligned data contract (install from ../shared/python) ---
+# robot-contracts>=1.1.0
+
 # --- development ---
 pytest>=7.4

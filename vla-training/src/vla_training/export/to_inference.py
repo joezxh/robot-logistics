@@ -33,10 +33,16 @@ BUNDLE_VERSION = 1
 
 @dataclass
 class InferenceManifest:
-    """Everything the robot needs to use a checkpoint correctly."""
+    """Everything the robot needs to use a checkpoint correctly.
+
+    RCS-aligned: ``robot_type`` declares the target robot using the unified
+    ``RobotType`` taxonomy (RCS stock arms + robot-logic logistics morphologies)
+    so a model is unambiguously bound to the hardware it was trained for.
+    """
 
     bundle_version: int = BUNDLE_VERSION
     base_model: str = ""
+    robot_type: str = ""
     action_dim: int = 0
     action_space: str = "joint_position"
     chunk_size: int = 1
@@ -49,6 +55,7 @@ class InferenceManifest:
         return {
             "bundle_version": self.bundle_version,
             "base_model": self.base_model,
+            "robot_type": self.robot_type,
             "action_dim": self.action_dim,
             "action_space": self.action_space,
             "chunk_size": self.chunk_size,
@@ -63,6 +70,7 @@ class InferenceManifest:
         return cls(
             bundle_version=int(data.get("bundle_version", 0)),
             base_model=str(data.get("base_model", "")),
+            robot_type=str(data.get("robot_type", "")),
             action_dim=int(data.get("action_dim", 0)),
             action_space=str(data.get("action_space", "joint_position")),
             chunk_size=int(data.get("chunk_size", 1)),
@@ -72,7 +80,7 @@ class InferenceManifest:
             action_std=list(data.get("action_std", [])),
         )
 
-    def validate_against_robot(self, *, robot_action_dim: int) -> None:
+    def validate_against_robot(self, *, robot_action_dim: int, robot_type: str = "") -> None:
         """Refuse a model that does not fit the arm it is about to drive.
 
         Called by ``robot_decision`` at load time. Executing a 7-DOF policy on a
@@ -89,6 +97,11 @@ class InferenceManifest:
                 f"model action_dim {self.action_dim} != robot action_dim "
                 f"{robot_action_dim}; refusing to load"
             )
+        if robot_type and self.robot_type and self.robot_type != robot_type:
+            raise ValueError(
+                f"model robot_type {self.robot_type} != robot {robot_type}; "
+                f"refusing to load"
+            )
         if len(self.action_mean) != self.action_dim or len(self.action_std) != self.action_dim:
             raise ValueError("normalisation statistics do not match action_dim")
 
@@ -99,6 +112,7 @@ def build_manifest(config: Mapping[str, Any], stats: DatasetStats) -> InferenceM
     first_image = (get_by_path(config, "observation.images", []) or [{}])[0]
     return InferenceManifest(
         base_model=str(get_by_path(config, "model.base_model", "")),
+        robot_type=str(get_by_path(config, "action.robot_type", "")),
         action_dim=int(get_by_path(config, "action.dim", len(stats.action_mean))),
         action_space=str(get_by_path(config, "action.space", "joint_position")),
         chunk_size=int(get_by_path(config, "action.chunk_size", 1)),
