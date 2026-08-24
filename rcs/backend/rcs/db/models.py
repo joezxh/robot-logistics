@@ -41,6 +41,13 @@ class Device(Base):
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     locked: Mapped[bool] = mapped_column(Boolean, default=False)
     base_pose_in_world: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    # Persisted device spec / params (Phase B)
+    spec_json: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
+    limits_json: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
+    home_joints_json: Mapped[list | None] = mapped_column(JSON, nullable=True, default=list)
+    status: Mapped[str] = mapped_column(String(32), default="registered", index=True)
+
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), default=_now, onupdate=_now
@@ -121,3 +128,88 @@ class TopologyGrid(Base):
     size_m: Mapped[list] = mapped_column(JSON, default=list)
     rotation_deg: Mapped[float] = mapped_column(Float, default=0.0)
     data: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+# ---------------------------------------------------------------------------
+# Phase B additions: site maps (node/edge graph with versions), planning
+# profile library, scheduler configs (single-active), command + event logs.
+# ---------------------------------------------------------------------------
+
+
+class SiteMap(Base):
+    __tablename__ = "site_maps"
+
+    map_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    current_version: Mapped[int] = mapped_column(Integer, default=1)
+    nodes_json: Mapped[list] = mapped_column(JSON, default=list)
+    edges_json: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
+    )
+
+
+class SiteMapVersion(Base):
+    __tablename__ = "site_map_versions"
+
+    version_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    map_id: Mapped[str] = mapped_column(
+        ForeignKey("site_maps.map_id", ondelete="CASCADE"), index=True
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    nodes_json: Mapped[list] = mapped_column(JSON, default=list)
+    edges_json: Mapped[list] = mapped_column(JSON, default=list)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class PlanningProfile(Base):
+    __tablename__ = "planning_profiles"
+
+    profile_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    algo: Mapped[str] = mapped_column(String(32), nullable=False)
+    axes: Mapped[int] = mapped_column(Integer, default=6)
+    vel_max_json: Mapped[list] = mapped_column(JSON, default=list)
+    acc_max_json: Mapped[list] = mapped_column(JSON, default=list)
+    created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class SchedulerConfig(Base):
+    __tablename__ = "scheduler_configs"
+
+    config_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    strategy: Mapped[str] = mapped_column(String(32), default="util-weighted")
+    weights_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    active: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class CommandLog(Base):
+    __tablename__ = "command_logs"
+
+    cmd_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    device_id: Mapped[str] = mapped_column(String(64), index=True)
+    cmd_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    payload_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    issued_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    result: Mapped[str] = mapped_column(String(16), default="ok")
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, index=True
+    )
+
+
+class EventLog(Base):
+    __tablename__ = "event_logs"
+
+    event_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    level: Mapped[str] = mapped_column(String(16), default="info", index=True)
+    source: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    meta_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, index=True
+    )
