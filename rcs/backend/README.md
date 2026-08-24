@@ -26,10 +26,9 @@ docker run -p 8100:8100 rcs-backend
 | 变量 | 默认 | 说明 |
 |------|------|------|
 | `RCS_API_KEY` | `` | API 密钥（留空则禁用） |
-| `RCS_STORAGE` | `memory` | 存储后端（`memory` / `sqlite`） |
+| `RCS_STORAGE` | `memory` | 存储后端（`memory` / `sqlite` / `postgres`） |
 | `RCS_DB_PATH` | `/tmp/rcs.db` | SQLite 路径 |
-| `RCS_SERVICE_URL` | `http://127.0.0.1:8101` | rcs/rcs 子项目 URL |
-| `RCS_EMBEDDED` | `0` | 是否嵌入式（1=导入 rcs 子项目） |
+| `RCS_DATABASE_URL` | `postgresql+asyncpg://rcs:rcs@localhost:5432/rcs` | PostgreSQL 连接（storage=postgres 时生效） |
 
 ## REST API
 

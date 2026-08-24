@@ -1,7 +1,7 @@
 """Convert DXF document into FloorShell."""
-from rcs_backend.topology.dxf_parser import DxfDocument, DxfEntity
-from rcs_backend.topology.dxf_to_shell import dxf_to_shell
-from rcs_backend.models.floor_shell import WallSegment, Zone, Facility
+from rcs.topology.dxf_parser import DxfDocument, DxfEntity
+from rcs.topology.dxf_to_shell import dxf_to_shell
+from rcs.models.floor_shell import WallSegment, Zone, Facility
 
 
 def _doc(entities: list[DxfEntity]) -> DxfDocument:

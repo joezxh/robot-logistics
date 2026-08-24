@@ -1,8 +1,8 @@
 """Integration tests for topology REST endpoints."""
 import pytest
 from fastapi.testclient import TestClient
-from rcs_backend.main import create_app
-from rcs_backend.models.floor_shell import FloorShell, Bounds
+from rcs.main import create_app
+from rcs.models.floor_shell import FloorShell, Bounds
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ def test_shell_list_after_puts(client):
 
 
 # --- Task 12: topology_grid ---
-from rcs_backend.models.site_grid import SiteGrid, Cell, CellType
+from rcs.models.site_grid import SiteGrid, Cell, CellType
 
 
 def test_grid_put_then_get(client):

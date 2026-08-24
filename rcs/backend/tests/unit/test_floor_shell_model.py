@@ -1,5 +1,5 @@
 """Pydantic models for floor blueprint."""
-from rcs_backend.models.floor_shell import (
+from rcs.models.floor_shell import (
     WallSegment, Zone, Facility, Dock, Corridor, Marking, FloorShell, Floor,
 )
 
@@ -40,7 +40,7 @@ def test_floor_shell_with_multi_floor():
 
 def test_zone_type_v2_2_covers_scenarios():
     """v2.2 must accept all 23 zone types from spec §13.3.2."""
-    from rcs_backend.models.floor_shell import ZONE_TYPES
+    from rcs.models.floor_shell import ZONE_TYPES
     expected = {
         # E-commerce
         "flow_rack", "high_rack", "mezzanine", "automated", "temp", "temp_bagged", "returns",

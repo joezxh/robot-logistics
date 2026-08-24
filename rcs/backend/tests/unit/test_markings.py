@@ -1,6 +1,6 @@
 """Auto-generate floor markings from FloorShell."""
-from rcs_backend.topology.markings import generate_markings
-from rcs_backend.models.floor_shell import (
+from rcs.topology.markings import generate_markings
+from rcs.models.floor_shell import (
     FloorShell, Bounds, WallSegment, Corridor, Zone, Marking, Dock,
 )
 

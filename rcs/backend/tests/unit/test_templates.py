@@ -1,10 +1,10 @@
 """6 scenario template factory."""
 import pytest
-from rcs_backend.topology.templates import (
+from rcs.topology.templates import (
     list_templates, get_template, SCENARIO_IDS, TemplateBundle, TemplateInfo,
 )
-from rcs_backend.models.floor_shell import FloorShell
-from rcs_backend.models.site_grid import SiteGrid
+from rcs.models.floor_shell import FloorShell
+from rcs.models.site_grid import SiteGrid
 
 
 def test_scenario_ids_count():

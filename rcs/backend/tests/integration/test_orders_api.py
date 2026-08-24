@@ -1,7 +1,7 @@
 """Integration tests for orders API."""
 import pytest
 from fastapi.testclient import TestClient
-from rcs_backend.main import create_app
+from rcs.main import create_app
 
 
 @pytest.fixture

@@ -3,9 +3,9 @@ requires = ["flit_core >=3.2.0,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "rcs_backend"
+name = "rcs"
 version = "0.1.0"
-description = "RCS unified backend extension layer (topology + orders + DXF)"
+description = "RCS unified backend (control + topology + orders + DXF)"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
@@ -13,8 +13,8 @@ dependencies = [
     "uvicorn[standard]==0.24.0",
     "pydantic==2.4.0",
     "pydantic-settings==2.1.0",
-    "httpx==0.25.0",
-    "aiosqlite>=0.19.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "asyncpg>=0.29.0",
     "numpy>=1.26.0",
     "python-multipart==0.0.6",
     "robot-contracts>=1.1.0",
@@ -25,7 +25,7 @@ dxf = ["ezdxf>=1.1.0"]
 dev = ["pytest==7.4.0", "pytest-asyncio==0.21.0"]
 
 [tool.flit.module]
-name = "rcs_backend"
+name = "rcs"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

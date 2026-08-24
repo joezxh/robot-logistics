@@ -1,0 +1,2 @@
+INFO:     127.0.0.1:57502 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57505 - "GET /api/rcs/topology/templates HTTP/1.1" 404 Not Found

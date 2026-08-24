@@ -1,6 +1,6 @@
 """Pydantic models for site grid (resolution-N raster of CellType)."""
 import pytest
-from rcs_backend.models.site_grid import SiteGrid, Cell, CellType
+from rcs.models.site_grid import SiteGrid, Cell, CellType
 
 
 def test_cell_type_enum_all_members():

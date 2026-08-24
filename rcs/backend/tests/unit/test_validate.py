@@ -1,6 +1,6 @@
 """FloorShell validation — bounds/overlap/zone-types."""
-from rcs_backend.topology.validate import validate_shell, ValidationError, ValidationReport
-from rcs_backend.models.floor_shell import FloorShell, Bounds, WallSegment, Zone, ZONE_TYPES
+from rcs.topology.validate import validate_shell, ValidationError, ValidationReport
+from rcs.models.floor_shell import FloorShell, Bounds, WallSegment, Zone, ZONE_TYPES
 
 
 def _shell(**kw) -> FloorShell:

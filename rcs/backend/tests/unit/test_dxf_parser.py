@@ -1,5 +1,5 @@
 """DXF ASCII parser — ported from wx3D parseDXF (zero external deps)."""
-from rcs_backend.topology.dxf_parser import parse_dxf, DxfEntity, DxfDocument
+from rcs.topology.dxf_parser import parse_dxf, DxfEntity, DxfDocument
 
 
 def test_parse_minimal_line_entity():
