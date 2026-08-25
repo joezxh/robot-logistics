@@ -103,3 +103,37 @@ async def get_order(order_id: str) -> OrderResponse:
         dag=record.get("tasks", []),
         created_at=record["created_at"],
     )
+
+
+@router.get("/orders")
+async def list_orders(status: Optional[str] = None):
+    """List orders, optionally filtered by status (queued/running/done/failed)."""
+    return await repo.list_orders(status=status)
+
+
+@router.put("/orders/{order_id}/status")
+async def advance_status(order_id: str, body: dict):
+    """Advance order lifecycle status (queued -> running -> done/failed/cancelled)."""
+    target = body.get("status", "running")
+    if not await repo.advance_status(order_id, target):
+        raise HTTPException(404, "order not found")
+    return {"order_id": order_id, "status": target}
+
+
+@router.get("/orders/{order_id}/tasks")
+async def order_tasks(order_id: str):
+    """Return DAG task rows for monitoring (status, deps)."""
+    record = await repo.get(order_id)
+    if record is None:
+        raise HTTPException(404, "order not found")
+    return record["tasks"]
+
+
+@router.put("/orders/{order_id}/tasks/{node_id}/status")
+async def set_task_status(order_id: str, node_id: str, body: dict):
+    """Update individual DAG task status."""
+    target = body.get("status", "done")
+    ok = await repo.set_task_status(order_id, node_id, target)
+    if not ok:
+        raise HTTPException(404, "task not found")
+    return {"order_id": order_id, "node_id": node_id, "status": target}

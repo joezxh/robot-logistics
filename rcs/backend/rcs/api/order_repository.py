@@ -5,6 +5,9 @@ import time
 import uuid
 from typing import Optional
 
+from sqlalchemy import select, update as sa_update
+from sqlalchemy.orm import selectinload
+
 from rcs.db import models, session as db_session
 
 
@@ -87,6 +90,42 @@ class OrderRepository:
                 "tasks": tasks,
             }
         return None
+
+    # ---- lifecycle / status machine ----
+    async def list_orders(self, status: Optional[str] = None) -> list[dict]:
+        async for s in db_session.session():
+            stmt = select(models.Order).order_by(models.Order.created_at.desc())
+            if status:
+                stmt = stmt.where(models.Order.status == status)
+            rows = (await s.execute(stmt)).scalars().all()
+            out: list[dict] = []
+            for order in rows:
+                d = await self.get(order.order_id)
+                if d is not None:
+                    out.append(d)
+            return out
+        return []
+
+    async def advance_status(self, order_id: str, status: str) -> bool:
+        async for s in db_session.session():
+            o = await s.get(models.Order, order_id)
+            if o is None:
+                return False
+            o.status = status
+            await s.commit()
+            return True
+        return False
+
+    async def set_task_status(self, order_id: str, node_id: str, status: str) -> bool:
+        async for s in db_session.session():
+            stmt = (sa_update(models.OrderTask)
+                    .where(models.OrderTask.order_id == order_id,
+                           models.OrderTask.node_id == node_id)
+                    .values(status=status))
+            res = await s.execute(stmt)
+            await s.commit()
+            return res.rowcount > 0
+        return False
 
 
 repo = OrderRepository()

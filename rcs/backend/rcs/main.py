@@ -18,6 +18,10 @@ from rcs.control import lifespan as control_lifespan
 from rcs.control import router as control_router
 from rcs.control.devices import service as dev_svc
 from rcs.control.devices.api import router as devices_router
+from rcs.control.topology.api import router as maps_router
+from rcs.control.planning.api import router as planning_router
+from rcs.control.scheduler.api import router as scheduler_router
+from rcs.control.logs.api import router as logs_router
 from rcs.db import init_db
 
 
@@ -51,6 +55,11 @@ def create_app() -> FastAPI:
     app.include_router(orders, prefix="/api/rcs", tags=["orders"])
     # Phase C1: persistent device registry (CRUD under /api/rcs/devices).
     app.include_router(devices_router, prefix="/api/rcs", tags=["devices"])
+    # Phase C2-C6: site maps, planning profiles, scheduler configs, logs.
+    app.include_router(maps_router, prefix="/api/rcs", tags=["maps"])
+    app.include_router(planning_router, prefix="/api/rcs", tags=["planning"])
+    app.include_router(scheduler_router, prefix="/api/rcs", tags=["scheduler"])
+    app.include_router(logs_router, prefix="/api/rcs", tags=["logs"])
     # Embedded control runtime (registry / command / state / estop / WS).
     app.include_router(control_router(), prefix="/api/rcs", tags=["control"])
     return app
