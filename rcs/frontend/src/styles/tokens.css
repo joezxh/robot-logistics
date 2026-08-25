@@ -1,0 +1,15 @@
+:root {
+  --bg: #0f172a;
+  --bg-card: #1e293b;
+  --bg-card-alt: #273449;
+  --fg: #e2e8f0;
+  --fg-soft: #94a3b8;
+  --border: #334155;
+  --accent: #38bdf8;
+  --accent-2: #a78bfa;
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --err: #ef4444;
+  --radius: 8px;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}

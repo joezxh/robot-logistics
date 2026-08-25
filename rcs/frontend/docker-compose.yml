@@ -1,0 +1,17 @@
+services:
+  rcs-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - rcs-backend
+    restart: unless-stopped
+
+  # Reference backend; override image/command to your RCS backend service.
+  rcs-backend:
+    image: ghcr.io/your-org/rcs-backend:latest
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
