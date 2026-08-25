@@ -1,0 +1,28 @@
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple, https://mirrors.aliyun.com/pypi/simple
+Processing d:\projects\robot-logic\simulation\backend\rcs_sim_core
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'error'
+  error: subprocess-exited-with-error
+  
+  × Preparing metadata (pyproject.toml) did not run successfully.
+  │ exit code: 7
+  ╰─> [2 lines of output]
+      ERROR: Unrecognized options in pyproject.toml:
+        tool.scikit-build.minimum-python-version -> Did you mean: tool.scikit-build.minimum-version, tool.scikit-build.null-variant, tool.scikit-build.variant?
+      [end of output]
+  
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+error: metadata-generation-failed
+
+× Encountered error while generating package metadata.
+╰─> See above for output.
+
+note: This is an issue with the package mentioned above, not pip.
+hint: See above for details.
+
+[notice] A new release of pip available: 22.3 -> 26.2.1
+[notice] To update, run: python.exe -m pip install --upgrade pip
