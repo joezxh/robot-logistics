@@ -16,14 +16,17 @@ from rcs.api import (
 )
 from rcs.control import lifespan as control_lifespan
 from rcs.control import router as control_router
+from rcs.control.devices import service as dev_svc
+from rcs.control.devices.api import router as devices_router
 from rcs.db import init_db
 
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
-    # Initialise DB (creates tables when storage is postgres/sqlite) and start
-    # the embedded control loop inside the control lifespan's context.
+    # Initialise DB (creates tables) and seed default device profiles the first
+    # time the deployment boots. Then enter the embedded control loop.
     await init_db()
+    await dev_svc.seed_defaults_if_empty()
     async with control_lifespan():
         settings = get_settings()
         yield {"settings": settings}
@@ -46,6 +49,8 @@ def create_app() -> FastAPI:
     app.include_router(topology_export, prefix="/api/rcs/topology", tags=["export"])
     app.include_router(topology_templates, prefix="/api/rcs/topology", tags=["templates"])
     app.include_router(orders, prefix="/api/rcs", tags=["orders"])
+    # Phase C1: persistent device registry (CRUD under /api/rcs/devices).
+    app.include_router(devices_router, prefix="/api/rcs", tags=["devices"])
     # Embedded control runtime (registry / command / state / estop / WS).
     app.include_router(control_router(), prefix="/api/rcs", tags=["control"])
     return app
