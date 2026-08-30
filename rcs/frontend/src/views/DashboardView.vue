@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Console landing page: platform counters plus the caller's recent activity.
 import { computed, onMounted, ref } from 'vue'
+import { gsap } from 'gsap'
 import { useRouter } from 'vue-router'
 import {
   ApiOutlined,
@@ -32,11 +33,17 @@ const summary = ref<{
 } | null>(null)
 const loading = ref(false)
 
+// GSAP drives these, so the HUD numbers count up instead of snapping into
+// place. Kept as a separate array so the tween never fights with Vue's render.
+const displayValues = ref<number[]>([0, 0, 0, 0])
+const reduceMotion = ref(false)
+
 async function load() {
   loading.value = true
   try {
     const res = await fetchDashboardSummary()
     summary.value = res?.data ?? null
+    animateCounts()
   } catch {
     summary.value = null
   } finally {
@@ -44,7 +51,11 @@ async function load() {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  reduceMotion.value =
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+  load()
+})
 
 const stats = computed(() => [
   {
@@ -76,6 +87,33 @@ const stats = computed(() => [
     color: 'var(--ok)',
   },
 ])
+
+/**
+ * Count the stat values up from zero. Each tile gets its own tween with a small
+ * stagger so the row reads as instruments spinning up rather than one
+ * synchronised animation.
+ */
+function animateCounts() {
+  stats.value.forEach((s, i) => {
+    const target = Number(s.value) || 0
+    if (reduceMotion.value) {
+      displayValues.value[i] = target
+      return
+    }
+    // Tween a plain proxy object and copy the rounded value across, so Vue only
+    // sees whole numbers and never re-renders mid-tween with a fraction.
+    const proxy = { v: displayValues.value[i] ?? 0 }
+    gsap.to(proxy, {
+      v: target,
+      duration: 1.1,
+      ease: 'power2.out',
+      delay: i * 0.08,
+      onUpdate: () => {
+        displayValues.value[i] = Math.round(proxy.v)
+      },
+    })
+  })
+}
 
 /** Leaf pages granted to the user — rendered as quick-launch tiles. */
 const quickLinks = computed(() => {
@@ -124,9 +162,9 @@ function statusColor(status?: number | null): string {
     </header>
 
     <div class="stat-grid">
-      <div v-for="s in stats" :key="s.key" class="stat-tile">
+      <div v-for="(s, i) in stats" :key="s.key" class="stat-tile clip-notch">
         <span class="stat-label">{{ s.label }}</span>
-        <span class="stat-value">{{ s.value }}</span>
+        <span class="stat-value">{{ displayValues[i] ?? 0 }}</span>
         <span class="stat-ico" :style="{ color: s.color }"><component :is="s.icon" /></span>
       </div>
     </div>

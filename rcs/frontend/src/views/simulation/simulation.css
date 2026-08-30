@@ -1,0 +1,251 @@
+/*
+ * Global styles for the embedded simulation console.
+ *
+ * These were originally declared in the standalone app's `App.vue` against
+ * `:root`/bare selectors (`.topbar`, `.panel`, `main`, …). Inside RCS that is
+ * unsafe in both directions:
+ *   - RCS `styles/global.css` defines a global `.panel`, and the console shell
+ *     renders its own `.topbar`, so bare selectors would restyle RCS chrome.
+ *   - The simulation's `:root` variables (`--fg`, `--border`, `--accent`, …)
+ *     collide with RCS design tokens and would recolour the entire console.
+ *
+ * Everything is therefore scoped under `.sim-root`, which `SimulationRoot.vue`
+ * renders. The simulation keeps its own look without leaking out, and RCS
+ * tokens cannot reach in.
+ */
+
+/* --- skin variables (scoped, not :root) ---------------------------------- */
+.sim-root[data-theme='light'] {
+  --bg-app: #f4f6fb;
+  --bg-card: #ffffff;
+  --bg-card-alt: #eef1f8;
+  --bg-grid: #d3d9e7;
+  --bg-hover: #e0e6f1;
+  --fg: #1c2333;
+  --fg-muted: #4b5566;
+  --fg-soft: #6c7891;
+  --border: #d3d9e7;
+  --accent: #2a72d8;
+  --accent-soft: #5a8eea;
+  --good: #1f8a4c;
+  --warn: #d68910;
+  --bad: #c0392b;
+  --shadow: 0 6px 20px rgba(31, 41, 60, 0.08);
+}
+
+.sim-root,
+.sim-root[data-theme='dark'] {
+  --bg-app: #0b1220;
+  --bg-card: #111a2e;
+  --bg-card-alt: #0e1730;
+  --bg-grid: #1d2740;
+  --bg-hover: #14213d;
+  --fg: #e6e9ef;
+  --fg-muted: #c7d2e0;
+  --fg-soft: #8a98ad;
+  --border: #1d2740;
+  --accent: #5eb0ff;
+  --accent-soft: #58c47e;
+  --good: #1f8a4c;
+  --warn: #d68910;
+  --bad: #c0392b;
+  --shadow: none;
+}
+
+/* --- surface -------------------------------------------------------------- */
+.sim-root,
+.sim-root * {
+  box-sizing: border-box;
+}
+
+.sim-root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', 'PingFang SC',
+    'Microsoft YaHei', Arial, sans-serif;
+  background: var(--bg-app);
+  color: var(--fg);
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+.sim-root .card,
+.sim-root .topbar,
+.sim-root .modal,
+.sim-root .drawer,
+.sim-root .dialog,
+.sim-root .menu,
+.sim-root .scene,
+.sim-root .timeline,
+.sim-root .hud,
+.sim-root .dashboard,
+.sim-root .panel,
+.sim-root .palette {
+  transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+}
+
+/* --- topbar --------------------------------------------------------------- */
+.sim-root .topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  flex-wrap: nowrap;
+}
+.sim-root .brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sim-root .brand .logo {
+  font-size: 20px;
+}
+.sim-root .topbar h1 {
+  font-size: 16px;
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.sim-root .topbar .subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--fg-soft);
+}
+.sim-root .topbar .grow {
+  flex: 1;
+}
+.sim-root .topbar .badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--good);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+}
+.sim-root .topbar .docs {
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.sim-root .topbar .docs:hover {
+  background: var(--bg-card-alt);
+}
+.sim-root .topbar .iconbtn {
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  width: auto;
+  min-width: 32px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.sim-root .topbar .iconbtn:hover {
+  background: var(--bg-hover);
+}
+
+/* --- dashboard grid ------------------------------------------------------ */
+.sim-root main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 460px;
+  grid-template-rows: minmax(440px, auto) 320px auto;
+  gap: 12px;
+  padding: 12px;
+  height: calc(100% - 52px);
+}
+.sim-root main.has-drawer {
+  grid-template-columns: minmax(0, 1fr) 320px 460px;
+}
+.sim-root .scene {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+  min-height: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+.sim-root .scene::before {
+  content: attr(data-caption);
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 11px;
+  color: var(--fg-soft);
+  z-index: 1;
+  pointer-events: none;
+}
+.sim-root .timeline {
+  grid-column: 1 / 2;
+  grid-row: 2 / 4;
+  min-height: 0;
+}
+.sim-root .drawer {
+  grid-column: 2 / 3;
+  grid-row: 1 / 4;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-y: auto;
+}
+.sim-root .panel {
+  grid-column: 3 / 4;
+  grid-row: 1 / 4;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.sim-root main:not(.has-drawer) .panel {
+  grid-column: 2 / 3;
+}
+
+@media (max-width: 1100px) {
+  .sim-root main,
+  .sim-root main.has-drawer {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+  }
+  .sim-root .panel,
+  .sim-root .scene,
+  .sim-root .dashboard,
+  .sim-root .drawer {
+    grid-column: 1 / 2;
+    grid-row: auto;
+  }
+  .sim-root .topbar .subtitle {
+    display: none;
+  }
+}
+
+/* Scoped so these don't clash with the console shell's own `fade` transition. */
+.sim-root .fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.sim-root .fade-enter-active {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.sim-root .fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.sim-root .fade-leave-to {
+  opacity: 0;
+}

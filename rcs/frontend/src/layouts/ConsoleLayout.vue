@@ -10,9 +10,9 @@ import AppHeader from './components/AppHeader.vue'
     <a-layout class="workspace-main">
       <AppHeader />
 
-      <a-layout-content class="workspace-content">
+      <a-layout-content class="workspace-content hud-grid">
         <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
+          <transition name="page" mode="out-in">
             <component :is="Component" />
           </transition>
         </router-view>

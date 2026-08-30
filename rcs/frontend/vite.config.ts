@@ -21,6 +21,14 @@ export default defineConfig({
         target: 'http://localhost:8100',
         changeOrigin: true,
       },
+      // Simulation backend. MUST stay last: Vite matches proxy keys in
+      // declaration order, and /api/rcs + /api/sys above belong to RCS.
+      // Everything else under /api (tasks, devices, scenes, warehouse, plus the
+      // SSE streams) is served by the simulation service.
+      '/api': {
+        target: process.env.VITE_SIM_API || 'http://localhost:8000',
+        changeOrigin: true,
+      },
     },
   },
   test: {

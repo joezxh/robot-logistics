@@ -107,6 +107,7 @@ function onPortalClick({ key }: { key: string | number }) {
 
     <div class="spacer" />
 
+    <span class="live-dot" aria-hidden="true" />
     <span class="clock mono">{{ currentTime }}</span>
 
     <a-dropdown>
@@ -157,6 +158,7 @@ function onPortalClick({ key }: { key: string | number }) {
 
 <style scoped>
 .topbar {
+  position: relative;
   height: var(--header-h);
   display: flex;
   align-items: center;
@@ -169,6 +171,20 @@ function onPortalClick({ key }: { key: string | number }) {
   flex-shrink: 0;
 }
 
+/* Thin accent "system bus" line along the bottom edge of the header — reads as
+ * a live instrument rail rather than a plain 1px divider. */
+.topbar::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .topbar-title {
   display: flex;
   flex-direction: column;
@@ -176,9 +192,10 @@ function onPortalClick({ key }: { key: string | number }) {
 }
 
 .kicker {
-  font-family: var(--font-mono);
+  font-family: var(--font-tech);
   font-size: 10px;
-  letter-spacing: 0.18em;
+  font-weight: 600;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--accent);
 }
@@ -201,6 +218,35 @@ function onPortalClick({ key }: { key: string | number }) {
   font-size: 12px;
   color: var(--fg-secondary);
   white-space: nowrap;
+}
+
+/* Pulsing "system live" indicator sitting next to the clock. */
+.live-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: var(--glow-ok);
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    animation: none;
+  }
 }
 
 .icon-btn {
@@ -282,6 +328,7 @@ function onPortalClick({ key }: { key: string | number }) {
 }
 
 @media (max-width: 900px) {
+  .live-dot,
   .clock,
   .topbar-title {
     display: none;

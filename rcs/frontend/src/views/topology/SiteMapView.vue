@@ -4,19 +4,16 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useScenarioStore } from '@/stores/scenario'
 import { useFloorShellStore } from '@/stores/floorShell'
-import { useSiteGridStore } from '@/stores/siteGrid'
 import DeviceMap2D from '@/components/DeviceMap2D/DeviceMap2D.vue'
 import DeviceMap3D from '@/components/DeviceMap3D/DeviceMap3D.vue'
 import ScenarioPanel from '@/components/scenarios/ScenarioPanel.vue'
 import OrderPanel from '@/components/orders/OrderPanel.vue'
-import { scenarioName } from '@/i18n'
-import type { ScenarioId } from '@/types'
+import { templateDisplayName } from '@/api/warehouseTemplates'
 
 const { t, locale } = useI18n()
 const scenarioStore = useScenarioStore()
 const floorStore = useFloorShellStore()
-const gridStore = useSiteGridStore()
-const { templates, selected, error } = storeToRefs(scenarioStore)
+const { templates, selected, selectedTemplate, error } = storeToRefs(scenarioStore)
 const { shell } = storeToRefs(floorStore)
 
 const view = ref<'2d' | '3d'>('2d')
@@ -25,10 +22,16 @@ const floorIndex = ref<number | undefined>(undefined)
 const floorCount = computed(() => shell.value?.floors?.length ?? 0)
 const showFloorSelector = computed(() => floorCount.value > 0)
 
-async function selectScenario(id: ScenarioId) {
-  scenarioStore.select(id)
+/**
+ * Load a database template. The FloorShell is stored under the template's
+ * `site_id` (identical to its `map_id`), so it comes from the shell endpoint
+ * rather than from a hard-coded scenario bundle.
+ */
+async function selectTemplate(key: string) {
+  scenarioStore.select(key)
   floorIndex.value = undefined
-  await Promise.all([floorStore.loadByScenario(id), gridStore.loadByScenario(id)])
+  const tpl = scenarioStore.templateByKey(key)
+  if (tpl) await floorStore.loadBySite(tpl.site_id)
 }
 
 function onViewModeChange(e: { target: { value: '2d' | '3d' } }) {
@@ -37,17 +40,18 @@ function onViewModeChange(e: { target: { value: '2d' | '3d' } }) {
 
 onMounted(async () => {
   await scenarioStore.loadTemplates()
-  if (selected.value) await selectScenario(selected.value)
+  if (selected.value) await selectTemplate(selected.value)
 })
 
-watch(selected, (id) => {
-  if (id) selectScenario(id)
+watch(selected, (key) => {
+  if (key) selectTemplate(key)
 })
 
-const scenarioOptions = computed(() =>
+// Names come from the backend (zh + en), so no i18n key is needed per template.
+const templateOptions = computed(() =>
   templates.value.map((tpl) => ({
-    id: tpl.scenario_id,
-    name: scenarioName(tpl.scenario_id, locale.value as 'zh-CN' | 'en-US'),
+    key: tpl.key,
+    name: templateDisplayName(tpl, locale.value),
   })),
 )
 </script>
@@ -59,11 +63,11 @@ const scenarioOptions = computed(() =>
       <div class="controls">
         <a-select
           :value="selected"
-          style="width: 200px"
+          style="width: 260px"
           :placeholder="t('scenario.select')"
-          @change="selectScenario($event as ScenarioId)"
+          @change="selectTemplate($event as string)"
         >
-          <a-select-option v-for="o in scenarioOptions" :key="o.id" :value="o.id">
+          <a-select-option v-for="o in templateOptions" :key="o.key" :value="o.key">
             {{ o.name }}
           </a-select-option>
         </a-select>
@@ -93,7 +97,12 @@ const scenarioOptions = computed(() =>
         <DeviceMap3D v-else :shell="shell" :floor-index="floorIndex" />
       </section>
       <aside class="side">
-        <ScenarioPanel v-if="selected" :scenario-id="selected" :shell="shell" />
+        <ScenarioPanel
+          v-if="selectedTemplate"
+          :category="selectedTemplate.category"
+          :title="templateDisplayName(selectedTemplate, locale)"
+          :shell="shell"
+        />
         <OrderPanel v-if="selected" :scenario-id="selected" />
       </aside>
     </div>

@@ -3,13 +3,60 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
+import type { MenuNode } from '@/types'
 import SidebarItem from './SidebarItem.vue'
 
 const router = useRouter()
 const app = useAppStore()
 const auth = useAuthStore()
 
-const menus = computed(() => auth.menus)
+/**
+ * The simulation console is rendered from data served by the simulation
+ * backend, which holds no rows in `sys_menu` — so it can never appear in the
+ * permission-filtered tree returned by `/api/sys/auth/me/menus`.
+ *
+ * These synthetic nodes give it a stable home in the rail. They are display-only:
+ * the routes themselves are registered as built-ins in `router/dynamic.ts`, so
+ * authorisation behaviour is unchanged (built-in routes carry no permission).
+ * IDs are negative to avoid colliding with real `sys_menu.id` values.
+ */
+function leaf(id: number, name: string, path: string, icon: string): MenuNode {
+  return {
+    id,
+    name,
+    i18n: {},
+    path,
+    icon,
+    type: 2,
+    sort: 0,
+    status: 1,
+    visible: 1,
+    keepAlive: 0,
+    alwaysShow: 0,
+    children: [],
+  }
+}
+
+const SIMULATION_MENU: MenuNode = {
+  id: -1000,
+  name: '仿真中心',
+  i18n: {},
+  path: '/simulation',
+  icon: 'RobotOutlined',
+  type: 1,
+  sort: 999,
+  status: 1,
+  visible: 1,
+  keepAlive: 0,
+  alwaysShow: 1,
+  children: [
+    leaf(-1001, '仿真总览', '/simulation', 'DashboardOutlined'),
+    leaf(-1002, '场景仿真', '/simulation/scenes', 'ThunderboltOutlined'),
+    leaf(-1003, '仓储仿真', '/simulation/warehouse', 'ApartmentOutlined'),
+  ],
+}
+
+const menus = computed(() => [...auth.menus, SIMULATION_MENU])
 const collapsed = computed(() => app.sidebarCollapsed)
 
 const roleText = computed(() => {

@@ -15,6 +15,7 @@ from rcs.api import (
     topology_export, topology_templates, orders,
 )
 from rcs.api.warehouse_import_api import router as warehouse_router
+from rcs.api.warehouse_inventory_api import router as warehouse_inventory_router
 from rcs.control import lifespan as control_lifespan
 from rcs.control import router as control_router
 from rcs.api.control.control_devices import router as devices_router
@@ -67,6 +68,8 @@ def create_app() -> FastAPI:
     app.include_router(orders, prefix="/api/rcs", tags=["orders"])
     # Warehouse Theatre 3D integration
     app.include_router(warehouse_router, prefix="/api/rcs", tags=["warehouse"])
+    # Warehouse inventory domain (WMS layer: slots / items / AGV / tasks)
+    app.include_router(warehouse_inventory_router, prefix="/api/rcs", tags=["warehouse-inventory"])
     # Phase C1: persistent device registry (CRUD under /api/rcs/devices).
     app.include_router(devices_router, prefix="/api/rcs", tags=["devices"])
     # Phase C2-C6: site maps, planning profiles, scheduler configs, logs.

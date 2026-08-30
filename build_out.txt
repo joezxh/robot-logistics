@@ -1,0 +1,178 @@
+
+> rcs-frontend@2.2.0 build D:\projects\robot-logic\rcs\frontend
+> vue-tsc --noEmit && vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 4101 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                                                             [39m[1m[2m    0.41 kB[22m[1m[22m[2m │ gzip:   0.28 kB[22m
+[2mdist/[22m[32massets/orbitron-latin-700-normal-4jsRXGGJ.woff2                        [39m[1m[2m    6.53 kB[22m[1m[22m
+[2mdist/[22m[32massets/orbitron-latin-500-normal-DQ2gt4P1.woff2                        [39m[1m[2m    6.60 kB[22m[1m[22m
+[2mdist/[22m[32massets/orbitron-latin-700-normal-DmYOh-W9.woff                         [39m[1m[2m    8.97 kB[22m[1m[22m
+[2mdist/[22m[32massets/orbitron-latin-500-normal-BCCupJ8c.woff                         [39m[1m[2m    9.03 kB[22m[1m[22m
+[2mdist/[22m[32massets/chakra-petch-latin-400-normal-SafcrIr2.woff2                    [39m[1m[2m    9.76 kB[22m[1m[22m
+[2mdist/[22m[32massets/chakra-petch-latin-600-normal-DVQm9bgb.woff2                    [39m[1m[2m    9.97 kB[22m[1m[22m
+[2mdist/[22m[32massets/chakra-petch-latin-400-normal-D7EtbySE.woff                     [39m[1m[2m   13.16 kB[22m[1m[22m
+[2mdist/[22m[32massets/chakra-petch-latin-600-normal-DQKfcdKo.woff                     [39m[1m[2m   13.43 kB[22m[1m[22m
+[2mdist/[22m[35massets/AdminSchedulerView-uao3TKYU.css                                 [39m[1m[2m    0.05 kB[22m[1m[22m[2m │ gzip:   0.07 kB[22m
+[2mdist/[22m[35massets/SceneBag-DHVWfP-0.css                                           [39m[1m[2m    0.06 kB[22m[1m[22m[2m │ gzip:   0.07 kB[22m
+[2mdist/[22m[35massets/SceneBox-CraTDaum.css                                           [39m[1m[2m    0.06 kB[22m[1m[22m[2m │ gzip:   0.07 kB[22m
+[2mdist/[22m[35massets/ScenePallet-CR5OC5v0.css                                        [39m[1m[2m    0.06 kB[22m[1m[22m[2m │ gzip:   0.07 kB[22m
+[2mdist/[22m[35massets/AdminLogsView-2cSodZON.css                                      [39m[1m[2m    0.07 kB[22m[1m[22m[2m │ gzip:   0.09 kB[22m
+[2mdist/[22m[35massets/RoleManage-DwWjXOAC.css                                         [39m[1m[2m    0.07 kB[22m[1m[22m[2m │ gzip:   0.08 kB[22m
+[2mdist/[22m[35massets/DictManage-pIgQ2TE0.css                                         [39m[1m[2m    0.09 kB[22m[1m[22m[2m │ gzip:   0.09 kB[22m
+[2mdist/[22m[35massets/UserManage-BIiiOGZK.css                                         [39m[1m[2m    0.09 kB[22m[1m[22m[2m │ gzip:   0.09 kB[22m
+[2mdist/[22m[35massets/AdminOrdersView-BYqBmjO1.css                                    [39m[1m[2m    0.12 kB[22m[1m[22m[2m │ gzip:   0.13 kB[22m
+[2mdist/[22m[35massets/MenuManage-DV26A0rv.css                                         [39m[1m[2m    0.19 kB[22m[1m[22m[2m │ gzip:   0.14 kB[22m
+[2mdist/[22m[35massets/DeviceMap3D-CdnNwu0_.css                                        [39m[1m[2m    0.21 kB[22m[1m[22m[2m │ gzip:   0.15 kB[22m
+[2mdist/[22m[35massets/TaskTimeline-Ddmc5jSl.css                                       [39m[1m[2m    0.25 kB[22m[1m[22m[2m │ gzip:   0.18 kB[22m
+[2mdist/[22m[35massets/ProfileView-HUpmnpx7.css                                        [39m[1m[2m    0.32 kB[22m[1m[22m[2m │ gzip:   0.20 kB[22m
+[2mdist/[22m[35massets/AdminDevicesView-Cq1zPu08.css                                   [39m[1m[2m    0.42 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2mdist/[22m[35massets/NotFoundView-B1eLOZmi.css                                       [39m[1m[2m    0.42 kB[22m[1m[22m[2m │ gzip:   0.27 kB[22m
+[2mdist/[22m[35massets/AdminMapsView-DECOg6yc.css                                      [39m[1m[2m    0.49 kB[22m[1m[22m[2m │ gzip:   0.27 kB[22m
+[2mdist/[22m[35massets/AuditLog-DDZobKpX.css                                           [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist/[22m[35massets/BottomBar-kIAWM07X.css                                          [39m[1m[2m    0.56 kB[22m[1m[22m[2m │ gzip:   0.33 kB[22m
+[2mdist/[22m[35massets/StatusBar-VwVVI6XX.css                                          [39m[1m[2m    0.61 kB[22m[1m[22m[2m │ gzip:   0.35 kB[22m
+[2mdist/[22m[35massets/DashboardView-Dr0TZD2l.css                                      [39m[1m[2m    0.69 kB[22m[1m[22m[2m │ gzip:   0.37 kB[22m
+[2mdist/[22m[35massets/Kpi-B9fMK1Fv.css                                                [39m[1m[2m    0.80 kB[22m[1m[22m[2m │ gzip:   0.39 kB[22m
+[2mdist/[22m[35massets/ProgressRing-BsRB9NdE.css                                       [39m[1m[2m    0.84 kB[22m[1m[22m[2m │ gzip:   0.37 kB[22m
+[2mdist/[22m[35massets/DashboardGrid-BMGL6a8d.css                                      [39m[1m[2m    1.05 kB[22m[1m[22m[2m │ gzip:   0.46 kB[22m
+[2mdist/[22m[35massets/ScenesPage-BsoXE-D-.css                                         [39m[1m[2m    1.15 kB[22m[1m[22m[2m │ gzip:   0.41 kB[22m
+[2mdist/[22m[35massets/SceneStage-BA2TqVHu.css                                         [39m[1m[2m    1.22 kB[22m[1m[22m[2m │ gzip:   0.45 kB[22m
+[2mdist/[22m[35massets/TaskCreate-Mayf4zZK.css                                         [39m[1m[2m    1.25 kB[22m[1m[22m[2m │ gzip:   0.49 kB[22m
+[2mdist/[22m[35massets/KpiZoom-A7e9_dx0.css                                            [39m[1m[2m    1.29 kB[22m[1m[22m[2m │ gzip:   0.52 kB[22m
+[2mdist/[22m[35massets/AislePicker-BjAOEUUE.css                                        [39m[1m[2m    1.40 kB[22m[1m[22m[2m │ gzip:   0.57 kB[22m
+[2mdist/[22m[35massets/UserMenu-Bh84CUzp.css                                           [39m[1m[2m    1.45 kB[22m[1m[22m[2m │ gzip:   0.58 kB[22m
+[2mdist/[22m[35massets/Stats-CQY0zrUL.css                                              [39m[1m[2m    1.49 kB[22m[1m[22m[2m │ gzip:   0.53 kB[22m
+[2mdist/[22m[35massets/RightTabs-DpTmfYHu.css                                          [39m[1m[2m    1.49 kB[22m[1m[22m[2m │ gzip:   0.51 kB[22m
+[2mdist/[22m[35massets/HelpOverlay-DzDFDUzB.css                                        [39m[1m[2m    1.55 kB[22m[1m[22m[2m │ gzip:   0.61 kB[22m
+[2mdist/[22m[35massets/AGVGridModal-BmSSFY3p.css                                       [39m[1m[2m    1.56 kB[22m[1m[22m[2m │ gzip:   0.57 kB[22m
+[2mdist/[22m[35massets/CommandPalette-BZYK5VRC.css                                     [39m[1m[2m    1.59 kB[22m[1m[22m[2m │ gzip:   0.61 kB[22m
+[2mdist/[22m[35massets/ToastHost-D2hCYbpT.css                                          [39m[1m[2m    1.61 kB[22m[1m[22m[2m │ gzip:   0.62 kB[22m
+[2mdist/[22m[35massets/DetailPanel-C1dszzHX.css                                        [39m[1m[2m    1.67 kB[22m[1m[22m[2m │ gzip:   0.60 kB[22m
+[2mdist/[22m[35massets/Sidebar-CABt5voS.css                                            [39m[1m[2m    1.72 kB[22m[1m[22m[2m │ gzip:   0.63 kB[22m
+[2mdist/[22m[35massets/WarehouseView-BS9j0Pf4.css                                      [39m[1m[2m    1.81 kB[22m[1m[22m[2m │ gzip:   0.77 kB[22m
+[2mdist/[22m[35massets/OnboardOverlay-C4ndsWEL.css                                     [39m[1m[2m    1.86 kB[22m[1m[22m[2m │ gzip:   0.65 kB[22m
+[2mdist/[22m[35massets/OrderPanel-DHG2VzuA.css                                         [39m[1m[2m    1.96 kB[22m[1m[22m[2m │ gzip:   0.57 kB[22m
+[2mdist/[22m[35massets/ControlView-DNrQOS9M.css                                        [39m[1m[2m    1.97 kB[22m[1m[22m[2m │ gzip:   0.57 kB[22m
+[2mdist/[22m[35massets/SiteMapView-B918CjB4.css                                        [39m[1m[2m    2.03 kB[22m[1m[22m[2m │ gzip:   0.66 kB[22m
+[2mdist/[22m[35massets/WarehouseScene-CptezpUW.css                                     [39m[1m[2m    2.10 kB[22m[1m[22m[2m │ gzip:   0.62 kB[22m
+[2mdist/[22m[35massets/Rollback-CPURWLCk.css                                           [39m[1m[2m    2.10 kB[22m[1m[22m[2m │ gzip:   0.64 kB[22m
+[2mdist/[22m[35massets/WarehouseView-CwrlPLxh.css                                      [39m[1m[2m    2.14 kB[22m[1m[22m[2m │ gzip:   0.65 kB[22m
+[2mdist/[22m[35massets/LogViewer-BC8f9u1p.css                                          [39m[1m[2m    2.17 kB[22m[1m[22m[2m │ gzip:   0.81 kB[22m
+[2mdist/[22m[35massets/TaskQueue-DS-yy7oL.css                                          [39m[1m[2m    2.46 kB[22m[1m[22m[2m │ gzip:   0.81 kB[22m
+[2mdist/[22m[35massets/Alerts-D3YL18-Z.css                                             [39m[1m[2m    2.71 kB[22m[1m[22m[2m │ gzip:   0.86 kB[22m
+[2mdist/[22m[35massets/DeviceDrawer-B51z4S91.css                                       [39m[1m[2m    2.87 kB[22m[1m[22m[2m │ gzip:   0.84 kB[22m
+[2mdist/[22m[35massets/LoginView-DmK0MkCk.css                                          [39m[1m[2m    3.22 kB[22m[1m[22m[2m │ gzip:   1.03 kB[22m
+[2mdist/[22m[35massets/View2D-CaewCC6-.css                                             [39m[1m[2m    3.23 kB[22m[1m[22m[2m │ gzip:   1.05 kB[22m
+[2mdist/[22m[35massets/TaskDrawer-COMvMv3v.css                                         [39m[1m[2m    3.36 kB[22m[1m[22m[2m │ gzip:   1.01 kB[22m
+[2mdist/[22m[35massets/TopBar-wrPtrYuY.css                                             [39m[1m[2m    3.66 kB[22m[1m[22m[2m │ gzip:   1.07 kB[22m
+[2mdist/[22m[35massets/FloorPlanModal-CEkXR4bh.css                                     [39m[1m[2m    3.77 kB[22m[1m[22m[2m │ gzip:   1.08 kB[22m
+[2mdist/[22m[35massets/SiteManager-B9D0Cgmc.css                                        [39m[1m[2m    3.82 kB[22m[1m[22m[2m │ gzip:   0.96 kB[22m
+[2mdist/[22m[35massets/SimulationRoot-B02-V4sV.css                                     [39m[1m[2m    3.82 kB[22m[1m[22m[2m │ gzip:   1.31 kB[22m
+[2mdist/[22m[35massets/DeviceStatus-BnTvD3-v.css                                       [39m[1m[2m    6.55 kB[22m[1m[22m[2m │ gzip:   1.55 kB[22m
+[2mdist/[22m[35massets/ConsoleLayout-BEtGjfBi.css                                      [39m[1m[2m    6.82 kB[22m[1m[22m[2m │ gzip:   1.71 kB[22m
+[2mdist/[22m[35massets/index-BHFpH9AS.css                                              [39m[1m[2m   15.00 kB[22m[1m[22m[2m │ gzip:   3.77 kB[22m
+[2mdist/[22m[36massets/_plugin-vue_export-helper-DlAUqK2U.js                           [39m[1m[2m    0.09 kB[22m[1m[22m[2m │ gzip:   0.10 kB[22m
+[2mdist/[22m[36massets/topologyShell-BaEYKPhT.js                                       [39m[1m[2m    0.13 kB[22m[1m[22m[2m │ gzip:   0.14 kB[22m
+[2mdist/[22m[36massets/warehouse-BXcoVIeq.js                                           [39m[1m[2m    0.18 kB[22m[1m[22m[2m │ gzip:   0.15 kB[22m
+[2mdist/[22m[36massets/SimulationRoot-UmkmwBLD.js                                      [39m[1m[2m    0.22 kB[22m[1m[22m[2m │ gzip:   0.18 kB[22m
+[2mdist/[22m[36massets/sysMenus-DfcdII4n.js                                            [39m[1m[2m    0.25 kB[22m[1m[22m[2m │ gzip:   0.19 kB[22m
+[2mdist/[22m[36massets/sectorHelper-CKuqcoj0.js                                        [39m[1m[2m    0.27 kB[22m[1m[22m[2m │ gzip:   0.22 kB[22m
+[2mdist/[22m[36massets/sysRoles-BKnHPEbS.js                                            [39m[1m[2m    0.31 kB[22m[1m[22m[2m │ gzip:   0.21 kB[22m
+[2mdist/[22m[36massets/kpiZoomBus-C924FmgB.js                                          [39m[1m[2m    0.36 kB[22m[1m[22m[2m │ gzip:   0.26 kB[22m
+[2mdist/[22m[36massets/theme-C2iAX7Yt.js                                               [39m[1m[2m    0.37 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/orders-AdYmX-qY.js                                              [39m[1m[2m    0.46 kB[22m[1m[22m[2m │ gzip:   0.23 kB[22m
+[2mdist/[22m[36massets/taskDrawerBus-Q5GGLV5X.js                                       [39m[1m[2m    0.56 kB[22m[1m[22m[2m │ gzip:   0.36 kB[22m
+[2mdist/[22m[36massets/WarehouseView-t2-OKSM2.js                                       [39m[1m[2m    0.60 kB[22m[1m[22m[2m │ gzip:   0.36 kB[22m
+[2mdist/[22m[36massets/NotFoundView-ByO18V49.js                                        [39m[1m[2m    0.61 kB[22m[1m[22m[2m │ gzip:   0.43 kB[22m
+[2mdist/[22m[36massets/toast-U1BiW_dF.js                                               [39m[1m[2m    0.62 kB[22m[1m[22m[2m │ gzip:   0.33 kB[22m
+[2mdist/[22m[36massets/ScenesEntry-CocMuUs9.js                                         [39m[1m[2m    0.70 kB[22m[1m[22m[2m │ gzip:   0.43 kB[22m
+[2mdist/[22m[36massets/WarehouseEntry-Bt6MxJ_m.js                                      [39m[1m[2m    0.91 kB[22m[1m[22m[2m │ gzip:   0.52 kB[22m
+[2mdist/[22m[36massets/StatusBar-BT-i17FS.js                                           [39m[1m[2m    0.93 kB[22m[1m[22m[2m │ gzip:   0.57 kB[22m
+[2mdist/[22m[36massets/UserMenu-DLpQLrmZ.js                                            [39m[1m[2m    0.98 kB[22m[1m[22m[2m │ gzip:   0.62 kB[22m
+[2mdist/[22m[36massets/http-D3XID8fe.js                                                [39m[1m[2m    1.01 kB[22m[1m[22m[2m │ gzip:   0.56 kB[22m
+[2mdist/[22m[36massets/ToastHost-hWsj-Ei6.js                                           [39m[1m[2m    1.10 kB[22m[1m[22m[2m │ gzip:   0.67 kB[22m
+[2mdist/[22m[36massets/dataSample-pgiLWvyV.js                                          [39m[1m[2m    1.10 kB[22m[1m[22m[2m │ gzip:   0.57 kB[22m
+[2mdist/[22m[36massets/ProgressRing-BW6PENaF.js                                        [39m[1m[2m    1.12 kB[22m[1m[22m[2m │ gzip:   0.63 kB[22m
+[2mdist/[22m[36massets/AislePicker-ZkJOQOjb.js                                         [39m[1m[2m    1.15 kB[22m[1m[22m[2m │ gzip:   0.69 kB[22m
+[2mdist/[22m[36massets/BottomBar-HV670sXw.js                                           [39m[1m[2m    1.22 kB[22m[1m[22m[2m │ gzip:   0.66 kB[22m
+[2mdist/[22m[36massets/Sidebar-Bxz2Z5do.js                                             [39m[1m[2m    1.24 kB[22m[1m[22m[2m │ gzip:   0.75 kB[22m
+[2mdist/[22m[36massets/DashboardPage-BruWQWvP.js                                       [39m[1m[2m    1.34 kB[22m[1m[22m[2m │ gzip:   0.65 kB[22m
+[2mdist/[22m[36massets/DashboardEntry-CCMRTCqy.js                                      [39m[1m[2m    1.57 kB[22m[1m[22m[2m │ gzip:   0.79 kB[22m
+[2mdist/[22m[36massets/SimulationRoot.vue_vue_type_script_setup_true_lang-CMORITr5.js  [39m[1m[2m    1.60 kB[22m[1m[22m[2m │ gzip:   0.86 kB[22m
+[2mdist/[22m[36massets/ScenesPage-GqolYOlt.js                                          [39m[1m[2m    1.64 kB[22m[1m[22m[2m │ gzip:   0.99 kB[22m
+[2mdist/[22m[36massets/AGVGridModal-DAX2NCbT.js                                        [39m[1m[2m    1.70 kB[22m[1m[22m[2m │ gzip:   0.98 kB[22m
+[2mdist/[22m[36massets/RightTabs-CYpKhzOv.js                                           [39m[1m[2m    1.77 kB[22m[1m[22m[2m │ gzip:   0.97 kB[22m
+[2mdist/[22m[36massets/DetailPanel-wsK6PdUp.js                                         [39m[1m[2m    1.85 kB[22m[1m[22m[2m │ gzip:   0.91 kB[22m
+[2mdist/[22m[36massets/TaskTimeline-qsFlz69x.js                                        [39m[1m[2m    2.01 kB[22m[1m[22m[2m │ gzip:   1.21 kB[22m
+[2mdist/[22m[36massets/SceneBag-DFocdbhD.js                                            [39m[1m[2m    2.03 kB[22m[1m[22m[2m │ gzip:   1.16 kB[22m
+[2mdist/[22m[36massets/OnboardOverlay-CLgx5JF8.js                                      [39m[1m[2m    2.08 kB[22m[1m[22m[2m │ gzip:   1.12 kB[22m
+[2mdist/[22m[36massets/HelpOverlay-C5mfKm1P.js                                         [39m[1m[2m    2.12 kB[22m[1m[22m[2m │ gzip:   1.25 kB[22m
+[2mdist/[22m[36massets/Kpi-D0RFXrVa.js                                                 [39m[1m[2m    2.13 kB[22m[1m[22m[2m │ gzip:   1.16 kB[22m
+[2mdist/[22m[36massets/Rollback-4eclvodg.js                                            [39m[1m[2m    2.16 kB[22m[1m[22m[2m │ gzip:   1.23 kB[22m
+[2mdist/[22m[36massets/SceneBox-DqNPTuhQ.js                                            [39m[1m[2m    2.24 kB[22m[1m[22m[2m │ gzip:   1.22 kB[22m
+[2mdist/[22m[36massets/CommandPalette-V4hYmG7G.js                                      [39m[1m[2m    2.25 kB[22m[1m[22m[2m │ gzip:   1.26 kB[22m
+[2mdist/[22m[36massets/TopBar-B2JNgGJI.js                                              [39m[1m[2m    2.27 kB[22m[1m[22m[2m │ gzip:   1.29 kB[22m
+[2mdist/[22m[36massets/TaskCreate-BFN2ux0n.js                                          [39m[1m[2m    2.43 kB[22m[1m[22m[2m │ gzip:   1.14 kB[22m
+[2mdist/[22m[36massets/DashboardGrid-DhEvT0yy.js                                       [39m[1m[2m    2.49 kB[22m[1m[22m[2m │ gzip:   1.30 kB[22m
+[2mdist/[22m[36massets/UserOutlined-BYMD2S5k.js                                        [39m[1m[2m    2.52 kB[22m[1m[22m[2m │ gzip:   1.10 kB[22m
+[2mdist/[22m[36massets/Stats-TjK-hErO.js                                               [39m[1m[2m    2.58 kB[22m[1m[22m[2m │ gzip:   1.23 kB[22m
+[2mdist/[22m[36massets/DeviceDrawer-D4CHLJnd.js                                        [39m[1m[2m    2.66 kB[22m[1m[22m[2m │ gzip:   1.29 kB[22m
+[2mdist/[22m[36massets/rack-CpWCywNA.js                                                [39m[1m[2m    2.70 kB[22m[1m[22m[2m │ gzip:   1.39 kB[22m
+[2mdist/[22m[36massets/KpiZoom-Bez1Ge3F.js                                             [39m[1m[2m    2.72 kB[22m[1m[22m[2m │ gzip:   1.42 kB[22m
+[2mdist/[22m[36massets/FloorPlanModal-CZfqJ26u.js                                      [39m[1m[2m    2.74 kB[22m[1m[22m[2m │ gzip:   1.46 kB[22m
+[2mdist/[22m[36massets/TaskDrawer-DSz5LkQi.js                                          [39m[1m[2m    2.83 kB[22m[1m[22m[2m │ gzip:   1.42 kB[22m
+[2mdist/[22m[36massets/View2D-BbbTfIm_.js                                              [39m[1m[2m    2.84 kB[22m[1m[22m[2m │ gzip:   1.52 kB[22m
+[2mdist/[22m[36massets/DashboardPage.vue_vue_type_script_setup_true_lang-SrhXnxDX.js   [39m[1m[2m    2.89 kB[22m[1m[22m[2m │ gzip:   1.41 kB[22m
+[2mdist/[22m[36massets/warehouse-BuYUA2xR.js                                           [39m[1m[2m    3.11 kB[22m[1m[22m[2m │ gzip:   1.44 kB[22m
+[2mdist/[22m[36massets/SceneStage-CN60WY0-.js                                          [39m[1m[2m    3.16 kB[22m[1m[22m[2m │ gzip:   1.55 kB[22m
+[2mdist/[22m[36massets/LogViewer-BDJG3ABK.js                                           [39m[1m[2m    3.19 kB[22m[1m[22m[2m │ gzip:   1.77 kB[22m
+[2mdist/[22m[36massets/LoginView-CAaLp6WM.js                                           [39m[1m[2m    3.50 kB[22m[1m[22m[2m │ gzip:   1.56 kB[22m
+[2mdist/[22m[36massets/OrderPanel-tP3Puska.js                                          [39m[1m[2m    3.54 kB[22m[1m[22m[2m │ gzip:   1.57 kB[22m
+[2mdist/[22m[36massets/LoaderRobot-DeX2Qa37.js                                         [39m[1m[2m    3.63 kB[22m[1m[22m[2m │ gzip:   1.39 kB[22m
+[2mdist/[22m[36massets/GlobalOutlined-DdcN9a-K.js                                      [39m[1m[2m    3.64 kB[22m[1m[22m[2m │ gzip:   1.83 kB[22m
+[2mdist/[22m[36massets/ScenePallet-BQnBLRqI.js                                         [39m[1m[2m    4.13 kB[22m[1m[22m[2m │ gzip:   1.88 kB[22m
+[2mdist/[22m[36massets/TaskQueue-Kn7E16l3.js                                           [39m[1m[2m    4.41 kB[22m[1m[22m[2m │ gzip:   2.06 kB[22m
+[2mdist/[22m[36massets/ProfileView-Bt5Q_Frd.js                                         [39m[1m[2m    4.77 kB[22m[1m[22m[2m │ gzip:   1.68 kB[22m
+[2mdist/[22m[36massets/ControlView-6f4e0n5p.js                                         [39m[1m[2m    4.87 kB[22m[1m[22m[2m │ gzip:   1.81 kB[22m
+[2mdist/[22m[36massets/SiteManager-DKTDdbbH.js                                         [39m[1m[2m    4.97 kB[22m[1m[22m[2m │ gzip:   2.07 kB[22m
+[2mdist/[22m[36massets/AdminSchedulerView-C6F9yg6Z.js                                  [39m[1m[2m    4.97 kB[22m[1m[22m[2m │ gzip:   1.95 kB[22m
+[2mdist/[22m[36massets/Alerts-CETnx6A8.js                                              [39m[1m[2m    5.06 kB[22m[1m[22m[2m │ gzip:   2.26 kB[22m
+[2mdist/[22m[36massets/WarehouseView-BzOkuSVY.js                                       [39m[1m[2m    5.14 kB[22m[1m[22m[2m │ gzip:   2.10 kB[22m
+[2mdist/[22m[36massets/index-1deey94F.js                                               [39m[1m[2m    5.15 kB[22m[1m[22m[2m │ gzip:   2.72 kB[22m
+[2mdist/[22m[36massets/AdminDevicesView-C58Y3e5_.js                                    [39m[1m[2m    5.31 kB[22m[1m[22m[2m │ gzip:   2.14 kB[22m
+[2mdist/[22m[36massets/AdminLogsView-AUBUPOde.js                                       [39m[1m[2m    5.55 kB[22m[1m[22m[2m │ gzip:   1.88 kB[22m
+[2mdist/[22m[36massets/AdminOrdersView-CFkYaDTP.js                                     [39m[1m[2m    5.65 kB[22m[1m[22m[2m │ gzip:   1.99 kB[22m
+[2mdist/[22m[36massets/ConsoleLayout-BOrHQaOQ.js                                       [39m[1m[2m    7.40 kB[22m[1m[22m[2m │ gzip:   2.98 kB[22m
+[2mdist/[22m[36massets/AdminMapsView-qkUlcw6R.js                                       [39m[1m[2m    7.56 kB[22m[1m[22m[2m │ gzip:   2.79 kB[22m
+[2mdist/[22m[36massets/RoleManage-BVp4e5vp.js                                          [39m[1m[2m    7.56 kB[22m[1m[22m[2m │ gzip:   2.68 kB[22m
+[2mdist/[22m[36massets/AuditLog-W7Sz00Av.js                                            [39m[1m[2m    7.58 kB[22m[1m[22m[2m │ gzip:   2.71 kB[22m
+[2mdist/[22m[36massets/WarehouseScene-56SjRjTX.js                                      [39m[1m[2m    7.81 kB[22m[1m[22m[2m │ gzip:   3.40 kB[22m
+[2mdist/[22m[36massets/DeviceStatus-B_Ern_Cz.js                                        [39m[1m[2m    8.33 kB[22m[1m[22m[2m │ gzip:   3.46 kB[22m
+[2mdist/[22m[36massets/UserManage-CmmfLnRa.js                                          [39m[1m[2m    9.32 kB[22m[1m[22m[2m │ gzip:   2.99 kB[22m
+[2mdist/[22m[36massets/DictManage-DlXwp626.js                                          [39m[1m[2m   10.63 kB[22m[1m[22m[2m │ gzip:   2.97 kB[22m
+[2mdist/[22m[36massets/MenuManage-CZczmlWB.js                                          [39m[1m[2m   11.29 kB[22m[1m[22m[2m │ gzip:   3.64 kB[22m
+[2mdist/[22m[36massets/index-CQZgmrVh.js                                               [39m[1m[2m   13.94 kB[22m[1m[22m[2m │ gzip:   5.71 kB[22m
+[2mdist/[22m[36massets/install-DAG4KElF.js                                             [39m[1m[2m   17.04 kB[22m[1m[22m[2m │ gzip:   6.38 kB[22m
+[2mdist/[22m[36massets/WarehouseView.vue_vue_type_style_index_0_lang-BdtnznWs.js       [39m[1m[2m   17.43 kB[22m[1m[22m[2m │ gzip:   6.78 kB[22m
+[2mdist/[22m[36massets/install-DO55cX-Q.js                                             [39m[1m[2m   18.19 kB[22m[1m[22m[2m │ gzip:   6.49 kB[22m
+[2mdist/[22m[36massets/install-CN1DTIGP.js                                             [39m[1m[2m   19.14 kB[22m[1m[22m[2m │ gzip:   7.90 kB[22m
+[2mdist/[22m[36massets/install-DvuQIalU.js                                             [39m[1m[2m   20.53 kB[22m[1m[22m[2m │ gzip:   7.78 kB[22m
+[2mdist/[22m[36massets/install-CAAObDs_.js                                             [39m[1m[2m   26.83 kB[22m[1m[22m[2m │ gzip:  10.36 kB[22m
+[2mdist/[22m[36massets/DeviceMap3D-CmeBqMPk.js                                         [39m[1m[2m   36.71 kB[22m[1m[22m[2m │ gzip:  10.51 kB[22m
+[2mdist/[22m[36massets/index-BCn5QfZZ.js                                               [39m[1m[2m   51.44 kB[22m[1m[22m[2m │ gzip:  19.49 kB[22m
+[2mdist/[22m[36massets/DashboardView-TgvdIYOF.js                                       [39m[1m[2m   74.84 kB[22m[1m[22m[2m │ gzip:  29.63 kB[22m
+[2mdist/[22m[36massets/install-DBjlKcMJ.js                                             [39m[1m[2m  452.71 kB[22m[1m[22m[2m │ gzip: 153.33 kB[22m
+[2mdist/[22m[36massets/three.module-Dk0qzur-.js                                        [39m[1m[2m  482.92 kB[22m[1m[22m[2m │ gzip: 122.67 kB[22m
+[2mdist/[22m[36massets/SiteMapView-BPnJGJfx.js                                         [39m[1m[2m  495.87 kB[22m[1m[22m[2m │ gzip: 163.24 kB[22m
+[2mdist/[22m[36massets/icons-CLGUy8Ku.js                                               [39m[1m[33m1,046.24 kB[39m[22m[2m │ gzip: 166.36 kB[22m
+[2mdist/[22m[36massets/index-DS5CR3Ao.js                                               [39m[1m[33m1,657.61 kB[39m[22m[2m │ gzip: 522.97 kB[22m
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[32m✓ built in 43.73s[39m

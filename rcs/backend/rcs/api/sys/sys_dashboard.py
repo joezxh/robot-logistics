@@ -52,8 +52,22 @@ async def get_summary(
     ).scalar_one()
     devices = (await db.execute(select(func.count()).select_from(Device))).scalar_one()
     orders = (await db.execute(select(func.count()).select_from(Order))).scalar_one()
-    maps = (await db.execute(select(func.count()).select_from(SiteMap))).scalar_one()
-    warehouses = (await db.execute(select(func.count()).select_from(TopologyShell))).scalar_one()
+    # Warehousetype templates share these tables with real records, so they must
+    # be filtered out or every counter silently inflates by the template count.
+    maps = (
+        await db.execute(
+            select(func.count())
+            .select_from(SiteMap)
+            .where(SiteMap.is_template.is_(False))
+        )
+    ).scalar_one()
+    warehouses = (
+        await db.execute(
+            select(func.count())
+            .select_from(TopologyShell)
+            .where(TopologyShell.is_template.is_(False))
+        )
+    ).scalar_one()
 
     recent = (
         (

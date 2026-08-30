@@ -2,20 +2,31 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FloorShell, ScenarioId } from '@/types'
-import { SCENARIO_CONFIG, relevantZonesFor } from './scenarioConfig'
+import { configForCategory, relevantZonesFor } from './scenarioConfig'
 import { zoneLabel, scenarioName } from '@/i18n'
 
 const props = defineProps<{
-  scenarioId: ScenarioId
+  /**
+   * Warehouse category — selects the theme colour and alert chips.
+   * Accepts any string: database templates use their own categories, which are
+   * a superset of the demo `ScenarioId`s, and unknown ones fall back to a
+   * neutral config instead of rendering nothing.
+   */
+  category?: string | null
+  /** Legacy alias for demo scenario pages. */
+  scenarioId?: string | null
+  /** Overrides the heading; database templates pass their own localised name. */
+  title?: string
   shell: FloorShell | null
 }>()
 
 const { locale } = useI18n()
-const cfg = computed(() => SCENARIO_CONFIG[props.scenarioId])
+const category = computed(() => props.category ?? props.scenarioId ?? null)
+const cfg = computed(() => configForCategory(category.value))
 
 const relevantZones = computed(() => {
   const types = (props.shell?.zones ?? []).map((z) => z.type)
-  return relevantZonesFor(props.scenarioId, types)
+  return relevantZonesFor(category.value ?? '', types)
 })
 
 const zoneBreakdown = computed(() => {
@@ -32,7 +43,13 @@ const zoneBreakdown = computed(() => {
   }))
 })
 
-const title = computed(() => scenarioName(props.scenarioId, locale.value as 'zh-CN' | 'en-US'))
+const title = computed(() => {
+  if (props.title) return props.title
+  const id = category.value
+  if (!id) return '—'
+  // Falls back to the raw id for categories with no i18n entry.
+  return scenarioName(id as ScenarioId, locale.value as 'zh-CN' | 'en-US')
+})
 </script>
 
 <template>

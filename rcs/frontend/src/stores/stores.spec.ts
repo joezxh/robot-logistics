@@ -20,45 +20,82 @@ beforeEach(() => {
   setActivePinia(createPinia())
 })
 
+// Mirrors the backend /maps/templates payload for a database warehouse template.
+function tpl(key: string, name: string, category: string) {
+  return {
+    key,
+    map_id: `tpl-${key}`,
+    site_id: `tpl-${key}`,
+    name,
+    name_en: key,
+    category,
+    description: '',
+    bounds: { w: 160, d: 100 },
+    node_count: 60,
+    edge_count: 60,
+    node_types: {},
+    zone_count: 8,
+    facility_count: 10,
+    dock_count: 4,
+    wall_count: 4,
+    grid_row_count: 8,
+  }
+}
+
+const WAREHOUSE_TEMPLATES = [
+  tpl('ecommerce_large', '大型电商仓', 'ecommerce'),
+  tpl('port_terminal', '港口集装箱码头', 'port'),
+]
+
 describe('useScenarioStore', () => {
-  it('loadTemplates populates the list and auto-selects the first', async () => {
-    fakeFetch([
-      { scenario_id: 'ecommerce', name: 'Ecommerce', bounds: { w: 160, d: 100 }, zone_count: 8 },
-      { scenario_id: 'port', name: 'Port', bounds: { w: 200, d: 150 }, zone_count: 8 },
-    ])
+  it('loadTemplates populates the list and auto-selects the first key', async () => {
+    fakeFetch(WAREHOUSE_TEMPLATES)
     const store = useScenarioStore()
     await store.loadTemplates()
     expect(store.templates).toHaveLength(2)
-    expect(store.selected).toBe('ecommerce')
+    expect(store.selected).toBe('ecommerce_large')
     expect(store.loading).toBe(false)
   })
 
-  it('loadBundle fetches shell+grid+metadata for the scenario', async () => {
-    fakeFetch({
-      scenario_id: 'port',
-      shell: { bounds: { w: 200, d: 150 } },
-      grid: { site_id: 'port', bounds: { w: 200, d: 150 }, resolution: 2, cells: [[]] },
-      metadata: { alert_types: ['customs_hold'] },
+  it('self-heals an empty catalogue by seeding', async () => {
+    let seeded = false
+    const fn = vi.fn(async (url: string) => {
+      let body: unknown
+      if (url.endsWith('/maps/templates/seed')) {
+        seeded = true
+        body = []
+      } else {
+        body = seeded ? WAREHOUSE_TEMPLATES : []
+      }
+      return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) } as unknown as Response
     })
+    ;(http as unknown as { fetchFn: typeof fetch }).fetchFn = fn as unknown as typeof fetch
     const store = useScenarioStore()
-    await store.loadBundle('port')
-    expect(store.bundle?.scenario_id).toBe('port')
-    expect(store.selected).toBe('port')
+    await store.loadTemplates()
+    expect(seeded).toBe(true)
+    expect(store.templates).toHaveLength(2)
+    expect(store.selected).toBe('ecommerce_large')
   })
 
-  it('select clears the cached bundle', async () => {
-    fakeFetch({
-      scenario_id: 'port',
-      shell: { bounds: { w: 200, d: 150 } },
-      grid: { site_id: 'port', bounds: { w: 200, d: 150 }, resolution: 2, cells: [[]] },
-      metadata: {},
-    })
+  it('selectedTemplate and templateByKey resolve the chosen template', async () => {
+    fakeFetch(WAREHOUSE_TEMPLATES)
     const store = useScenarioStore()
-    await store.loadBundle('port')
-    expect(store.bundle).not.toBeNull()
-    store.select('ecommerce')
-    expect(store.bundle).toBeNull()
-    expect(store.selected).toBe('ecommerce')
+    await store.loadTemplates()
+    expect(store.selectedTemplate?.category).toBe('ecommerce')
+    expect(store.templateByKey('port_terminal')?.site_id).toBe('tpl-port_terminal')
+    expect(store.templateByKey('nope')).toBeNull()
+
+    store.select('port_terminal')
+    expect(store.selectedTemplate?.category).toBe('port')
+  })
+
+  it('select does not throw for an unknown key', async () => {
+    fakeFetch(WAREHOUSE_TEMPLATES)
+    const store = useScenarioStore()
+    await store.loadTemplates()
+    store.select('does_not_exist')
+    expect(store.selected).toBe('does_not_exist')
+    expect(store.selectedTemplate).toBeNull()
   })
 
   it('captures errors on failure', async () => {

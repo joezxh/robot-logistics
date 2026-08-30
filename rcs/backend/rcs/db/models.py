@@ -107,11 +107,25 @@ class TopologyShell(Base):
 
     site_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # Warehouse-type templates live in this same table as real sites, using a
+    # deterministic ``site_id`` of ``tpl-<key>`` (see
+    # ``rcs.models.site_map_templates``). Flagging them keeps them out of the
+    # normal site listings while still letting the 2D/3D map render them.
+    is_template: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     width_m: Mapped[float] = mapped_column(Float, default=0.0)
     depth_m: Mapped[float] = mapped_column(Float, default=0.0)
     height_m: Mapped[float] = mapped_column(Float, default=0.0)
     data: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    # Declaring the ORM relationship is what lets SQLAlchemy order INSERTs
+    # correctly. Without it, a session that adds a shell and its grid rows
+    # together can emit the grid INSERT first and trip
+    # robot_topology_grid_site_id_fkey. No schema change — purely ORM metadata.
+    grid_rows: Mapped[list["TopologyGrid"]] = relationship(
+        back_populates="shell", cascade="all, delete-orphan",
+        passive_deletes=True, lazy="raise",
+    )
 
 
 class TopologyGrid(Base):
@@ -122,7 +136,11 @@ class TopologyGrid(Base):
     site_id: Mapped[str] = mapped_column(
         ForeignKey("robot_topology_shell.site_id", ondelete="CASCADE"), index=True
     )
+    shell: Mapped["TopologyShell"] = relationship(back_populates="grid_rows", lazy="raise")
     zone_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    # Mirrors TopologyShell.is_template so a query can filter grid rows for a
+    # template without joining back to the shell.
+    is_template: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     zone_type: Mapped[int] = mapped_column(Integer, default=0)
     center_m: Mapped[list] = mapped_column(JSON, default=list)
     size_m: Mapped[list] = mapped_column(JSON, default=list)
@@ -141,6 +159,12 @@ class SiteMap(Base):
 
     map_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # Marks a row as a reusable warehouse-type template rather than a live map.
+    # Templates use a deterministic, human-readable ``map_id`` (see
+    # ``rcs.models.site_map_templates``) so seeding stays idempotent: re-running
+    # the seeder refreshes their contents instead of duplicating them.
+    # Live maps created "from template" copy the nodes/edges and set this False.
+    is_template: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     current_version: Mapped[int] = mapped_column(Integer, default=1)
     nodes_json: Mapped[list] = mapped_column(JSON, default=list)
     edges_json: Mapped[list] = mapped_column(JSON, default=list)
@@ -213,3 +237,86 @@ class EventLog(Base):
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), default=_now, index=True
     )
+
+
+# ── Warehouse inventory domain (WMS) ────────────────────────────────────────
+# The 3-D geometry (FloorShell / SiteMap) already lives in the topology domain.
+# These tables own the *inventory* layer: storage slots, the SKUs they hold,
+# the AGV fleet, and the logistics tasks flowing through the docks.
+
+
+class WmsSlot(Base):
+    """A storage slot (rack cell) addressed by row/col within a warehouse group."""
+    __tablename__ = "wms_slots"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    site_id: Mapped[str] = mapped_column(String(64), index=True, default="warehouse-theatre-3d")
+    group_id: Mapped[str] = mapped_column(String(64), index=True)
+    label: Mapped[str] = mapped_column(String(64), index=True)
+    row: Mapped[int] = mapped_column(Integer, default=0)
+    col: Mapped[int] = mapped_column(Integer, default=0)
+    row_gap: Mapped[float] = mapped_column(Float, default=0.0)
+    occ: Mapped[float] = mapped_column(Float, default=0.0)  # 0..1 utilisation
+    levels: Mapped[list] = mapped_column(JSON, default=list)  # list[SlotLevelDTO]
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class WmsInventoryItem(Base):
+    """A SKU line held inside a slot level.
+
+    ``slot_id`` + ``level_label`` + ``item_code`` is the natural key; a surrogate
+    PK is kept for ORM ergonomics and the trio is unique-constrained.
+    """
+    __tablename__ = "wms_inventory_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    site_id: Mapped[str] = mapped_column(String(64), index=True, default="warehouse-theatre-3d")
+    slot_id: Mapped[int] = mapped_column(ForeignKey("wms_slots.id", ondelete="CASCADE"), index=True)
+    level_label: Mapped[str] = mapped_column(String(64))
+    item_code: Mapped[str] = mapped_column(String(64), index=True)
+    item_name: Mapped[str] = mapped_column(String(128))
+    uom: Mapped[str] = mapped_column(String(16), default="EA")
+    group: Mapped[str] = mapped_column(String(64), default="")
+    qty: Mapped[float] = mapped_column(Float, default=0.0)
+    reserved: Mapped[float] = mapped_column(Float, default=0.0)
+    rate: Mapped[float] = mapped_column(Float, default=0.0)  # throughput / day
+    stock_value: Mapped[float] = mapped_column(Float, default=0.0)
+    __table_args__ = (
+        UniqueConstraint("slot_id", "level_label", "item_code", name="uq_wms_item_slot_level"),
+    )
+
+
+class WmsAgv(Base):
+    """An AGV fleet member with live pose / battery / status."""
+    __tablename__ = "wms_agvs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    site_id: Mapped[str] = mapped_column(String(64), index=True, default="warehouse-theatre-3d")
+    ref: Mapped[str] = mapped_column(String(64), index=True)
+    name: Mapped[str] = mapped_column(String(128), default="")
+    x: Mapped[float] = mapped_column(Float, default=0.0)
+    z: Mapped[float] = mapped_column(Float, default=0.0)
+    yaw: Mapped[float] = mapped_column(Float, default=0.0)
+    battery: Mapped[float] = mapped_column(Float, default=1.0)  # 0..1
+    status: Mapped[str] = mapped_column(String(16), default="idle")  # idle|moving|charging|fault
+    current_task: Mapped[str | None] = mapped_column(String(64), default=None)
+    updated_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class WmsLogisticsTask(Base):
+    """A logistics task (inbound / outbound / transfer / replenishment)."""
+    __tablename__ = "wms_logistics_tasks"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    site_id: Mapped[str] = mapped_column(String(64), index=True, default="warehouse-theatre-3d")
+    ref: Mapped[str] = mapped_column(String(64), index=True)
+    type: Mapped[str] = mapped_column(String(16))  # inbound|outbound|transfer|replenishment
+    status: Mapped[str] = mapped_column(String(16), default="pending")  # pending|in_progress|completed|cancelled
+    priority: Mapped[int] = mapped_column(Integer, default=5)
+    source_dock: Mapped[str | None] = mapped_column(String(64), default=None)
+    target_dock: Mapped[str | None] = mapped_column(String(64), default=None)
+    items: Mapped[list] = mapped_column(JSON, default=list)  # list[TaskItemDTO]
+    assigned_vehicle: Mapped[str | None] = mapped_column(String(64), default=None)
+    eta: Mapped[int | None] = mapped_column(Integer, default=None)
+    completed_at: Mapped[int | None] = mapped_column(Integer, default=None)
+    created_at: Mapped[int] = mapped_column(Integer, default=0)

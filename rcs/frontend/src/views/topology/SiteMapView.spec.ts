@@ -36,6 +36,7 @@ beforeAll(() => {
       WebGLRenderer: class {
         domElement = document.createElement('canvas')
         setSize = vi.fn()
+        setPixelRatio = vi.fn()
         render = vi.fn()
         dispose = vi.fn()
       },
@@ -48,44 +49,79 @@ beforeAll(() => {
       dispose = vi.fn()
     },
   }))
+  // jsdom has no WebGL context, so stub the post-processing chain that
+  // DeviceMap3D uses for its bloom pass.
+  vi.mock('three/examples/jsm/postprocessing/EffectComposer.js', () => ({
+    EffectComposer: class {
+      addPass = vi.fn()
+      render = vi.fn()
+      setSize = vi.fn()
+      dispose = vi.fn()
+    },
+  }))
+  vi.mock('three/examples/jsm/postprocessing/RenderPass.js', () => ({
+    RenderPass: class {
+      scene = null
+      camera = null
+    },
+  }))
+  vi.mock('three/examples/jsm/postprocessing/UnrealBloomPass.js', () => ({
+    UnrealBloomPass: class {},
+  }))
+  vi.mock('three/examples/jsm/postprocessing/OutputPass.js', () => ({
+    OutputPass: class {},
+  }))
 })
 
+// Mirrors GET /api/rcs/maps/templates — the database warehouse templates.
+function tpl(key: string, name: string, category: string, bounds: { w: number; d: number }) {
+  return {
+    key,
+    map_id: `tpl-${key}`,
+    site_id: `tpl-${key}`,
+    name,
+    name_en: key,
+    category,
+    description: '',
+    bounds,
+    node_count: 40,
+    edge_count: 40,
+    node_types: {},
+    zone_count: 1,
+    facility_count: 2,
+    dock_count: 2,
+    wall_count: 4,
+    grid_row_count: 1,
+  }
+}
+
 const TEMPLATES = [
-  { scenario_id: 'ecommerce', name: 'Ecommerce', bounds: { w: 160, d: 100 }, zone_count: 1 },
-  { scenario_id: 'multi_floor', name: 'Multi-floor', bounds: { w: 80, d: 60 }, zone_count: 1 },
+  tpl('ecommerce_large', '大型电商仓', 'ecommerce', { w: 160, d: 100 }),
+  tpl('multi_floor_demo', '多层仓', 'multi_floor', { w: 80, d: 60 }),
 ]
 
-const BUNDLES: Record<string, unknown> = {
-  ecommerce: {
-    scenario_id: 'ecommerce',
-    shell: { bounds: { w: 160, d: 100 }, zones: [
-      { id: 'z1', ref: 'R1', type: 'flow_rack', x: 0, z: 0, w: 60, d: 40 },
-    ] },
-    grid: { site_id: 'ecommerce', bounds: { w: 160, d: 100 }, resolution: 2, cells: [[]] },
-    metadata: {},
+// Mirrors GET /api/rcs/topology/shell/{site_id} — keyed by template site_id.
+const SHELLS: Record<string, unknown> = {
+  'tpl-ecommerce_large': {
+    bounds: { w: 160, d: 100 },
+    zones: [{ id: 'z1', ref: 'R1', type: 'flow_rack', x: 0, z: 0, w: 60, d: 40 }],
   },
-  multi_floor: {
-    scenario_id: 'multi_floor',
-    shell: {
-      bounds: { w: 80, d: 60, h: 12 },
-      zones: [{ id: 'el1', ref: 'EL-1', type: 'elevator_shaft', x: 70, z: 50, w: 5, d: 5 }],
-      floors: [
-        { id: 'L1', z: 0, bounds: { w: 80, d: 60 }, zones: [] },
-        { id: 'L2', z: 4, bounds: { w: 80, d: 60 }, zones: [] },
-      ],
-    },
-    grid: { site_id: 'multi_floor', bounds: { w: 80, d: 60 }, resolution: 2, cells: [[]] },
-    metadata: {},
+  'tpl-multi_floor_demo': {
+    bounds: { w: 80, d: 60, h: 12 },
+    zones: [{ id: 'el1', ref: 'EL-1', type: 'elevator_shaft', x: 70, z: 50, w: 5, d: 5 }],
+    floors: [
+      { id: 'L1', z: 0, bounds: { w: 80, d: 60 }, zones: [] },
+      { id: 'L2', z: 4, bounds: { w: 80, d: 60 }, zones: [] },
+    ],
   },
 }
 
 function routeFetch() {
   const fn = vi.fn(async (url: string) => {
-    let body: unknown
-    if (url.endsWith('/topology/templates')) body = TEMPLATES
-    else {
-      const id = url.split('/topology/templates/')[1]
-      body = BUNDLES[id] ?? {}
+    let body: unknown = {}
+    if (url.endsWith('/maps/templates')) body = TEMPLATES
+    else if (url.includes('/topology/shell/')) {
+      body = SHELLS[url.split('/topology/shell/')[1]] ?? {}
     }
     return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) } as unknown as Response
   })
@@ -147,9 +183,9 @@ describe('SiteMapView', () => {
     await store.loadTemplates()
     const wrapper = mount(SiteMapView, { global: { plugins: [i18n, Antd] } })
     await new Promise((r) => setTimeout(r, 10))
-    await store.select('multi_floor')
+    await store.select('multi_floor_demo')
     await new Promise((r) => setTimeout(r, 20))
-    // scenario select + floor select
+    // template select + floor select
     expect(wrapper.findAll('.ant-select').length).toBeGreaterThanOrEqual(2)
   })
 })

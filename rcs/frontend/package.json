@@ -13,12 +13,17 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
+    "@fontsource/chakra-petch": "^5.3.0",
+    "@fontsource/orbitron": "^5.3.0",
     "ant-design-vue": "^4.2.6",
+    "axios": "^1.20.0",
     "dayjs": "^1.11.11",
     "echarts": "^5.5.0",
+    "gsap": "^3.15.0",
     "pinia": "^2.1.7",
     "three": "^0.162.0",
     "vue": "^3.4.21",
+    "vue-echarts": "^8.2.0",
     "vue-i18n": "^9.13.1",
     "vue-router": "^4.3.0"
   },

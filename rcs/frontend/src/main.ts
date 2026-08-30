@@ -6,6 +6,15 @@ import { resetDynamicRoutes, router } from './router'
 import { i18n } from './i18n'
 import { sysHttp } from './api/sysHttp'
 import { useAuthStore } from './stores/auth'
+
+// Sci-fi typefaces. Latin subsets only: Orbitron and Chakra Petch carry no CJK
+// glyphs, so Chinese/Japanese text falls through to the system stack declared
+// in --font-* (HarmonyOS Sans SC / PingFang SC / Microsoft YaHei).
+import '@fontsource/orbitron/latin-500.css'
+import '@fontsource/orbitron/latin-700.css'
+import '@fontsource/chakra-petch/latin-400.css'
+import '@fontsource/chakra-petch/latin-600.css'
+
 // Order matters: tokens define the variables, global.css consumes them.
 import './styles/tokens.css'
 import './styles/global.css'

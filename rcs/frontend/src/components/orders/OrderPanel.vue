@@ -2,10 +2,13 @@
 import { reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useOrderStore } from '@/stores/orders'
-import type { ScenarioId } from '@/types'
 
 const props = defineProps<{
-  scenarioId: ScenarioId | null
+  /**
+   * Forwarded to the backend as `scenario_id`, which is a free-form string with
+   * no allow-list, so a database warehouse template can pass its template key.
+   */
+  scenarioId: string | null
 }>()
 
 const { t } = useI18n()

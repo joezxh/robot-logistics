@@ -10,10 +10,36 @@ import type { MenuNode } from '@/types'
 /** Eager-ish glob: keys are "/src/views/...", values are dynamic imports. */
 const viewModules = import.meta.glob('/src/views/**/*.vue')
 
+/** A console page that has no row in the backend menu tree. */
+interface BuiltInView {
+  component: string
+  name: string
+  title: string
+}
+
 /** Static pages rendered inside the console shell that have no menu row. */
-const BUILT_IN_VIEWS: Record<string, string> = {
-  '/dashboard': 'views/DashboardView.vue',
-  '/profile': 'views/ProfileView.vue',
+const BUILT_IN_VIEWS: Record<string, BuiltInView> = {
+  '/dashboard': { component: 'views/DashboardView.vue', name: 'DashboardView', title: 'Dashboard' },
+  '/profile': { component: 'views/ProfileView.vue', name: 'ProfileView', title: 'Profile' },
+  // Simulation console. Its data comes from the simulation backend (`/api`),
+  // which owns no rows in `sys_menu`, so these routes can never be granted via
+  // the menu tree. Registering them as built-ins makes the guard admit them;
+  // the sidebar renders them from a synthetic node (see `AppSidebar.vue`).
+  '/simulation': {
+    component: 'views/simulation/DashboardEntry.vue',
+    name: 'SimulationDashboard',
+    title: '仿真总览',
+  },
+  '/simulation/scenes': {
+    component: 'views/simulation/ScenesEntry.vue',
+    name: 'SimulationScenes',
+    title: '场景仿真',
+  },
+  '/simulation/warehouse': {
+    component: 'views/simulation/WarehouseEntry.vue',
+    name: 'SimulationWarehouse',
+    title: '仓储仿真',
+  },
 }
 
 function resolveComponent(componentPath: string | null | undefined): RouteRecordRaw['component'] | undefined {
@@ -77,15 +103,15 @@ export function buildRoutes(nodes: MenuNode[], parentPath = ''): RouteRecordRaw[
  */
 export function builtInRoutes(existingPaths: Set<string>): RouteRecordRaw[] {
   const routes: RouteRecordRaw[] = []
-  for (const [path, componentPath] of Object.entries(BUILT_IN_VIEWS)) {
+  for (const [path, view] of Object.entries(BUILT_IN_VIEWS)) {
     if (existingPaths.has(path)) continue
-    const component = resolveComponent(componentPath)
+    const component = resolveComponent(view.component)
     if (!component) continue
     routes.push({
       path: path.replace(/^\//, ''),
-      name: path === '/dashboard' ? 'DashboardView' : 'ProfileView',
+      name: view.name,
       component,
-      meta: { builtIn: true, title: path === '/dashboard' ? 'Dashboard' : 'Profile' },
+      meta: { builtIn: true, title: view.title },
     })
   }
   return routes

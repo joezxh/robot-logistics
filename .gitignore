@@ -58,3 +58,5 @@ Thumbs.db
 # Intentionally excluded from version control. Re-import via the dedicated
 # repo `robot-logistics-knowledge-base` if/when needed.
 docs/logitics/
+.gstack/
+.gitkeep

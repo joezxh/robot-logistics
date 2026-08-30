@@ -1,0 +1,21 @@
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mD:/projects/robot-logic/rcs/frontend[39m
+
+ [32m✓[39m src/api/control.spec.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/types/types.spec.ts [2m ([22m[2m11 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m src/api/api.spec.ts [2m ([22m[2m9 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/stores/orders.spec.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 72[2mms[22m[39m
+ [32m✓[39m src/stores/devices.spec.ts [2m ([22m[2m4 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m src/stores/stores.spec.ts [2m ([22m[2m8 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32m✓[39m src/components/DeviceMap2D/DeviceMap2D.spec.ts [2m ([22m[2m7 tests[22m[2m)[22m[33m 920[2mms[22m[39m
+ [32m✓[39m src/components/DeviceMap3D/DeviceMap3D.spec.ts [2m ([22m[2m7 tests[22m[2m)[22m[33m 847[2mms[22m[39m
+ [32m✓[39m src/i18n/i18n.spec.ts [2m ([22m[2m8 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m src/components/scenarios/scenarios.spec.ts [2m ([22m[2m8 tests[22m[2m)[22m[33m 314[2mms[22m[39m
+ [32m✓[39m src/components/orders/OrderPanel.spec.ts [2m ([22m[2m3 tests[22m[2m)[22m[33m 960[2mms[22m[39m
+ [32m✓[39m src/views/topology/SiteMapView.spec.ts [2m ([22m[2m5 tests[22m[2m)[22m[33m 812[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m      Tests [22m [1m[32m79 passed[39m[22m[90m (79)[39m
+[2m   Start at [22m 00:27:21
+[2m   Duration [22m 10.85s[2m (transform 4.24s, setup 1ms, collect 13.68s, tests 4.05s, environment 29.57s, prepare 7.71s)[22m
+

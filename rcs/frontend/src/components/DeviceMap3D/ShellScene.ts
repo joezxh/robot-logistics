@@ -15,7 +15,23 @@ export interface BuildResult {
 
 export function buildScene(shell: FloorShell): BuildResult {
   const scene = new THREE.Scene()
-  scene.background = new THREE.Color('#0f172a')
+  // Matches --bg-page so the canvas blends into the surrounding console surface.
+  scene.background = new THREE.Color('#0b1322')
+
+  // Lighting belongs to the scene, not the Vue wrapper: the wrapper used to add
+  // lights before `build()` ran, so they landed on a null scene and never lit
+  // anything. Keeping them here also makes the scene unit-testable.
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55))
+
+  const keyLight = new THREE.DirectionalLight(0xffffff, 0.75)
+  keyLight.position.set(60, 120, 60)
+  scene.add(keyLight)
+
+  // Cool rim light tinted with --accent so zone silhouettes stay readable once
+  // the bloom pass picks out their emissive edges.
+  const rimLight = new THREE.DirectionalLight(0x4aa3ff, 0.5)
+  rimLight.position.set(-60, 40, -80)
+  scene.add(rimLight)
 
   const { w, d } = shell.bounds
 
@@ -58,7 +74,15 @@ export function buildScene(shell: FloorShell): BuildResult {
 function zoneToMesh(z: Zone): THREE.Mesh {
   const h = ZONE_DEFAULT_HEIGHT
   const geo = new THREE.BoxGeometry(z.w, h, z.d)
-  const mat = new THREE.MeshStandardMaterial({ color: zoneColor(z.type), transparent: true, opacity: 0.85 })
+  // `emissive` gives the bloom pass something to pick up, so zones read as
+  // lit holographic volumes rather than flat colour boxes.
+  const mat = new THREE.MeshStandardMaterial({
+    color: zoneColor(z.type),
+    emissive: zoneColor(z.type),
+    emissiveIntensity: 0.45,
+    transparent: true,
+    opacity: 0.85,
+  })
   const mesh = new THREE.Mesh(geo, mat)
   mesh.position.set(z.x + z.w / 2, h / 2, z.z + z.d / 2)
   mesh.name = `zone:${z.id}`
@@ -72,7 +96,13 @@ function wallSegmentMesh(wall: WallSegment) {
   if (length === 0) return null
   const h = wall.h ?? 3.5
   const geo = new THREE.BoxGeometry(length, h, 0.2)
-  const mat = new THREE.MeshStandardMaterial({ color: '#475569' })
+  // Walls stay mostly matte; the faint accent emissive lets their top edges
+  // catch a little bloom so the floor plan outline is visible in the dark.
+  const mat = new THREE.MeshStandardMaterial({
+    color: '#475569',
+    emissive: '#4aa3ff',
+    emissiveIntensity: 0.15,
+  })
   const mesh = new THREE.Mesh(geo, mat)
   const cx = (wall.x0 + wall.x1) / 2
   const cz = (wall.z0 + wall.z1) / 2

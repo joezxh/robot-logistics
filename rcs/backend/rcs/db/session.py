@@ -51,3 +51,21 @@ async def init_db() -> None:
 async def session() -> AsyncIterator[AsyncSession]:
     async with get_sessionmaker()() as s:
         yield s
+
+
+async def dispose_engine() -> None:
+    """Dispose the engine bound to the running event loop, if there is one.
+
+    Engines are cached per event loop (see ``_engines``) and their asyncpg pools
+    are never closed implicitly. Anything that churns through event loops —
+    pytest-asyncio creates a fresh loop per async test — must dispose
+    explicitly, or every test leaks a connection pool until PostgreSQL refuses
+    new connections with ``TooManyConnectionsError``.
+
+    Safe to call when no engine exists for the current loop; it is a no-op.
+    """
+    loop = asyncio.get_running_loop()
+    engine = _engines.pop(loop, None)
+    _sessionmakers.pop(loop, None)
+    if engine is not None:
+        await engine.dispose()

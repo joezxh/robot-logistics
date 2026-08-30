@@ -6,7 +6,7 @@
 // permitted page) once the session is established.
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { LockOutlined, UserOutlined } from '@ant-design/icons-vue'
+import { GlobalOutlined, LockOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { LOCALE_LABELS, SUPPORTED_LOCALES } from '@/i18n'
@@ -54,7 +54,7 @@ function onLocale({ key }: { key: string }) {
     <div class="lang-switch">
       <a-dropdown>
         <button class="lang-btn" type="button">
-          <span class="globe">🌐</span>
+          <GlobalOutlined />
           {{ LOCALE_LABELS[app.locale] }}
         </button>
         <template #overlay>
@@ -214,8 +214,9 @@ function onLocale({ key }: { key: string }) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-mono);
+  font-family: var(--font-tech);
   font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--accent);

@@ -63,6 +63,7 @@ describe('DeviceMap3D component', () => {
         WebGLRenderer: class {
           domElement = document.createElement('canvas')
           setSize = vi.fn()
+          setPixelRatio = vi.fn()
           render = vi.fn()
           dispose = vi.fn()
         },
@@ -74,6 +75,29 @@ describe('DeviceMap3D component', () => {
         update = vi.fn()
         dispose = vi.fn()
       },
+    }))
+    // jsdom cannot create a WebGL context, so the whole post-processing chain
+    // is stubbed out. The component falls back to a plain renderer when the
+    // composer is missing, but these mocks keep the bloom path exercised.
+    vi.mock('three/examples/jsm/postprocessing/EffectComposer.js', () => ({
+      EffectComposer: class {
+        addPass = vi.fn()
+        render = vi.fn()
+        setSize = vi.fn()
+        dispose = vi.fn()
+      },
+    }))
+    vi.mock('three/examples/jsm/postprocessing/RenderPass.js', () => ({
+      RenderPass: class {
+        scene = null
+        camera = null
+      },
+    }))
+    vi.mock('three/examples/jsm/postprocessing/UnrealBloomPass.js', () => ({
+      UnrealBloomPass: class {},
+    }))
+    vi.mock('three/examples/jsm/postprocessing/OutputPass.js', () => ({
+      OutputPass: class {},
     }))
   })
 
