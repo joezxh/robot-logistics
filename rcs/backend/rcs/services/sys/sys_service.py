@@ -102,6 +102,25 @@ def _menu_to_dict(menu: SysMenu) -> dict[str, Any]:
     }
 
 
+def _tree_to_nodes(
+    nodes: Sequence[dict[str, Any]],
+    node_by_id: dict[int, MenuNode],
+) -> list[MenuNode]:
+    """Transfer the nesting computed by `build_menu_tree` onto `MenuNode`s.
+
+    `build_menu_tree` operates on plain dicts (and only sets `children` when a
+    node has some), but the API returns `MenuNode` models. Building the models
+    straight from those dicts would blow up, so the tree shape is copied back
+    onto models built from the ORM rows.
+    """
+    out: list[MenuNode] = []
+    for node in nodes:
+        current = node_by_id[node["id"]]
+        children = _tree_to_nodes(node.get("children", []), node_by_id)
+        out.append(current.model_copy(update={"children": children}) if children else current)
+    return out
+
+
 def _menu_to_node(menu: SysMenu) -> MenuNode:
     return MenuNode(
         id=menu.id,
@@ -475,7 +494,10 @@ async def get_menu_tree(
 ) -> list[MenuNode]:
     """Full menu tree for the management screen."""
     menus = await _load_menus(db, name=name, status=status, menu_type=menu_type)
-    return [_menu_to_node(m) for m in build_menu_tree([_menu_to_dict(m) for m in menus])]
+    node_by_id = {m.id: _menu_to_node(m) for m in menus}
+    return _tree_to_nodes(
+        build_menu_tree([_menu_to_dict(m) for m in menus]), node_by_id
+    )
 
 
 async def get_menu_flat(

@@ -35,6 +35,10 @@ async function handleImport() {
   await store.doImport()
 }
 
+function onViewChange(e: { target: { value: '3d' | 'info' } }) {
+  view.value = e.target.value
+}
+
 async function handlePreview() {
   await store.loadPreview()
 }
@@ -45,16 +49,16 @@ async function handlePreview() {
     <header class="wh-top">
       <h2>{{ t('warehouse.title') }}</h2>
       <div class="controls">
-        <div class="toggle">
-          <button :class="{ active: view === '3d' }" @click="view = '3d'">{{ t('map.view3d') }}</button>
-          <button :class="{ active: view === 'info' }" @click="view = 'info'">{{ t('warehouse.info') }}</button>
-        </div>
-        <button class="btn btn-preview" :disabled="loading" @click="handlePreview">
+        <a-radio-group :value="view" @change="onViewChange">
+          <a-radio-button value="3d">{{ t('map.view3d') }}</a-radio-button>
+          <a-radio-button value="info">{{ t('warehouse.info') }}</a-radio-button>
+        </a-radio-group>
+        <a-button :loading="loading" @click="handlePreview">
           {{ loading ? t('app.loading') : t('warehouse.preview') }}
-        </button>
-        <button class="btn btn-import" :disabled="importing" @click="handleImport">
+        </a-button>
+        <a-button type="primary" :loading="importing" @click="handleImport">
           {{ importing ? t('warehouse.importing') : t('warehouse.import') }}
-        </button>
+        </a-button>
       </div>
     </header>
 
@@ -73,7 +77,7 @@ async function handlePreview() {
       <section v-show="view === '3d'" class="map">
         <div v-if="!hasData && !loading" class="empty">
           <p>{{ t('warehouse.noData') }}</p>
-          <button class="btn btn-import" @click="handleImport">{{ t('warehouse.import') }}</button>
+          <a-button type="primary" :loading="importing" @click="handleImport">{{ t('warehouse.import') }}</a-button>
         </div>
         <div v-else-if="loading" class="empty">{{ t('app.loading') }}</div>
         <DeviceMap3D v-else :shell="shell" />
@@ -147,13 +151,6 @@ export default { methods: { getZoneColor } }
 .wh-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .wh-top h2 { margin: 0; font-size: 18px; }
 .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
-.toggle button { background: var(--bg-card-alt); color: var(--fg); border: none; padding: 5px 12px; cursor: pointer; }
-.toggle button.active { background: var(--accent); color: #0b1120; }
-.btn { padding: 5px 14px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 13px; background: var(--bg-card-alt); color: var(--fg); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-import { background: var(--accent); color: #0b1120; border-color: var(--accent); font-weight: 600; }
-.btn-preview { }
 .err { color: var(--err); font-size: 13px; margin: 0; }
 .import-summary { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--fg-soft); padding: 6px 12px; background: var(--bg-card-alt); border-radius: var(--radius); border: 1px solid var(--border); }
 .badge.ok { background: #16a34a; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }

@@ -35,6 +35,10 @@ export const fetchDashboardSummary = () =>
       menuCount: number
       dictCount: number
       activeUserCount: number
+      deviceCount: number
+      orderCount: number
+      mapCount: number
+      warehouseCount: number
       recentOperations: Array<Record<string, unknown>>
     }
   }>('/dashboard/summary')

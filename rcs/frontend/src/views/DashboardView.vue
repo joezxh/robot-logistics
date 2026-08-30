@@ -3,10 +3,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  BookOutlined,
-  MenuOutlined,
-  SafetyCertificateOutlined,
-  TeamOutlined,
+  ApiOutlined,
+  FileDoneOutlined,
+  GlobalOutlined,
+  HomeOutlined,
 } from '@ant-design/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { fetchDashboardSummary } from '@/api/sysAuth'
@@ -24,6 +24,10 @@ const summary = ref<{
   menuCount: number
   dictCount: number
   activeUserCount: number
+  deviceCount: number
+  orderCount: number
+  mapCount: number
+  warehouseCount: number
   recentOperations: Array<Record<string, unknown>>
 } | null>(null)
 const loading = ref(false)
@@ -44,31 +48,31 @@ onMounted(load)
 
 const stats = computed(() => [
   {
-    key: 'users',
-    label: t('sys.dashboard.users'),
-    value: summary.value?.userCount ?? 0,
-    icon: TeamOutlined,
+    key: 'devices',
+    label: t('sys.dashboard.devices'),
+    value: summary.value?.deviceCount ?? 0,
+    icon: ApiOutlined,
     color: 'var(--accent)',
   },
   {
-    key: 'roles',
-    label: t('sys.dashboard.roles'),
-    value: summary.value?.roleCount ?? 0,
-    icon: SafetyCertificateOutlined,
+    key: 'orders',
+    label: t('sys.dashboard.orders'),
+    value: summary.value?.orderCount ?? 0,
+    icon: FileDoneOutlined,
     color: 'var(--accent-2)',
   },
   {
-    key: 'menus',
-    label: t('sys.dashboard.menus'),
-    value: summary.value?.menuCount ?? 0,
-    icon: MenuOutlined,
+    key: 'maps',
+    label: t('sys.dashboard.maps'),
+    value: summary.value?.mapCount ?? 0,
+    icon: GlobalOutlined,
     color: 'var(--info)',
   },
   {
-    key: 'dicts',
-    label: t('sys.dashboard.dictionaries'),
-    value: summary.value?.dictCount ?? 0,
-    icon: BookOutlined,
+    key: 'warehouses',
+    label: t('sys.dashboard.warehouses'),
+    value: summary.value?.warehouseCount ?? 0,
+    icon: HomeOutlined,
     color: 'var(--ok)',
   },
 ])
@@ -105,31 +109,32 @@ function statusColor(status?: number | null): string {
 </script>
 
 <template>
-  <div class="page">
-    <div class="page-header">
-      <div>
-        <h2 class="page-title">
+  <div class="app-page">
+    <header class="page-hero">
+      <div class="hero-text">
+        <span class="hero-kicker">{{ t('common.kicker') }}</span>
+        <h1 class="hero-title">
           {{ t('sys.dashboard.welcome') }}, {{ auth.profile?.realName ?? auth.profile?.username }}
-        </h2>
-        <p class="page-subtitle">{{ t('sys.dashboard.subtitle') }}</p>
+        </h1>
+        <p class="hero-sub">{{ t('sys.dashboard.subtitle') }}</p>
       </div>
-      <a-tag v-if="auth.isAdmin" color="cyan">ADMIN</a-tag>
-    </div>
+      <div class="hero-actions">
+        <a-tag v-if="auth.isAdmin" color="cyan">ADMIN</a-tag>
+      </div>
+    </header>
 
     <div class="stat-grid">
-      <div v-for="s in stats" :key="s.key" class="stat-card">
-        <div class="stat-icon" :style="{ color: s.color }">
-          <component :is="s.icon" />
-        </div>
-        <div>
-          <div class="stat-value">{{ s.value }}</div>
-          <div class="stat-label">{{ s.label }}</div>
-        </div>
+      <div v-for="s in stats" :key="s.key" class="stat-tile">
+        <span class="stat-label">{{ s.label }}</span>
+        <span class="stat-value">{{ s.value }}</span>
+        <span class="stat-ico" :style="{ color: s.color }"><component :is="s.icon" /></span>
       </div>
     </div>
 
-    <div class="panel">
-      <h3 class="panel-title">{{ t('sys.dashboard.quickActions') }}</h3>
+    <div class="data-panel">
+      <div class="panel-head">
+        <h3>{{ t('sys.dashboard.quickActions') }}</h3>
+      </div>
       <div class="quick-grid">
         <button
           v-for="link in quickLinks"
@@ -144,8 +149,10 @@ function statusColor(status?: number | null): string {
       </div>
     </div>
 
-    <div class="panel">
-      <h3 class="panel-title">{{ t('sys.dashboard.recentOps') }}</h3>
+    <div class="data-panel">
+      <div class="panel-head">
+        <h3>{{ t('sys.dashboard.recentOps') }}</h3>
+      </div>
       <a-table
         :columns="opColumns"
         :data-source="summary?.recentOperations ?? []"

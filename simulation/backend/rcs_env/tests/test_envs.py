@@ -22,7 +22,13 @@ from rcs_env.envs.wrappers import (
     DigitalTwinWrapper,
 )
 from rcs_env.envs.vec import make_vec_env, random_rollout
-from rcs_env.envs.twin import DigitalTwinSink, InMemoryTransport, TwinRecord
+from rcs_env.envs.twin import (
+    DigitalTwinSink,
+    InMemoryTransport,
+    LoopbackTransport,
+    TwinRecord,
+    _serialize_telemetry,
+)
 
 
 def _maybe_skip(fn):
@@ -153,6 +159,91 @@ def test_p3_4_async_vecenv():
     vec.close()
 
 
+def test_p3_4b_twin_ingest_parse():
+    """P3.4: a serialized twin frame parses into the canonical TelemetryPayload."""
+    rec = TwinRecord(
+        robot_type="fr3",
+        qpos=[0.1, -0.2, 0.3, -0.4, 0.5, -0.6, 0.7],
+        qvel=[0.0] * 7,
+        ee_pose=[0.4, 0.1, 0.5, 1.0, 0.0, 0.0, 0.0],
+        gripper_state=0.0,
+        sim_time=1.234,
+        episode=2,
+        step=42,
+        timestamp_ns=1_700_000_000_000_000_000,
+    )
+    # TelemetryPayload is the single wire-format source of truth; require it.
+    # The sim venv may have a numpy-only stub on PYTHONPATH; force the canonical
+    # contract package (repo-root shared/python) ahead of any cached stub.
+    import sys as _sys
+    from rcs_env.envs.twin import _contract_path_for
+
+    _cp = _contract_path_for(None)
+    if _cp:
+        _sys.path.insert(0, _cp)
+        _sys.modules.pop("robot_contracts", None)
+        _sys.modules.pop("robot_contracts.payloads", None)
+        _sys.modules.pop("robot_contracts.topics", None)
+    from robot_contracts import TelemetryPayload
+
+    topic, payload = _serialize_telemetry("fr3-demo", "", rec)
+    assert topic == "robot/fr3-demo/telemetry", topic
+    telem = TelemetryPayload.model_validate_json(payload)
+    assert telem.device_id == "fr3-demo"
+    assert telem.robot_type == "fr3"
+    assert list(telem.qpos) == rec.qpos
+    assert list(telem.ee_pose) == rec.ee_pose
+    assert telem.sim_time == 1.234
+    assert telem.episode == 2 and telem.step == 42
+    print(f"[OK] P3.4b twin ingest parse (topic={topic}, qpos={len(telem.qpos)}, ee={len(telem.ee_pose)})")
+
+
+def test_p3_4b_end_to_end_loopback():
+    """P3.4: sim twin -> LoopbackTransport -> canonical contract parse (broker path).
+
+    Exercises the exact serialize -> topic -> parse pipeline the real backend
+    :class:`TelemetryIngest` runs, without a running Mosquitto or the heavy
+    ``rcs.control`` backend package. We subscribe a handler that mirrors what the
+    backend ingest does (validate ``TelemetryPayload`` and recover joint state).
+    """
+    sys.path.insert(0, "d:/projects/robot-logic/shared/python")
+    sys.modules.pop("robot_contracts", None)
+    for _m in list(sys.modules):
+        if _m.startswith("robot_contracts."):
+            sys.modules.pop(_m, None)
+    from robot_contracts import TelemetryPayload
+
+    DEVICE = "fr3-e2e"
+    received_topic = []
+    last_qpos = []
+    last_ee = []
+
+    def _handler(topic: str, raw: bytes) -> None:
+        received_topic.append(topic)
+        telem = TelemetryPayload.model_validate_json(raw)  # same as TelemetryIngest
+        last_qpos.clear(); last_qpos.extend(telem.qpos)
+        last_ee.clear(); last_ee.extend(telem.ee_pose)
+
+    loop = LoopbackTransport(DEVICE)
+    loop.subscribe(_handler)
+
+    sink = DigitalTwinSink(device_id=DEVICE, transport=loop)
+    env = DigitalTwinWrapper(make_env("rcs/fr3-reach-v0"), sink=sink)
+    obs, info = env.reset()
+    for _ in range(6):
+        obs, reward, terminated, truncated, info = env.step(np.zeros(env.action_space.shape[0]))
+        if terminated or truncated:
+            env.reset()
+    env.close()
+
+    assert len(received_topic) > 0, "no frames delivered through loopback transport"
+    assert received_topic[0] == f"robot/{DEVICE}/telemetry", received_topic[0]
+    assert len(last_qpos) == 7, f"joint positions={len(last_qpos)}"
+    assert len(last_ee) == 7, f"ee_pose={len(last_ee)}"
+    print(f"[OK] P3.4b end-to-end loopback (frames={len(received_topic)}, "
+          f"topic={received_topic[0]}, dof={len(last_qpos)})")
+
+
 def main():
     register_envs()
     tests = [
@@ -165,6 +256,8 @@ def main():
         test_p3_3_vecenv_with_gripper,
         test_p3_4_twin_sink,
         test_p3_4_async_vecenv,
+        test_p3_4b_twin_ingest_parse,
+        test_p3_4b_end_to_end_loopback,
     ]
     for t in tests:
         _maybe_skip(t)()

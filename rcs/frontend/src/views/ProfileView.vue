@@ -80,17 +80,18 @@ async function onChangePassword() {
 </script>
 
 <template>
-  <div class="page">
-    <div class="page-header">
-      <div>
-        <h2 class="page-title">{{ t('sys.profile.title') }}</h2>
-        <p class="page-subtitle">{{ auth.profile?.username }}</p>
+  <div class="app-page">
+    <header class="page-hero">
+      <div class="hero-text">
+        <span class="hero-kicker">{{ t('common.kicker') }}</span>
+        <h1 class="hero-title">{{ t('sys.profile.title') }}</h1>
+        <p class="hero-sub">{{ auth.profile?.username }}</p>
       </div>
-    </div>
+    </header>
 
     <div class="profile-grid">
-      <div class="panel">
-        <h3 class="panel-title">
+      <div class="app-card">
+        <h3 class="card-title">
           <UserOutlined />
           {{ t('sys.profile.basic') }}
         </h3>
@@ -124,8 +125,8 @@ async function onChangePassword() {
         </a-form>
       </div>
 
-      <div class="panel">
-        <h3 class="panel-title">
+      <div class="app-card">
+        <h3 class="card-title">
           <LockOutlined />
           {{ t('sys.profile.security') }}
         </h3>

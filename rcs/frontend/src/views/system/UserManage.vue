@@ -176,41 +176,45 @@ async function submitReset() {
 </script>
 
 <template>
-  <div class="page">
-    <div class="page-header">
-      <div>
-        <h2 class="page-title">{{ t('sys.user.title') }}</h2>
-        <p class="page-subtitle">{{ t('common.total') }} {{ total }}</p>
+  <div class="app-page">
+    <header class="page-hero">
+      <div class="hero-text">
+        <span class="hero-kicker">{{ t('common.kicker') }}</span>
+        <h1 class="hero-title">{{ t('sys.user.title') }}</h1>
+        <p class="hero-sub">{{ t('common.total') }} {{ total }}</p>
       </div>
-      <a-space>
+      <div class="hero-actions">
         <a-button type="primary" @click="openCreate">{{ t('common.add') }}</a-button>
         <a-button @click="load">{{ t('admin.devices.refresh') }}</a-button>
-      </a-space>
-    </div>
+      </div>
+    </header>
 
-    <div class="panel">
-      <div class="toolbar">
-        <a-input
-          v-model:value="filters.keyword"
-          :placeholder="t('common.search')"
-          allow-clear
-          style="width: 220px"
-          @press-enter="load"
-        />
-        <a-select
-          v-model:value="filters.status"
-          :placeholder="t('common.status')"
-          allow-clear
-          style="width: 140px"
-          @change="load"
-        >
-          <a-select-option value="active">{{ t('common.enabled') }}</a-select-option>
-          <a-select-option value="disabled">{{ t('common.disabled') }}</a-select-option>
-        </a-select>
-        <a-button type="primary" ghost @click="load">{{ t('common.search') }}</a-button>
-        <a-button @click="filters.keyword = ''; filters.status = undefined; load()">
-          {{ t('common.reset') }}
-        </a-button>
+    <div class="data-panel">
+      <div class="panel-head">
+        <h3>{{ t('sys.user.title') }}</h3>
+        <div class="toolbar">
+          <a-input
+            v-model:value="filters.keyword"
+            :placeholder="t('common.search')"
+            allow-clear
+            class="toolbar-search"
+            @press-enter="load"
+          />
+          <a-select
+            v-model:value="filters.status"
+            :placeholder="t('common.status')"
+            allow-clear
+            style="width: 140px"
+            @change="load"
+          >
+            <a-select-option value="active">{{ t('common.enabled') }}</a-select-option>
+            <a-select-option value="disabled">{{ t('common.disabled') }}</a-select-option>
+          </a-select>
+          <a-button type="primary" ghost @click="load">{{ t('common.search') }}</a-button>
+          <a-button @click="filters.keyword = ''; filters.status = undefined; load()">
+            {{ t('common.reset') }}
+          </a-button>
+        </div>
       </div>
 
       <a-table

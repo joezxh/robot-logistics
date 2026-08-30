@@ -48,7 +48,7 @@ async function send(type: CommandType): Promise<void> {
       <span class="cp-health" :class="{ on: devices.health.running }">
         {{ t('control.health') }}: {{ devices.health.running ? t('control.running') : t('control.stopped') }}
       </span>
-      <button class="cp-btn" type="button" @click="devices.loadRegistry()">{{ t('control.refresh') }}</button>
+      <a-button type="default" @click="devices.loadRegistry()">{{ t('control.refresh') }}</a-button>
     </header>
 
     <div class="cp-body">
@@ -91,22 +91,20 @@ async function send(type: CommandType): Promise<void> {
 
           <h4>{{ t('control.commands') }}</h4>
           <div class="cp-cmds">
-            <button
+            <a-button
               v-for="b in commandButtons"
               :key="b.type"
-              class="cp-btn"
-              :class="{ danger: b.danger }"
-              type="button"
+              :danger="b.danger"
               @click="send(b.type)"
             >
               {{ t(b.labelKey) }}
-            </button>
-            <button class="cp-btn danger" type="button" @click="selectedId && devices.estop(selectedId)">
+            </a-button>
+            <a-button danger @click="selectedId && devices.estop(selectedId)">
               {{ t('control.estop') }}
-            </button>
-            <button class="cp-btn" type="button" @click="selectedId && devices.clearEstop(selectedId)">
+            </a-button>
+            <a-button @click="selectedId && devices.clearEstop(selectedId)">
               {{ t('control.clearEstop') }}
-            </button>
+            </a-button>
           </div>
           <p v-if="devices.lastCommand" class="cp-last">{{ t('control.lastCommand') }}: {{ devices.lastCommand }}</p>
         </div>
@@ -123,9 +121,6 @@ async function send(type: CommandType): Promise<void> {
 .cp-head h2 { margin: 0; font-size: 18px; }
 .cp-health { font-size: 12px; color: var(--fg-soft); padding: 2px 8px; border: 1px solid var(--border); border-radius: 12px; }
 .cp-health.on { color: var(--ok); border-color: var(--ok); }
-.cp-btn { background: var(--bg-card-alt); border: 1px solid var(--border); color: var(--fg); border-radius: 6px; padding: 6px 10px; font-size: 13px; cursor: pointer; }
-.cp-btn.danger { background: var(--err); border-color: var(--err); color: #fff; }
-.cp-btn:hover { filter: brightness(1.1); }
 .cp-body { flex: 1; display: grid; grid-template-columns: 220px 1fr; gap: 14px; min-height: 0; }
 .cp-list { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; overflow: auto; }
 .cp-list h4 { margin: 0 0 8px; font-size: 13px; color: var(--fg-soft); }

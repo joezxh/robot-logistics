@@ -6,119 +6,126 @@
  * component palette, remapped further down) resolves through these variables,
  * so switching skins never requires a component-level change.
  *
- * Both palettes share a "technical / instrumentation" character:
- * cyan-violet accents, near-black or near-white surfaces, and a subtle grid
- * backdrop that reads as an engineering console rather than a marketing page.
+ * The palette, typography, radii and surface treatment follow the
+ * Semantica "explorer" reference skin: blue accent (#3b82f6 / #2563eb) with a
+ * warm amber (#f59e0b) companion, large radii (14–26px), frosted-glass panels
+ * and soft radial glows — a calm, product-grade instrument surface.
  */
 
 :root {
-  /* Typography */
-  --font-sans: 'Inter', 'HarmonyOS Sans SC', 'PingFang SC', 'Microsoft YaHei',
-    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  /* Typography — matches the explorer reference face stack */
+  --font-sans: 'IBM Plex Sans', 'Space Grotesk', 'HarmonyOS Sans SC',
+    'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, 'Segoe UI',
+    Roboto, 'Helvetica Neue', sans-serif;
+  --font-display: 'Space Grotesk', 'IBM Plex Sans', 'HarmonyOS Sans SC',
+    'PingFang SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
 
-  /* Geometry */
-  --radius-sm: 4px;
-  --radius: 8px;
-  --radius-lg: 12px;
-  --header-h: 56px;
-  --sidebar-w: 232px;
-  --sidebar-w-collapsed: 64px;
-  --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Geometry — generous radii for the frosted, rounded explorer look */
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 26px;
+  --header-h: 64px;
+  --sidebar-w: 240px;
+  --sidebar-w-collapsed: 68px;
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ------------------------------------------------------------------ *
- * Dark skin — deep space blue with cyan / violet accents
+ * Dark skin — deep navy with blue / amber accents
  * ------------------------------------------------------------------ */
 :root,
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --bg-base: #070b14;
-  --bg-page: #0b1120;
-  --bg-surface: #111a2b;
-  --bg-elevated: #16223a;
-  --bg-hover: rgba(56, 189, 248, 0.10);
-  --bg-active: rgba(56, 189, 248, 0.16);
-  --bg-input: rgba(9, 15, 28, 0.72);
+  --bg-base: #07111f;
+  --bg-page: #0b1322;
+  --bg-surface: rgba(9, 18, 32, 0.84);
+  --bg-elevated: rgba(11, 22, 38, 0.92);
+  --bg-hover: rgba(74, 163, 255, 0.08);
+  --bg-active: rgba(74, 163, 255, 0.14);
+  --bg-input: rgba(3, 8, 14, 0.55);
 
-  --fg: #e6edf7;
-  --fg-secondary: #9fb0cb;
-  --fg-muted: #64748b;
-  --fg-inverse: #050a12;
+  --fg: #ebf3ff;
+  --fg-secondary: #8fa8c6;
+  --fg-muted: #5a7a9a;
+  --fg-inverse: #050b15;
 
-  --border: #1f2d45;
-  --border-strong: #2c3d5c;
-  --divider: rgba(148, 163, 184, 0.14);
+  --border: rgba(140, 192, 255, 0.14);
+  --border-strong: rgba(140, 192, 255, 0.26);
+  --divider: rgba(140, 192, 255, 0.1);
 
-  --accent: #22d3ee;
-  --accent-hover: #67e8f9;
-  --accent-soft: rgba(34, 211, 238, 0.14);
-  --accent-2: #a78bfa;
-  --accent-2-soft: rgba(167, 139, 250, 0.14);
+  --accent: #4aa3ff;
+  --accent-hover: #7fd0ff;
+  --accent-soft: rgba(74, 163, 255, 0.12);
+  --accent-2: #f2b66d;
+  --accent-2-soft: rgba(242, 182, 109, 0.12);
 
-  --ok: #34d399;
-  --ok-soft: rgba(52, 211, 153, 0.14);
-  --warn: #fbbf24;
-  --warn-soft: rgba(251, 191, 36, 0.14);
-  --err: #f87171;
-  --err-soft: rgba(248, 113, 113, 0.14);
-  --info: #60a5fa;
-  --info-soft: rgba(96, 165, 250, 0.14);
+  --ok: #4cc38a;
+  --ok-soft: rgba(76, 195, 138, 0.12);
+  --warn: #f2b66d;
+  --warn-soft: rgba(242, 182, 109, 0.12);
+  --err: #ff7b72;
+  --err-soft: rgba(255, 123, 114, 0.12);
+  --info: #4aa3ff;
+  --info-soft: rgba(74, 163, 255, 0.12);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-lg: 0 28px 64px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
-  /* "Instrument panel" grid backdrop used behind the console content. */
-  --grid-line: rgba(56, 189, 248, 0.05);
-  --glow: 0 0 0 1px rgba(34, 211, 238, 0.28), 0 0 18px rgba(34, 211, 238, 0.14);
+  /* Soft radial glows used behind the page + login surfaces. */
+  --glow-a: radial-gradient(circle at top, rgba(103, 182, 255, 0.08), transparent 24%);
+  --glow-b: radial-gradient(circle at top right, rgba(242, 182, 109, 0.07), transparent 30%);
+  --glass: saturate(140%) blur(18px);
 }
 
 /* ------------------------------------------------------------------ *
- * Light skin — cool graphite on paper white, same accent hue family
+ * Light skin — cool paper white, same accent hue family
  * ------------------------------------------------------------------ */
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --bg-base: #eef2f8;
-  --bg-page: #f6f8fc;
-  --bg-surface: #ffffff;
-  --bg-elevated: #ffffff;
-  --bg-hover: rgba(8, 145, 178, 0.08);
-  --bg-active: rgba(8, 145, 178, 0.14);
+  --bg-base: #eef2f7;
+  --bg-page: #f5f7fa;
+  --bg-surface: rgba(255, 255, 255, 0.92);
+  --bg-elevated: rgba(255, 255, 255, 0.96);
+  --bg-hover: rgba(59, 130, 246, 0.06);
+  --bg-active: rgba(59, 130, 246, 0.1);
   --bg-input: #ffffff;
 
-  --fg: #0f1c30;
-  --fg-secondary: #4a5b74;
-  --fg-muted: #8296b0;
+  --fg: #1f2937;
+  --fg-secondary: #5a6b80;
+  --fg-muted: #9ca3af;
   --fg-inverse: #ffffff;
 
-  --border: #d6e0ee;
-  --border-strong: #b9c9de;
-  --divider: rgba(15, 28, 48, 0.08);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(59, 130, 246, 0.3);
+  --divider: rgba(0, 0, 0, 0.07);
 
-  --accent: #0891b2;
-  --accent-hover: #0e7490;
-  --accent-soft: rgba(8, 145, 178, 0.10);
-  --accent-2: #7c3aed;
-  --accent-2-soft: rgba(124, 58, 237, 0.10);
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-soft: rgba(59, 130, 246, 0.08);
+  --accent-2: #f59e0b;
+  --accent-2-soft: rgba(245, 158, 11, 0.08);
 
-  --ok: #059669;
-  --ok-soft: rgba(5, 150, 105, 0.10);
+  --ok: #10b981;
+  --ok-soft: rgba(16, 185, 129, 0.08);
   --warn: #d97706;
-  --warn-soft: rgba(217, 119, 6, 0.10);
-  --err: #dc2626;
-  --err-soft: rgba(220, 38, 38, 0.10);
-  --info: #2563eb;
-  --info-soft: rgba(37, 99, 235, 0.10);
+  --warn-soft: rgba(245, 158, 11, 0.08);
+  --err: #ef4444;
+  --err-soft: rgba(239, 68, 68, 0.08);
+  --info: #3b82f6;
+  --info-soft: rgba(59, 130, 246, 0.08);
 
-  --shadow-sm: 0 1px 2px rgba(15, 28, 48, 0.06);
-  --shadow: 0 6px 20px rgba(15, 28, 48, 0.10);
-  --shadow-lg: 0 16px 40px rgba(15, 28, 48, 0.14);
+  --shadow-sm: 0 1px 3px rgba(15, 28, 48, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --shadow: 0 12px 32px rgba(15, 28, 48, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --shadow-lg: 0 22px 48px rgba(15, 28, 48, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.85);
 
-  --grid-line: rgba(8, 145, 178, 0.05);
-  --glow: 0 0 0 1px rgba(8, 145, 178, 0.24), 0 0 14px rgba(8, 145, 178, 0.10);
+  --glow-a: radial-gradient(circle at top, rgba(59, 130, 246, 0.06), transparent 24%);
+  --glow-b: radial-gradient(circle at top right, rgba(245, 158, 11, 0.05), transparent 30%);
+  --glass: saturate(140%) blur(18px);
 }
 
 /* ------------------------------------------------------------------ *
@@ -130,50 +137,56 @@
  * ------------------------------------------------------------------ */
 :root[data-theme='dark'] .ant-app,
 :root[data-theme='dark'] {
-  --ant-color-primary: #22d3ee;
-  --ant-color-primary-hover: #67e8f9;
-  --ant-color-primary-active: #06b6d4;
-  --ant-color-success: #34d399;
-  --ant-color-warning: #fbbf24;
-  --ant-color-error: #f87171;
-  --ant-color-info: #60a5fa;
-  --ant-color-text: #e6edf7;
-  --ant-color-text-secondary: #9fb0cb;
-  --ant-color-text-tertiary: #64748b;
-  --ant-color-border: #2c3d5c;
-  --ant-color-border-secondary: #1f2d45;
-  --ant-color-bg-container: #111a2b;
-  --ant-color-bg-elevated: #16223a;
-  --ant-color-bg-layout: #0b1120;
-  --ant-color-fill-tertiary: rgba(56, 189, 248, 0.10);
-  --ant-border-radius: 8px;
+  --ant-color-primary: #4aa3ff;
+  --ant-color-primary-hover: #7fd0ff;
+  --ant-color-primary-active: #2b8be8;
+  --ant-color-success: #4cc38a;
+  --ant-color-warning: #f2b66d;
+  --ant-color-error: #ff7b72;
+  --ant-color-info: #4aa3ff;
+  --ant-color-text: #ebf3ff;
+  --ant-color-text-secondary: #8fa8c6;
+  --ant-color-text-tertiary: #5a7a9a;
+  --ant-color-border: rgba(140, 192, 255, 0.18);
+  --ant-color-border-secondary: rgba(140, 192, 255, 0.12);
+  --ant-color-bg-container: rgba(9, 18, 32, 0.84);
+  --ant-color-bg-elevated: rgba(11, 22, 38, 0.96);
+  --ant-color-bg-layout: #0b1322;
+  --ant-color-fill-tertiary: rgba(74, 163, 255, 0.1);
+  --ant-border-radius: 14px;
+  --ant-border-radius-lg: 20px;
+  --ant-border-radius-sm: 10px;
 }
 
 :root[data-theme='light'] .ant-app,
 :root[data-theme='light'] {
-  --ant-color-primary: #0891b2;
-  --ant-color-primary-hover: #0e7490;
-  --ant-color-primary-active: #155e75;
-  --ant-color-success: #059669;
+  --ant-color-primary: #3b82f6;
+  --ant-color-primary-hover: #2563eb;
+  --ant-color-primary-active: #1d4ed8;
+  --ant-color-success: #10b981;
   --ant-color-warning: #d97706;
-  --ant-color-error: #dc2626;
-  --ant-color-info: #2563eb;
-  --ant-color-text: #0f1c30;
-  --ant-color-text-secondary: #4a5b74;
-  --ant-color-text-tertiary: #8296b0;
-  --ant-color-border: #d6e0ee;
-  --ant-color-border-secondary: #e6edf6;
-  --ant-color-bg-container: #ffffff;
+  --ant-color-error: #ef4444;
+  --ant-color-info: #3b82f6;
+  --ant-color-text: #1f2937;
+  --ant-color-text-secondary: #5a6b80;
+  --ant-color-text-tertiary: #9ca3af;
+  --ant-color-border: rgba(0, 0, 0, 0.1);
+  --ant-color-border-secondary: rgba(0, 0, 0, 0.06);
+  --ant-color-bg-container: rgba(255, 255, 255, 0.92);
   --ant-color-bg-elevated: #ffffff;
-  --ant-color-bg-layout: #f6f8fc;
-  --ant-color-fill-tertiary: rgba(8, 145, 178, 0.08);
-  --ant-border-radius: 8px;
+  --ant-color-bg-layout: #f5f7fa;
+  --ant-color-fill-tertiary: rgba(59, 130, 246, 0.06);
+  --ant-border-radius: 14px;
+  --ant-border-radius-lg: 20px;
+  --ant-border-radius-sm: 10px;
 }
 
 /* ------------------------------------------------------------------ *
  * Global resets shared by both skins
  * ------------------------------------------------------------------ */
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -186,12 +199,17 @@ body,
 }
 
 body {
-  background: var(--bg-page);
+  background:
+    var(--glow-a),
+    var(--glow-b),
+    var(--bg-page);
+  background-attachment: fixed;
   color: var(--fg);
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: background-color var(--transition), color var(--transition);
 }
 
@@ -212,8 +230,8 @@ pre,
 
 /* Thin, unobtrusive scrollbars that follow the active skin. */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -222,7 +240,7 @@ pre,
 
 ::-webkit-scrollbar-thumb {
   background: var(--border-strong);
-  border-radius: 4px;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -232,4 +250,10 @@ pre,
 ::selection {
   background: var(--accent-soft);
   color: var(--fg);
+}
+
+/* Focus ring for accessibility */
+:focus-visible {
+  outline: 2px solid rgba(74, 163, 255, 0.55);
+  outline-offset: 2px;
 }

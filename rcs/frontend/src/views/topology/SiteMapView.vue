@@ -31,6 +31,10 @@ async function selectScenario(id: ScenarioId) {
   await Promise.all([floorStore.loadByScenario(id), gridStore.loadByScenario(id)])
 }
 
+function onViewModeChange(e: { target: { value: '2d' | '3d' } }) {
+  view.value = e.target.value
+}
+
 onMounted(async () => {
   await scenarioStore.loadTemplates()
   if (selected.value) await selectScenario(selected.value)
@@ -53,23 +57,31 @@ const scenarioOptions = computed(() =>
     <header class="sm-top">
       <h2>{{ t('app.title') }}</h2>
       <div class="controls">
-        <label class="ctrl">
-          <span>{{ t('scenario.label') }}</span>
-          <select :value="selected" @change="selectScenario(($event.target as HTMLSelectElement).value as ScenarioId)">
-            <option v-for="o in scenarioOptions" :key="o.id" :value="o.id">{{ o.name }}</option>
-          </select>
-        </label>
-        <div class="toggle">
-          <button :class="{ active: view === '2d' }" @click="view = '2d'">{{ t('map.view2d') }}</button>
-          <button :class="{ active: view === '3d' }" @click="view = '3d'">{{ t('map.view3d') }}</button>
-        </div>
-        <label v-if="showFloorSelector" class="ctrl">
-          <span>{{ t('map.floor') }}</span>
-          <select v-model.number="floorIndex">
-            <option :value="undefined">—</option>
-            <option v-for="(f, i) in shell?.floors" :key="f.id" :value="i">{{ f.id }}</option>
-          </select>
-        </label>
+        <a-select
+          :value="selected"
+          style="width: 200px"
+          :placeholder="t('scenario.select')"
+          @change="selectScenario($event as ScenarioId)"
+        >
+          <a-select-option v-for="o in scenarioOptions" :key="o.id" :value="o.id">
+            {{ o.name }}
+          </a-select-option>
+        </a-select>
+        <a-radio-group :value="view" @change="onViewModeChange">
+          <a-radio-button value="2d">{{ t('map.view2d') }}</a-radio-button>
+          <a-radio-button value="3d">{{ t('map.view3d') }}</a-radio-button>
+        </a-radio-group>
+        <a-select
+          v-if="showFloorSelector"
+          v-model:value.number="floorIndex"
+          style="width: 140px"
+          :placeholder="t('map.floor')"
+        >
+          <a-select-option :value="undefined">—</a-select-option>
+          <a-select-option v-for="(f, i) in shell?.floors" :key="f.id" :value="i">
+            {{ f.id }}
+          </a-select-option>
+        </a-select>
       </div>
     </header>
 
@@ -93,11 +105,6 @@ const scenarioOptions = computed(() =>
 .sm-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .sm-top h2 { margin: 0; font-size: 18px; }
 .controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.ctrl { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--fg-soft); }
-.ctrl select { background: var(--bg-card-alt); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; }
-.toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
-.toggle button { background: var(--bg-card-alt); color: var(--fg); border: none; padding: 5px 12px; cursor: pointer; }
-.toggle button.active { background: var(--accent); color: #0b1120; }
 .err { color: var(--err); font-size: 13px; margin: 0; }
 .sm-main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 12px; min-height: 0; }
 .map { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); min-height: 360px; }

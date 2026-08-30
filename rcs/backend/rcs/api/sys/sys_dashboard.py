@@ -17,6 +17,7 @@ from rcs.db.sys_models import (
     SysRole,
     SysUser,
 )
+from rcs.db.models import Device, Order, SiteMap, TopologyShell
 from rcs.services.sys.sys_schemas import Envelope
 
 router = APIRouter(prefix="/dashboard", tags=["sys-dashboard"])
@@ -49,6 +50,10 @@ async def get_summary(
             .where(SysUser.is_deleted.is_(False), SysUser.status == "active")
         )
     ).scalar_one()
+    devices = (await db.execute(select(func.count()).select_from(Device))).scalar_one()
+    orders = (await db.execute(select(func.count()).select_from(Order))).scalar_one()
+    maps = (await db.execute(select(func.count()).select_from(SiteMap))).scalar_one()
+    warehouses = (await db.execute(select(func.count()).select_from(TopologyShell))).scalar_one()
 
     recent = (
         (
@@ -70,6 +75,10 @@ async def get_summary(
             "menuCount": int(menus),
             "dictCount": int(dicts),
             "activeUserCount": int(online),
+            "deviceCount": int(devices),
+            "orderCount": int(orders),
+            "mapCount": int(maps),
+            "warehouseCount": int(warehouses),
             "recentOperations": [
                 {
                     "logId": log.log_id,

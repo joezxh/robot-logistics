@@ -118,7 +118,15 @@ class AlertPayload(BaseModel):
 
 
 class TelemetryPayload(BaseModel):
-    """Uplink telemetry from the robot-side application to RCS."""
+    """Uplink telemetry from the robot-side application to RCS.
+
+    In addition to free-form ``metrics``/``status``, the model carries an
+    optional *digital-twin* block. When a simulation backend mirrors a robot
+    into the live control stack, it fills ``qpos``/``qvel``/``ee_pose`` so the
+    frame can be ingested into ``StateStream`` exactly like real HAL state.
+    All twin fields are optional to stay backward-compatible with plain
+    telemetry publishers.
+    """
 
     device_id: str
     iso_ts: str
@@ -126,6 +134,17 @@ class TelemetryPayload(BaseModel):
     metrics: dict[str, float] = Field(default_factory=dict)
     # Free-form status strings (firmware version, current task, ...).
     status: dict[str, str] = Field(default_factory=dict)
+
+    # --- digital-twin block (optional) -------------------------------------
+    robot_type: str | None = None
+    qpos: list[float] = Field(default_factory=list)
+    qvel: list[float] = Field(default_factory=list)
+    # End-effector pose as [x, y, z, qw, qx, qy, qz].
+    ee_pose: list[float] = Field(default_factory=list)
+    # Simulation clock (seconds) when the frame was emitted.
+    sim_time: float = 0.0
+    episode: int = 0
+    step: int = 0
 
 
 class HugParamsPayload(BaseModel):

@@ -1,174 +1,200 @@
 <script setup lang="ts">
-// Left navigation: the permission-filtered menu tree for the signed-in user.
 import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { localise } from '@/i18n'
+import { useAuthStore } from '@/stores/auth'
 import SidebarItem from './SidebarItem.vue'
 
-const auth = useAuthStore()
-const app = useAppStore()
-const route = useRoute()
 const router = useRouter()
+const app = useAppStore()
+const auth = useAuthStore()
 
-/** Key of the currently open leaf, so the highlighted state follows the route. */
-const selectedKeys = computed(() => [route.path])
+const menus = computed(() => auth.menus)
+const collapsed = computed(() => app.sidebarCollapsed)
 
-/** Expand every directory that contains the active route by default. */
-const openKeys = computed(() => {
-  const keys: string[] = []
-  const walk = (nodes: typeof auth.menus, trail: string[]) => {
-    for (const node of nodes) {
-      const next = [...trail, `dir-${node.id}`]
-      if (node.children?.length) walk(node.children, next)
-      if (node.path === route.path) keys.push(...next)
-    }
-  }
-  walk(auth.menus, [])
-  return keys
+const roleText = computed(() => {
+  const r = auth.profile?.roles?.[0]
+  return r ? r : 'operator'
 })
 
-function onMenuClick({ key }: { key: string }) {
-  if (key && key !== route.path) router.push(key)
+function toggle() {
+  app.toggleSidebar()
 }
 
-/** Only directories and visible pages are shown; buttons never are. */
-const visibleMenus = computed(() => auth.menus.filter((m) => m.type !== 3 && m.visible === 1))
+function onSelect(key: string) {
+  if (key) router.push(key)
+}
 </script>
 
 <template>
-  <aside class="sidebar" :class="{ collapsed: app.sidebarCollapsed }">
-    <div class="brand">
-      <span class="brand-mark">R</span>
-      <span v-show="!app.sidebarCollapsed" class="brand-text">{{ localise({}, 'RCS') }}</span>
+  <aside class="rail" :class="{ 'rail--collapsed': collapsed }">
+    <!-- Brand -->
+    <div class="rail-brand" @click="router.push('/dashboard')">
+      <div class="rail-logo">
+        <span class="rail-logo-mark">R</span>
+      </div>
+      <div class="rail-brand-text" v-show="!collapsed">
+        <div class="rail-brand-name">RCS Console</div>
+        <div class="rail-brand-sub">Robot Control Suite</div>
+      </div>
     </div>
 
-    <a-menu
-      class="sidebar-menu"
-      mode="inline"
-      theme="dark"
-      :inline-collapsed="app.sidebarCollapsed"
-      :selected-keys="selectedKeys"
-      :open-keys="openKeys"
-      @click="onMenuClick"
-    >
-      <SidebarItem v-for="node in visibleMenus" :key="node.id" :node="node" />
-    </a-menu>
+    <!-- Nav -->
+    <nav class="rail-nav">
+      <SidebarItem
+        v-for="m in menus"
+        :key="m.id"
+        :node="m"
+        :collapsed="collapsed"
+        @select="onSelect"
+      />
+    </nav>
 
-    <div class="sidebar-footer" v-show="!app.sidebarCollapsed">
-      <button class="collapse-btn" type="button" @click="app.toggleSidebar()">
-        {{ app.sidebarCollapsed ? '»' : '«' }}
+    <!-- Footer / status -->
+    <div class="rail-foot" v-show="!collapsed">
+      <div class="rail-status">
+        <span class="dot" />
+        <span>{{ roleText }}</span>
+      </div>
+      <button class="rail-collapse" :title="collapsed ? 'Expand' : 'Collapse'" @click="toggle">
+        {{ collapsed ? '»' : '«' }}
       </button>
     </div>
+    <button
+      v-show="collapsed"
+      class="rail-collapse rail-collapse--mini"
+      title="Expand"
+      @click="toggle"
+    >
+      »
+    </button>
   </aside>
 </template>
 
 <style scoped>
-.sidebar {
+.rail {
+  position: relative;
   width: var(--sidebar-w);
-  flex-shrink: 0;
+  flex: 0 0 var(--sidebar-w);
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-base);
+  background: var(--bg-surface);
+  -webkit-backdrop-filter: var(--glass);
+  backdrop-filter: var(--glass);
   border-right: 1px solid var(--border);
-  transition: width var(--transition);
-  overflow: hidden;
+  transition: width var(--transition), flex-basis var(--transition);
 }
 
-.sidebar.collapsed {
+.rail--collapsed {
   width: var(--sidebar-w-collapsed);
+  flex-basis: var(--sidebar-w-collapsed);
 }
 
-.brand {
-  height: var(--header-h);
+.rail-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  gap: 12px;
+  padding: 20px 18px;
+  cursor: pointer;
+  user-select: none;
 }
 
-.brand-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+.rail-logo {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: var(--radius);
   display: grid;
   place-items: center;
-  font-weight: 800;
-  font-size: 15px;
-  color: var(--fg-inverse);
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  box-shadow: var(--shadow-sm);
 }
 
-.brand-text {
+.rail-logo-mark {
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 1.5px;
-  color: var(--fg);
-  white-space: nowrap;
+  font-size: 20px;
+  color: var(--fg-inverse);
 }
 
-.sidebar-menu {
+:root[data-theme='light'] .rail-logo-mark {
+  color: #fff;
+}
+
+.rail-brand-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--fg);
+  line-height: 1.2;
+}
+
+.rail-brand-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.rail-nav {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
-  border-inline-end: none !important;
-  background: transparent !important;
-  padding-top: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.sidebar-menu :deep(.ant-menu-item),
-.sidebar-menu :deep(.ant-menu-submenu-title) {
-  margin: 2px 8px;
-  border-radius: var(--radius-sm);
-  width: calc(100% - 16px);
+.rail-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-top: 1px solid var(--divider);
+}
+
+.rail-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
   color: var(--fg-secondary);
+  text-transform: capitalize;
 }
 
-.sidebar-menu :deep(.ant-menu-item:hover),
-.sidebar-menu :deep(.ant-menu-submenu-title:hover) {
-  color: var(--accent);
-  background: var(--bg-hover);
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-soft);
 }
 
-.sidebar-menu :deep(.ant-menu-item-selected) {
-  color: var(--accent);
-  background: var(--accent-soft) !important;
-  box-shadow: inset 2px 0 0 var(--accent);
-}
-
-.sidebar-menu :deep(.ant-menu-submenu-selected > .ant-menu-submenu-title) {
-  color: var(--accent);
-}
-
-.sidebar-menu :deep(.ant-menu-inline),
-.sidebar-menu :deep(.ant-menu-sub) {
-  background: transparent !important;
-}
-
-.sidebar-footer {
-  border-top: 1px solid var(--border);
-  padding: 8px;
-  flex-shrink: 0;
-}
-
-.collapse-btn {
-  width: 100%;
-  height: 30px;
+.rail-collapse {
+  appearance: none;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: transparent;
+  background: var(--bg-input);
   color: var(--fg-secondary);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all var(--transition);
+  font-size: 14px;
+  line-height: 1;
+  transition: color var(--transition), border-color var(--transition);
 }
 
-.collapse-btn:hover {
+.rail-collapse:hover {
   color: var(--accent);
-  border-color: var(--accent);
-  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.rail-collapse--mini {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 </style>

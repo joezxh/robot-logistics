@@ -1,8 +1,29 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { http } from '@/api/http'
+import Antd from 'ant-design-vue'
 
 beforeAll(() => {
+  // Polyfills required by ant-design-vue in jsdom.
+  if (!window.matchMedia) {
+    window.matchMedia = ((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia
+  }
+  if (!('ResizeObserver' in globalThis)) {
+    ;(globalThis as any).ResizeObserver = class {
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
+    }
+  }
   // Mock echarts so jsdom (no canvas) doesn't error during DeviceMap2D init.
   vi.mock('echarts', () => ({
     init: vi.fn(() => ({ setOption: vi.fn(), resize: vi.fn(), dispose: vi.fn() })),
@@ -80,25 +101,27 @@ describe('SiteMapView', () => {
     const { mount } = await import('@vue/test-utils')
     const { i18n } = await import('@/i18n')
     const { default: SiteMapView } = await import('./SiteMapView.vue')
-    const wrapper = mount(SiteMapView, { global: { plugins: [i18n] } })
+    const wrapper = mount(SiteMapView, { global: { plugins: [i18n, Antd] } })
     await new Promise((r) => setTimeout(r, 20))
     return wrapper
   }
 
   it('renders a scenario selector with the loaded templates', async () => {
     const wrapper = await mountView()
-    const options = wrapper.findAll('select').flatMap((s) => s.findAll('option'))
-    expect(options.length).toBeGreaterThan(0)
-    expect(options[0].text()).toBe('电商仓')
+    const selects = wrapper.findAll('.ant-select')
+    expect(selects.length).toBeGreaterThanOrEqual(1)
+    // scenario options are rendered inside the select after templates load
+    const { useScenarioStore } = await import('@/stores/scenario')
+    expect(useScenarioStore().templates.length).toBeGreaterThan(0)
   })
 
   it('shows the 2D map by default and switches to 3D on toggle', async () => {
     const wrapper = await mountView()
     expect(wrapper.find('[data-testid="map2d"]').exists()).toBe(true)
-    // click the 3D toggle button
-    const buttons = wrapper.findAll('button')
-    const threeD = buttons.find((b) => b.text() === '三维视图')!
-    await threeD.trigger('click')
+    // click the underlying radio input for the 3D option so AntD change fires
+    const threeD = wrapper.findAll('.ant-radio-button-wrapper').find((b) => b.text() === '三维视图')!
+    await threeD.find('.ant-radio-button-input').trigger('change')
+    await new Promise((r) => setTimeout(r, 10))
     expect(wrapper.find('[data-testid="map3d"]').exists()).toBe(true)
   })
 
@@ -109,12 +132,9 @@ describe('SiteMapView', () => {
 
   it('hides the floor selector when the shell has no floors', async () => {
     const wrapper = await mountView()
-    // scenario <select> present, floor <select> (bound to floorIndex) absent
-    const selects = wrapper.findAll('select')
-    expect(selects.length).toBeGreaterThanOrEqual(1)
-    const floorOptions = selects.flatMap((s) => s.findAll('option')).map((o) => o.text())
-    // ecommerce shell has no floors, so no "L1"/"L2" floor options
-    expect(floorOptions.some((t) => t === 'L1' || t === 'L2')).toBe(false)
+    // scenario a-select present, floor a-select (bound to floorIndex) absent for ecommerce
+    const selects = wrapper.findAll('.ant-select')
+    expect(selects.length).toBe(1)
   })
 
   it('shows a floor selector for multi_floor shells', async () => {
@@ -125,11 +145,11 @@ describe('SiteMapView', () => {
     const { useScenarioStore } = await import('@/stores/scenario')
     const store = useScenarioStore()
     await store.loadTemplates()
-    const wrapper = mount(SiteMapView, { global: { plugins: [i18n] } })
+    const wrapper = mount(SiteMapView, { global: { plugins: [i18n, Antd] } })
     await new Promise((r) => setTimeout(r, 10))
     await store.select('multi_floor')
     await new Promise((r) => setTimeout(r, 20))
     // scenario select + floor select
-    expect(wrapper.findAll('select').length).toBeGreaterThanOrEqual(2)
+    expect(wrapper.findAll('.ant-select').length).toBeGreaterThanOrEqual(2)
   })
 })

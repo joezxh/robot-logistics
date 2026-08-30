@@ -33,17 +33,22 @@ const antdLocale = computed(() => ANTD_LOCALES[app.locale] ?? enUS)
  * switch is a single attribute change; only the structural tokens are set here.
  */
 const componentTokens = computed(() => ({
-  borderRadius: 8,
+  // Large radii + slightly taller controls match the explorer frosted look.
+  borderRadius: 14,
+  borderRadiusLG: 20,
+  borderRadiusSM: 10,
   fontSize: 14,
-  controlHeight: 32,
+  controlHeight: 36,
   // Let surfaces pick up our palette instead of AntD's fixed whites/greys.
   colorBgContainer: 'var(--bg-surface)',
   colorBgElevated: 'var(--bg-elevated)',
   colorBorder: 'var(--border)',
   colorBorderSecondary: 'var(--border)',
   colorPrimary: 'var(--accent)',
+  colorPrimaryHover: 'var(--accent-hover)',
   colorText: 'var(--fg)',
   colorTextSecondary: 'var(--fg-secondary)',
+  fontFamily: "'IBM Plex Sans', 'Space Grotesk', 'HarmonyOS Sans SC', system-ui, sans-serif",
 }))
 
 const algorithm = computed(() =>

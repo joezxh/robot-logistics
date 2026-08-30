@@ -107,32 +107,29 @@ function purge(before?: string) {
 </script>
 
 <template>
-  <div class="page">
-    <div class="page-header">
-      <div>
-        <h2 class="page-title">{{ t('sys.audit.title') }}</h2>
-        <p class="page-subtitle">{{ t('common.total') }} {{ total }}</p>
+  <div class="app-page">
+    <header class="page-hero">
+      <div class="hero-text">
+        <span class="hero-kicker">{{ t('common.kicker') }}</span>
+        <h1 class="hero-title">{{ t('sys.audit.title') }}</h1>
+        <p class="hero-sub">{{ t('common.total') }} {{ total }}</p>
       </div>
-      <a-space>
+      <div class="hero-actions">
         <a-button danger @click="purge(dayjs().subtract(90, 'day').format('YYYY-MM-DD'))">
           {{ t('sys.audit.purge') }} (90d)
         </a-button>
         <a-button danger type="primary" @click="purge()">{{ t('sys.audit.purgeAll') }}</a-button>
         <a-button @click="load">{{ t('admin.devices.refresh') }}</a-button>
-      </a-space>
-    </div>
+      </div>
+    </header>
 
     <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-icon">
-          <span>#</span>
-        </div>
-        <div>
-          <div class="stat-value">{{ stats?.total ?? 0 }}</div>
-          <div class="stat-label">{{ t('sys.audit.totalRecords') }}</div>
-        </div>
+      <div class="stat-tile">
+        <span class="stat-label">{{ t('sys.audit.totalRecords') }}</span>
+        <span class="stat-value">{{ stats?.total ?? 0 }}</span>
       </div>
-      <div class="stat-card stat-by-type">
+      <div class="stat-tile stat-by-type">
+        <span class="stat-label">{{ t('sys.audit.operationType') }}</span>
         <div class="type-tags">
           <a-tag v-for="(count, type) in (stats?.byType ?? {})" :key="type" :color="typeColor(type)">
             {{ type }}: {{ count }}
@@ -142,37 +139,40 @@ function purge(before?: string) {
       </div>
     </div>
 
-    <div class="panel">
-      <div class="toolbar">
-        <a-input
-          v-model:value="filters.username"
-          :placeholder="t('sys.audit.user')"
-          allow-clear
-          style="width: 160px"
-          @press-enter="load"
-        />
-        <a-select
-          v-model:value="filters.operationType"
-          :placeholder="t('sys.audit.operationType')"
-          allow-clear
-          style="width: 150px"
-          @change="load"
-        >
-          <a-select-option v-for="op in OPERATION_TYPES" :key="op" :value="op">{{ op }}</a-select-option>
-        </a-select>
-        <a-input
-          v-model:value="filters.keyword"
-          :placeholder="t('common.search')"
-          allow-clear
-          style="width: 220px"
-          @press-enter="load"
-        />
-        <a-range-picker v-model:value="filters.range" style="width: 240px" @change="load" />
-        <a-button type="primary" ghost @click="load">{{ t('common.search') }}</a-button>
-        <a-button @click="filters.username = ''; filters.operationType = undefined;
-                          filters.keyword = ''; filters.range = undefined; load()">
-          {{ t('common.reset') }}
-        </a-button>
+    <div class="data-panel">
+      <div class="panel-head">
+        <h3>{{ t('sys.audit.title') }}</h3>
+        <div class="toolbar">
+          <a-input
+            v-model:value="filters.username"
+            :placeholder="t('sys.audit.user')"
+            allow-clear
+            class="toolbar-search"
+            @press-enter="load"
+          />
+          <a-select
+            v-model:value="filters.operationType"
+            :placeholder="t('sys.audit.operationType')"
+            allow-clear
+            style="width: 150px"
+            @change="load"
+          >
+            <a-select-option v-for="op in OPERATION_TYPES" :key="op" :value="op">{{ op }}</a-select-option>
+          </a-select>
+          <a-input
+            v-model:value="filters.keyword"
+            :placeholder="t('common.search')"
+            allow-clear
+            class="toolbar-search"
+            @press-enter="load"
+          />
+          <a-range-picker v-model:value="filters.range" style="width: 240px" @change="load" />
+          <a-button type="primary" ghost @click="load">{{ t('common.search') }}</a-button>
+          <a-button @click="filters.username = ''; filters.operationType = undefined;
+                            filters.keyword = ''; filters.range = undefined; load()">
+            {{ t('common.reset') }}
+          </a-button>
+        </div>
       </div>
 
       <a-table

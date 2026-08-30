@@ -83,7 +83,10 @@ function onPortalClick({ key }: { key: string | number }) {
       <MenuFoldOutlined v-else />
     </button>
 
-    <h1 class="title">{{ t('sys.brand') }}</h1>
+    <div class="topbar-title">
+      <span class="kicker">Console</span>
+      <h1 class="title">{{ t('sys.brand') }}</h1>
+    </div>
 
     <!-- Portal: direct access to the big-screen views granted to this user. -->
     <a-dropdown v-if="auth.portalMenus.length">
@@ -131,7 +134,7 @@ function onPortalClick({ key }: { key: string | number }) {
 
     <a-dropdown placement="bottomRight">
       <div class="user-chip">
-        <a-avatar :size="28" class="avatar">{{ initial }}</a-avatar>
+        <a-avatar :size="30" class="avatar">{{ initial }}</a-avatar>
         <span class="user-name">{{ auth.profile?.realName ?? '-' }}</span>
         <DownOutlined class="caret" />
       </div>
@@ -157,18 +160,35 @@ function onPortalClick({ key }: { key: string | number }) {
   height: var(--header-h);
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 16px;
+  gap: 12px;
+  padding: 0 18px;
   background: var(--bg-surface);
+  -webkit-backdrop-filter: var(--glass);
+  backdrop-filter: var(--glass);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
+.topbar-title {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
 .title {
-  margin: 0;
+  margin: 3px 0 0;
+  font-family: var(--font-display);
   font-size: 16px;
-  font-weight: 650;
-  letter-spacing: 0.4px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
   color: var(--fg);
   white-space: nowrap;
 }
@@ -184,8 +204,8 @@ function onPortalClick({ key }: { key: string | number }) {
 }
 
 .icon-btn {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
   border: 1px solid var(--border);
@@ -199,7 +219,7 @@ function onPortalClick({ key }: { key: string | number }) {
 
 .icon-btn:hover {
   color: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--border-strong);
   background: var(--bg-hover);
 }
 
@@ -207,8 +227,8 @@ function onPortalClick({ key }: { key: string | number }) {
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 32px;
-  padding: 0 12px;
+  height: 34px;
+  padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -220,7 +240,7 @@ function onPortalClick({ key }: { key: string | number }) {
 
 .portal-btn:hover {
   color: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--border-strong);
   background: var(--bg-hover);
 }
 
@@ -233,19 +253,21 @@ function onPortalClick({ key }: { key: string | number }) {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 8px 4px 4px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid var(--border);
   border-radius: 999px;
   cursor: pointer;
-  transition: background var(--transition);
+  transition: background var(--transition), border-color var(--transition);
 }
 
 .user-chip:hover {
   background: var(--bg-hover);
+  border-color: var(--border-strong);
 }
 
 .avatar {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: var(--fg-inverse);
+  color: var(--fg-inverse) !important;
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -261,7 +283,7 @@ function onPortalClick({ key }: { key: string | number }) {
 
 @media (max-width: 900px) {
   .clock,
-  .title {
+  .topbar-title {
     display: none;
   }
 }

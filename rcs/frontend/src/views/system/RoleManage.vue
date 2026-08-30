@@ -153,29 +153,33 @@ function toggleAll(checked: boolean) {
 </script>
 
 <template>
-  <div class="page">
-    <div class="page-header">
-      <div>
-        <h2 class="page-title">{{ t('sys.role.title') }}</h2>
-        <p class="page-subtitle">{{ t('common.total') }} {{ rows.length }}</p>
+  <div class="app-page">
+    <header class="page-hero">
+      <div class="hero-text">
+        <span class="hero-kicker">{{ t('common.kicker') }}</span>
+        <h1 class="hero-title">{{ t('sys.role.title') }}</h1>
+        <p class="hero-sub">{{ t('common.total') }} {{ rows.length }}</p>
       </div>
-      <a-space>
+      <div class="hero-actions">
         <a-button type="primary" @click="openCreate">{{ t('common.add') }}</a-button>
         <a-button @click="load">{{ t('admin.devices.refresh') }}</a-button>
-      </a-space>
-    </div>
+      </div>
+    </header>
 
-    <div class="panel">
-      <div class="toolbar">
-        <a-input
-          v-model:value="keyword"
-          :placeholder="t('common.search')"
-          allow-clear
-          style="width: 220px"
-          @press-enter="load"
-        />
-        <a-button type="primary" ghost @click="load">{{ t('common.search') }}</a-button>
-        <a-button @click="keyword = ''; load()">{{ t('common.reset') }}</a-button>
+    <div class="data-panel">
+      <div class="panel-head">
+        <h3>{{ t('sys.role.title') }}</h3>
+        <div class="toolbar">
+          <a-input
+            v-model:value="keyword"
+            :placeholder="t('common.search')"
+            allow-clear
+            class="toolbar-search"
+            @press-enter="load"
+          />
+          <a-button type="primary" ghost @click="load">{{ t('common.search') }}</a-button>
+          <a-button @click="keyword = ''; load()">{{ t('common.reset') }}</a-button>
+        </div>
       </div>
 
       <a-table

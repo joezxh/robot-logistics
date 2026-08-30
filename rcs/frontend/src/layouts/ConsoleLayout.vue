@@ -1,48 +1,52 @@
 <script setup lang="ts">
-// Console shell: sidebar (left) + top bar + main content (right).
-//
-// The sidebar is driven entirely by the permission-filtered menu tree held in
-// the auth store, so the layout itself contains no hard-coded navigation.
 import AppSidebar from './components/AppSidebar.vue'
 import AppHeader from './components/AppHeader.vue'
 </script>
 
 <template>
-  <div class="console">
+  <a-layout class="workspace">
     <AppSidebar />
-    <div class="console-body">
+
+    <a-layout class="workspace-main">
       <AppHeader />
-      <main class="console-content">
-        <router-view v-slot="{ Component, route }">
-          <keep-alive :max="8">
-            <component :is="Component" v-if="route.meta.keepAlive" :key="route.path" />
-          </keep-alive>
-          <component :is="Component" v-if="!route.meta.keepAlive" :key="route.path" />
+
+      <a-layout-content class="workspace-content">
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
         </router-view>
-      </main>
-    </div>
-  </div>
+      </a-layout-content>
+    </a-layout>
+  </a-layout>
 </template>
 
 <style scoped>
-.console {
-  display: flex;
-  height: 100%;
-  background: var(--bg-page);
-  overflow: hidden;
+.workspace {
+  display: flex !important;
+  flex-direction: row !important;
+  height: 100vh;
+  background: transparent;
 }
 
-.console-body {
+.workspace-main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: transparent;
 }
 
-.console-content {
+.workspace-content {
   flex: 1;
   min-height: 0;
-  overflow: auto;
-  position: relative;
+  overflow: hidden;
+}
+
+/* keep the frosted page glow from bleeding through the content scroll area */
+.workspace-content :deep(.app-page) {
+  height: 100%;
 }
 </style>

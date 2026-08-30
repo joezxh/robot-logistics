@@ -51,6 +51,23 @@ export const router = createRouter({
 let dynamicRegistered = false
 
 /**
+ * Does this record belong to the menu-derived set?
+ *
+ * Menu rows are named after `component_name` (e.g. "UserManage"), so matching
+ * on a `menu-` prefix alone misses most of them. Every record produced by
+ * `buildRoutes()` carries `meta.menuId`, and the fallback pages carry
+ * `meta.builtIn` — those two flags are the reliable marker.
+ */
+function isDynamicRoute(route: { name: unknown; meta?: unknown }): boolean {
+  const meta = (route.meta ?? {}) as Record<string, unknown>
+  return (
+    String(route.name).startsWith('menu-') ||
+    meta.menuId !== undefined ||
+    Boolean(meta.builtIn)
+  )
+}
+
+/**
  * Register the console children derived from the user's menus.
  *
  * Safe to call repeatedly: previously added dynamic routes are removed first so
@@ -60,10 +77,7 @@ export function registerDynamicRoutes(): void {
   const auth = useAuthStore()
   const existing = router.getRoutes()
   for (const route of existing) {
-    if (route.name && String(route.name).startsWith('menu-')) {
-      router.removeRoute(route.name)
-    }
-    if (route.meta?.builtIn && route.name) {
+    if (route.name && isDynamicRoute(route)) {
       router.removeRoute(route.name)
     }
   }
@@ -82,7 +96,7 @@ export function registerDynamicRoutes(): void {
 /** Drop the dynamic routes (used on logout). */
 export function resetDynamicRoutes(): void {
   for (const route of router.getRoutes()) {
-    if (route.name && (String(route.name).startsWith('menu-') || route.meta?.builtIn)) {
+    if (route.name && isDynamicRoute(route)) {
       router.removeRoute(route.name)
     }
   }
@@ -100,20 +114,21 @@ function firstAllowedPath(): string {
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
-  // 1. Public routes (login / 404) never require a session.
-  if (to.meta?.public) {
-    if (to.name === 'login' && auth.isAuthenticated) {
-      return { path: firstAllowedPath() }
-    }
-    return true
-  }
-
-  // 2. Authentication.
+  // 1. No session yet — send everything to the login page, remembering where
+  //    the user wanted to go so a deep link survives the detour.
   if (!auth.isAuthenticated) {
+    if (to.name === 'login') return true
     return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined }
   }
 
-  // 3. Make sure the profile + menu tree are loaded for this session.
+  // 2. Authenticated: load the profile + menu tree and register the routes
+  //    BEFORE deciding anything about `to`.
+  //
+  //    This ordering is what makes a full page load on a dynamic path work.
+  //    Until the menu routes are registered the console has no children, so
+  //    `/system/users` resolves to the 404 catch-all — and because that
+  //    catch-all is public, an earlier version of this guard allowed it
+  //    immediately and never registered the real route.
   if (!auth.profile) {
     try {
       await auth.loadProfile()
@@ -130,6 +145,16 @@ router.beforeEach(async (to) => {
       auth.reset()
       return { name: 'login' }
     }
+    // Re-resolve the target: `to` was matched before the menu routes existed,
+    // so it may now match a freshly added one. Returning the path replays the
+    // navigation; the next pass skips this branch (both flags are now set), so
+    // the redirect happens at most once.
+    return to.fullPath
+  }
+
+  // 3. Already signed in — the login page has nothing left to offer.
+  if (to.name === 'login') {
+    return { path: firstAllowedPath() }
   }
 
   // 4. Authorisation: the path must have come from the user's menu tree.
