@@ -15,11 +15,14 @@ description = "C++ MuJoCo simulation core for robot-control-stack (Sim / SimRobo
 requires-python = ">=3.9"
 dependencies = [
     "mujoco>=3.0",      # provides the C library + headers (Linux/macOS/Windows wheels)
-    "pinocchio>=3.0",   # kinematics / IK
     "numpy>=1.23",
 ]
 
 [project.optional-dependencies]
+# pinocchio: optional IK backend (enables RCS_HAVE_PINOCCHIO).
+# Only installable via conda-forge; on Windows (pip-only) we deliberately leave it out
+# and the build falls back to the built-in MuJoCo-native `MjIK` (RCS_HAVE_PINOCCHIO off).
+pinocchio = ["pinocchio>=3.0"]
 # Boost.Interprocess (shared-memory GUI) is header-only; install development headers if
 # your system package manager manages them separately.
 boost = ["boost>=1.80"]
@@ -28,8 +31,11 @@ boost = ["boost>=1.80"]
 # CMake source dir is the package root (where CMakeLists.txt lives).
 cmake.source-dir = "."
 cmake.build-type = "Release"
+# Keep a persistent build dir: faster incremental rebuilds, and avoids MSVC's
+# MSB8029 warning about intermediate files living in %TEMP%.
+build-dir = "build/{wheel_tag}-{build_type}"
 logging.level = "INFO"
-minimum-python-version = "3.9"
+minimum-version = "0.10"
 
 # Copy the compiled _core extension + an __init__.py into the installed `rcs` package.
 wheel.packages = ["python/rcs"]

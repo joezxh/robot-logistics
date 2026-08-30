@@ -1,28 +1,31 @@
 Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple, https://mirrors.aliyun.com/pypi/simple
-Processing d:\projects\robot-logic\simulation\backend\rcs_sim_core
-  Installing build dependencies: started
-  Installing build dependencies: finished with status 'done'
-  Getting requirements to build wheel: started
-  Getting requirements to build wheel: finished with status 'done'
-  Preparing metadata (pyproject.toml): started
-  Preparing metadata (pyproject.toml): finished with status 'error'
-  error: subprocess-exited-with-error
-  
-  × Preparing metadata (pyproject.toml) did not run successfully.
-  │ exit code: 7
-  ╰─> [2 lines of output]
-      ERROR: Unrecognized options in pyproject.toml:
-        tool.scikit-build.minimum-python-version -> Did you mean: tool.scikit-build.minimum-version, tool.scikit-build.null-variant, tool.scikit-build.variant?
-      [end of output]
-  
-  note: This error originates from a subprocess, and is likely not a problem with pip.
-error: metadata-generation-failed
-
-× Encountered error while generating package metadata.
-╰─> See above for output.
-
-note: This is an issue with the package mentioned above, not pip.
-hint: See above for details.
+Obtaining file:///D:/projects/robot-logic/simulation/backend/rcs_sim_core
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: mujoco>=3.0 in d:\projects\robot-logic\simulation\backend\rcs_sim_core\.venv\lib\site-packages (from rcs-sim-core==0.1.0) (3.12.0)
+Requirement already satisfied: numpy>=1.23 in d:\projects\robot-logic\simulation\backend\rcs_sim_core\.venv\lib\site-packages (from rcs-sim-core==0.1.0) (2.4.6)
+Requirement already satisfied: absl-py in d:\projects\robot-logic\simulation\backend\rcs_sim_core\.venv\lib\site-packages (from mujoco>=3.0->rcs-sim-core==0.1.0) (2.5.0)
+Requirement already satisfied: etils[epath] in d:\projects\robot-logic\simulation\backend\rcs_sim_core\.venv\lib\site-packages (from mujoco>=3.0->rcs-sim-core==0.1.0) (1.14.0)
+Requirement already satisfied: glfw in d:\projects\robot-logic\simulation\backend\rcs_sim_core\.venv\lib\site-packages (from mujoco>=3.0->rcs-sim-core==0.1.0) (2.10.2)
+Requirement already satisfied: pyopengl in d:\projects\robot-logic\simulation\backend\rcs_sim_core\.venv\lib\site-packages (from mujoco>=3.0->rcs-sim-core==0.1.0) (3.1.10)
+Requirement already satisfied: fsspec in d:\projects\robot-logic\simulation\backend\rcs_sim_core\.venv\lib\site-packages (from etils[epath]->mujoco>=3.0->rcs-sim-core==0.1.0) (2026.7.0)
+Requirement already satisfied: typing_extensions in d:\projects\robot-logic\simulation\backend\rcs_sim_core\.venv\lib\site-packages (from etils[epath]->mujoco>=3.0->rcs-sim-core==0.1.0) (4.16.0)
+Requirement already satisfied: zipp in d:\projects\robot-logic\simulation\backend\rcs_sim_core\.venv\lib\site-packages (from etils[epath]->mujoco>=3.0->rcs-sim-core==0.1.0) (4.1.0)
+Building wheels for collected packages: rcs-sim-core
+  Building editable for rcs-sim-core (pyproject.toml): started
+  Building editable for rcs-sim-core (pyproject.toml): still running...
+  Building editable for rcs-sim-core (pyproject.toml): finished with status 'done'
+  Created wheel for rcs-sim-core: filename=rcs_sim_core-0.1.0-cp311-cp311-win_amd64.whl size=339594 sha256=65eab4a2dd9bd5aac53c1f57cf6646ed8ba80d34125e11cb396f13c5498fda57
+  Stored in directory: C:\Users\joezxh\AppData\Local\Temp\pip-ephem-wheel-cache-jiz_jm82\wheels\08\cc\cb\5dbd78e122b10aa51fd389f5d386222f3f5c8617cf655e01c9
+Successfully built rcs-sim-core
+Installing collected packages: rcs-sim-core
+  Attempting uninstall: rcs-sim-core
+    Found existing installation: rcs-sim-core 0.1.0
+    Uninstalling rcs-sim-core-0.1.0:
+      Successfully uninstalled rcs-sim-core-0.1.0
+Successfully installed rcs-sim-core-0.1.0
 
 [notice] A new release of pip available: 22.3 -> 26.2.1
-[notice] To update, run: python.exe -m pip install --upgrade pip
+[notice] To update, run: D:\projects\robot-logic\simulation\backend\rcs_sim_core\.venv\Scripts\python.exe -m pip install --upgrade pip

@@ -773,13 +773,21 @@ PYBIND11_MODULE(_core, m) {
              return std::make_shared<rcs::sim::Sim>((mjModel*)m, (mjData*)d);
            }),
            py::arg("mjmdl"), py::arg("mjdata"))
+      .def(py::init([](const std::string& xml_path) {
+             return std::make_shared<rcs::sim::Sim>(xml_path);
+           }),
+           py::arg("xml_path"))
       .def("step_until_convergence", &rcs::sim::Sim::step_until_convergence,
            py::call_guard<py::gil_scoped_release>())
       .def("is_converged", &rcs::sim::Sim::is_converged)
       .def("set_config", &rcs::sim::Sim::set_config, py::arg("cfg"))
       .def("get_config", &rcs::sim::Sim::get_config)
-      .def("step", &rcs::sim::Sim::step, py::arg("k"))
+      .def("step", &rcs::sim::Sim::step, py::arg("k") = 1)
+      .def("forward", &rcs::sim::Sim::forward)
+      .def("ncon", &rcs::sim::Sim::ncon)
+      .def("close", &rcs::sim::Sim::close)
       .def("reset", &rcs::sim::Sim::reset)
+      .def("reset_key", &rcs::sim::Sim::reset_key, py::arg("name"))
       .def("sync_gui", &rcs::sim::Sim::sync_gui)
       .def("get_dynamic_joint_schema", &rcs::sim::Sim::get_dynamic_joint_schema)
       .def("get_dynamic_joint_state", &rcs::sim::Sim::get_dynamic_joint_state)
@@ -812,6 +820,16 @@ PYBIND11_MODULE(_core, m) {
       .def("set_config", &rcs::sim::SimRobot::set_config, py::arg("cfg"))
       .def("set_joints_hard", &rcs::sim::SimRobot::set_joints_hard,
            py::arg("q"))
+      .def("set_joint_position", &rcs::sim::SimRobot::set_joint_position,
+           py::arg("q"))
+      .def("get_joint_position", &rcs::sim::SimRobot::get_joint_position)
+      .def("get_joint_velocity", &rcs::sim::SimRobot::get_joint_velocity)
+      .def("joint_limits", &rcs::sim::SimRobot::joint_limits)
+      .def("get_cartesian_position", &rcs::sim::SimRobot::get_cartesian_position)
+      .def("get_cartesian_flange_position",
+           &rcs::sim::SimRobot::get_cartesian_flange_position)
+      .def("get_base_pose_in_world_coordinates",
+           &rcs::sim::SimRobot::get_base_pose_in_world_coordinates)
       .def("clear_collision_flag", &rcs::sim::SimRobot::clear_collision_flag)
       .def("get_state", &rcs::sim::SimRobot::get_state);
 

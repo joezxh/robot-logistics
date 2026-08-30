@@ -51,19 +51,21 @@ double MjIK::_step(const Pose& target_site_pose, Eigen::VectorXd& q) const {
   mj_forward(m, d_scratch);
 
   // current site pose
-  Eigen::Map<const Eigen::Vector3d> cur_pos(d_scratch->site_xpos +
-                                            3 * site_id);
-  // MuJoCo xmat is stored column-major (OpenGL convention).
-  Eigen::Map<const Eigen::Matrix<double, 3, 3>> cur_rot(
-      d_scratch->site_xmat + 9 * site_id);
+  Eigen::Vector3d cur_pos =
+      Eigen::Map<const Eigen::Vector3d>(d_scratch->site_xpos + 3 * site_id);
+  // MuJoCo stores xmat as a 9-element ROW-major array. Eigen::Map defaults to
+  // ColMajor, so RowMajor must be requested explicitly or we read the transpose.
+  Eigen::Matrix3d cur_rot =
+      Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>>(
+          d_scratch->site_xmat + 9 * site_id);
   Pose cur(cur_rot, cur_pos);
 
   // spatial error (position + orientation)
   Pose err_pose = target_site_pose * cur.inverse();
   Eigen::Vector3d p_err = err_pose.translation();
-  Eigen::AngleAxisd aa(err_pose.rotation());
+  Eigen::AngleAxisd aa(err_pose.quaternion());
   Eigen::Vector3d r_err = aa.angle() * aa.axis();
-  Eigen::Vector6d err;
+  Vector6d err;
   err << r_err, p_err;
 
   // full Jacobian at the site (6 x nv)
@@ -89,7 +91,9 @@ double MjIK::_step(const Pose& target_site_pose, Eigen::VectorXd& q) const {
   for (int i = 0; i < m->nq; ++i) qnew[i] = d_scratch->qpos[i];
   for (int i = 0; i < dof; ++i) qnew[dof_adr[i]] += dq[i] * DT;
   double serr = err.norm();
-  q = qnew.head(dof);  // return only controlled joints
+  // Read back through dof_adr: the controlled joints are NOT necessarily the
+  // first `dof` entries of qpos (other bodies may have joints/actuators too).
+  for (int i = 0; i < dof; ++i) q[i] = qnew[dof_adr[i]];
   return serr;
 }
 
@@ -113,10 +117,11 @@ Pose MjIK::forward(const VectorXd& q0, const Pose& tcp_offset) {
   for (int i = 0; i < dof; ++i) d_scratch->qpos[dof_adr[i]] = q0[i];
   mj_forward(m, d_scratch);
 
-  Eigen::Map<const Eigen::Vector3d> site_pos(d_scratch->site_xpos +
-                                             3 * site_id);
-  Eigen::Map<const Eigen::Matrix<double, 3, 3>> site_rot(
-      d_scratch->site_xmat + 9 * site_id);
+  Eigen::Vector3d site_pos =
+      Eigen::Map<const Eigen::Vector3d>(d_scratch->site_xpos + 3 * site_id);
+  Eigen::Matrix3d site_rot =
+      Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>>(
+          d_scratch->site_xmat + 9 * site_id);
   Pose site_pose(site_rot, site_pos);
 
   // transform site pose into robot base coordinates

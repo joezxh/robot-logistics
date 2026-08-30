@@ -12,6 +12,9 @@
     "lint": "eslint . --ext .ts,.vue"
   },
   "dependencies": {
+    "@ant-design/icons-vue": "^7.0.1",
+    "ant-design-vue": "^4.2.6",
+    "dayjs": "^1.11.11",
     "echarts": "^5.5.0",
     "pinia": "^2.1.7",
     "three": "^0.162.0",

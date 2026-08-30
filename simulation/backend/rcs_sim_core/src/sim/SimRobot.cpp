@@ -151,6 +151,28 @@ common::VectorXd SimRobot::get_joint_position() {
   return m_get_joint_position();
 }
 
+common::VectorXd SimRobot::get_joint_velocity() {
+  common::VectorXd v(std::size(this->cfg.joints));
+  for (size_t i = 0; i < std::size(this->cfg.joints); ++i) {
+    size_t jnt_id = this->ids.joints[i];
+    size_t jnt_dofadr = this->sim->m->jnt_dofadr[jnt_id];
+    v[i] = this->sim->d->qvel[jnt_dofadr];
+  }
+  return v;
+}
+
+std::pair<common::VectorXd, common::VectorXd> SimRobot::joint_limits() {
+  common::VectorXd low(std::size(this->cfg.joints));
+  common::VectorXd high(std::size(this->cfg.joints));
+  for (size_t i = 0; i < std::size(this->cfg.joints); ++i) {
+    size_t jnt_id = this->ids.joints[i];
+    size_t jnt_qposadr = this->sim->m->jnt_qposadr[jnt_id];
+    low[i] = this->sim->m->jnt_range[2 * jnt_qposadr];
+    high[i] = this->sim->m->jnt_range[2 * jnt_qposadr + 1];
+  }
+  return {low, high};
+}
+
 common::VectorXd SimRobot::m_get_joint_position() {
   common::VectorXd q(std::size(this->cfg.joints));
   for (size_t i = 0; i < std::size(this->cfg.joints); ++i) {
@@ -231,8 +253,9 @@ void SimRobot::set_joints_hard(const common::VectorXd& q) {
   for (size_t i = 0; i < std::size(this->ids.joints); ++i) {
     size_t jnt_id = this->ids.joints[i];
     size_t jnt_qposadr = this->sim->m->jnt_qposadr[jnt_id];
+    size_t act_id = this->ids.actuators[i];
     this->sim->d->qpos[jnt_qposadr] = q[i];
-    this->sim->d->ctrl[this->ids.actuators[i]] = q[i];
+    this->sim->d->ctrl[act_id] = q[i];
   }
 }
 

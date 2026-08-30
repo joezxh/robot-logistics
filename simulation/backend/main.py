@@ -20,9 +20,9 @@ from backend.services.runtime import runtime
 from backend.services.security import rate_limit_dep, require_api_key
 from backend.services import metrics as prom_metrics
 from backend.algorithm.scheduler.task import TaskPriority
-from backend.data.db import create_tables, init_db
+from backend.db.db import create_tables, init_db
 from backend.services.alerts import engine as alert_engine
-from backend.config import settings
+from backend.utils.config import settings
 
 # RCS is a sibling subproject (../../rcs). It can either be embedded here
 # (default, preserves the historical single-port deployment) or run as an
@@ -177,8 +177,8 @@ app = FastAPI(
 if rcs is not None:
     app.include_router(rcs.router(), prefix="/api/rcs")
 
-from backend.routers import rcs_env as _rcs_env_router  # noqa: E402
-from backend.routers.warehouse import router as _warehouse_router
+from backend.api import rcs_env as _rcs_env_router  # noqa: E402
+from backend.api.warehouse import router as _warehouse_router
 
 app.include_router(_rcs_env_router.router)
 app.include_router(_warehouse_router)

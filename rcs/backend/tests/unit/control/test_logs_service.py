@@ -40,7 +40,7 @@ async def _prepare_db():
 
 
 async def test_issue_and_query_commands():
-    from rcs.control.logs import service as logs_svc
+    from rcs.services.control import control_logs as logs_svc
 
     await logs_svc.issue_command(device_id="agv-01", cmd_type="MOVE",
                                 payload={"x": 1.0}, issued_by="u1", result="ok")
@@ -49,7 +49,7 @@ async def test_issue_and_query_commands():
 
 
 async def test_event_log():
-    from rcs.control.logs import service as logs_svc
+    from rcs.services.control import control_logs as logs_svc
 
     await logs_svc.log_event(level="info", source="scheduler", message="step", meta={"k": 1})
     evs = await logs_svc.list_events(level="info", limit=10)

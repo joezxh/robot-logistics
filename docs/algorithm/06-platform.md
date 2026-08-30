@@ -2898,7 +2898,7 @@ class LoaderUnpackPlugin(PlatformPlugin):
 ### B.1 核心数据结构
 
 ```python
-# rcs/services/orchestration/models.py
+# rcs/services/orchestration/topology-models.py
 @dataclass
 class PlatformTask:
     task_id: str                           # UUID

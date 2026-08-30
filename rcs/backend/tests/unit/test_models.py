@@ -2,9 +2,9 @@ from rcs.db import models
 
 
 def test_all_tables_present():
-    expected = {"devices", "orders", "order_items", "order_tasks",
-                "site_maps", "site_map_versions", "planning_profiles",
-                "scheduler_configs", "command_logs", "event_logs"}
+    expected = {"robot_devices", "robot_orders", "robot_order_items", "robot_order_tasks",
+                "robot_site_maps", "robot_site_map_versions", "robot_planning_profiles",
+                "robot_scheduler_configs", "robot_command_logs", "robot_event_logs"}
     assert expected.issubset(set(models.Base.metadata.tables.keys()))
 
 

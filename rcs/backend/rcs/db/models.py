@@ -29,7 +29,7 @@ class Base(DeclarativeBase):
 
 
 class Device(Base):
-    __tablename__ = "devices"
+    __tablename__ = "robot_devices"
 
     device_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     morphology: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -55,7 +55,7 @@ class Device(Base):
 
 
 class Order(Base):
-    __tablename__ = "orders"
+    __tablename__ = "robot_orders"
 
     order_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     scenario_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
@@ -73,11 +73,11 @@ class Order(Base):
 
 
 class OrderItem(Base):
-    __tablename__ = "order_items"
+    __tablename__ = "robot_order_items"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     order_id: Mapped[str] = mapped_column(
-        ForeignKey("orders.order_id", ondelete="CASCADE"), index=True
+        ForeignKey("robot_orders.order_id", ondelete="CASCADE"), index=True
     )
     ref: Mapped[str] = mapped_column(String(128), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, default=1)
@@ -86,12 +86,12 @@ class OrderItem(Base):
 
 
 class OrderTask(Base):
-    __tablename__ = "order_tasks"
+    __tablename__ = "robot_order_tasks"
     __table_args__ = (UniqueConstraint("order_id", "node_id", name="uq_order_task"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     order_id: Mapped[str] = mapped_column(
-        ForeignKey("orders.order_id", ondelete="CASCADE"), index=True
+        ForeignKey("robot_orders.order_id", ondelete="CASCADE"), index=True
     )
     node_id: Mapped[str] = mapped_column(String(64), nullable=False)
     task_type: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -103,7 +103,7 @@ class OrderTask(Base):
 
 
 class TopologyShell(Base):
-    __tablename__ = "topology_shell"
+    __tablename__ = "robot_topology_shell"
 
     site_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     name: Mapped[str | None] = mapped_column(String(128), nullable=True)
@@ -115,12 +115,12 @@ class TopologyShell(Base):
 
 
 class TopologyGrid(Base):
-    __tablename__ = "topology_grid"
+    __tablename__ = "robot_topology_grid"
     __table_args__ = (UniqueConstraint("site_id", "zone_id", name="uq_zone"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     site_id: Mapped[str] = mapped_column(
-        ForeignKey("topology_shell.site_id", ondelete="CASCADE"), index=True
+        ForeignKey("robot_topology_shell.site_id", ondelete="CASCADE"), index=True
     )
     zone_id: Mapped[str] = mapped_column(String(64), nullable=False)
     zone_type: Mapped[int] = mapped_column(Integer, default=0)
@@ -137,7 +137,7 @@ class TopologyGrid(Base):
 
 
 class SiteMap(Base):
-    __tablename__ = "site_maps"
+    __tablename__ = "robot_site_maps"
 
     map_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     name: Mapped[str | None] = mapped_column(String(128), nullable=True)
@@ -151,11 +151,11 @@ class SiteMap(Base):
 
 
 class SiteMapVersion(Base):
-    __tablename__ = "site_map_versions"
+    __tablename__ = "robot_site_map_versions"
 
     version_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     map_id: Mapped[str] = mapped_column(
-        ForeignKey("site_maps.map_id", ondelete="CASCADE"), index=True
+        ForeignKey("robot_site_maps.map_id", ondelete="CASCADE"), index=True
     )
     version: Mapped[int] = mapped_column(Integer, default=1)
     nodes_json: Mapped[list] = mapped_column(JSON, default=list)
@@ -165,7 +165,7 @@ class SiteMapVersion(Base):
 
 
 class PlanningProfile(Base):
-    __tablename__ = "planning_profiles"
+    __tablename__ = "robot_planning_profiles"
 
     profile_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -178,7 +178,7 @@ class PlanningProfile(Base):
 
 
 class SchedulerConfig(Base):
-    __tablename__ = "scheduler_configs"
+    __tablename__ = "robot_scheduler_configs"
 
     config_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -189,7 +189,7 @@ class SchedulerConfig(Base):
 
 
 class CommandLog(Base):
-    __tablename__ = "command_logs"
+    __tablename__ = "robot_command_logs"
 
     cmd_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     device_id: Mapped[str] = mapped_column(String(64), index=True)
@@ -203,7 +203,7 @@ class CommandLog(Base):
 
 
 class EventLog(Base):
-    __tablename__ = "event_logs"
+    __tablename__ = "robot_event_logs"
 
     event_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     level: Mapped[str] = mapped_column(String(16), default="info", index=True)

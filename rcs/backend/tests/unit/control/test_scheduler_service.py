@@ -39,7 +39,7 @@ async def _prepare_db():
 
 
 async def test_activate_config():
-    from rcs.control.scheduler import service as sch_svc
+    from rcs.services.control import control_scheduler as sch_svc
 
     c1 = await sch_svc.create(name="w1", strategy="util-weighted",
                               weights={"w1": 1.0, "w2": 0.5, "w3": 0.2, "w4": 0.1})
@@ -60,7 +60,7 @@ async def test_activate_config():
 
 
 async def test_update_weights():
-    from rcs.control.scheduler import service as sch_svc
+    from rcs.services.control import control_scheduler as sch_svc
 
     c = await sch_svc.create(name="w3", strategy="util-weighted",
                              weights={"w1": 1, "w2": 0, "w3": 0, "w4": 0})

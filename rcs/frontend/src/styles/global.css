@@ -1,0 +1,351 @@
+/*
+ * Global utilities shared by the console shell and the management pages.
+ * Loaded after `tokens.css` (see main.ts) so every rule can rely on the
+ * skin variables being defined.
+ */
+
+/* ------------------------------------------------------------------ *
+ * Page scaffolding — every management view uses these wrappers so the
+ * spacing and the "instrument panel" backdrop stay consistent.
+ * ------------------------------------------------------------------ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px 28px;
+  min-height: 100%;
+  position: relative;
+}
+
+/* Faint grid + top-down glow; purely decorative, sits behind content. */
+.page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 32px 32px, 32px 32px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65), transparent 70%);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65), transparent 70%);
+}
+
+.page > * {
+  position: relative;
+  z-index: 1;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+  color: var(--fg);
+}
+
+.page-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--fg-secondary);
+}
+
+/* ------------------------------------------------------------------ *
+ * Cards
+ * ------------------------------------------------------------------ */
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.panel-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-title::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: border-color var(--transition), transform var(--transition),
+    box-shadow var(--transition);
+}
+
+.stat-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--glow);
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  flex-shrink: 0;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--fg-secondary);
+  margin-top: 2px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Toolbar (search + actions)
+ * ------------------------------------------------------------------ */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toolbar .spacer {
+  flex: 1;
+}
+
+/* ------------------------------------------------------------------ *
+ * Ant Design Vue skin integration
+ *
+ * The library renders with its own surface colours; these rules pull the
+ * chrome (table headers, inputs, modals, menus) onto our token palette so
+ * the two visual languages read as one product.
+ * ------------------------------------------------------------------ */
+.ant-table {
+  background: transparent;
+  color: var(--fg);
+}
+
+.ant-table-thead > tr > th {
+  background: var(--bg-elevated) !important;
+  color: var(--fg-secondary) !important;
+  border-bottom: 1px solid var(--border) !important;
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--divider) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: var(--bg-hover) !important;
+}
+
+.ant-table-tbody > tr.ant-table-row-selected > td {
+  background: var(--bg-active) !important;
+}
+
+.ant-pagination {
+  color: var(--fg-secondary);
+}
+
+.ant-pagination .ant-pagination-item-active {
+  border-color: var(--accent);
+}
+
+.ant-pagination .ant-pagination-item-active a {
+  color: var(--accent);
+}
+
+.ant-modal-content,
+.ant-drawer-content,
+.ant-dropdown-menu,
+.ant-select-dropdown,
+.ant-picker-dropdown,
+.ant-tooltip-inner,
+.ant-popover-inner {
+  background: var(--bg-elevated) !important;
+  color: var(--fg);
+}
+
+.ant-modal-header {
+  background: var(--bg-elevated) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.ant-modal-title,
+.ant-drawer-title {
+  color: var(--fg) !important;
+}
+
+.ant-modal-close,
+.ant-drawer-close {
+  color: var(--fg-secondary) !important;
+}
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-picker,
+.ant-input-number,
+.ant-input-password {
+  background: var(--bg-input) !important;
+  border-color: var(--border) !important;
+  color: var(--fg) !important;
+}
+
+.ant-input::placeholder,
+.ant-select-selection-placeholder {
+  color: var(--fg-muted) !important;
+}
+
+.ant-select-arrow,
+.ant-picker-suffix,
+.ant-input-clear-icon {
+  color: var(--fg-secondary);
+}
+
+.ant-card {
+  background: var(--bg-surface);
+  border-color: var(--border);
+  color: var(--fg);
+}
+
+.ant-card-head {
+  border-bottom-color: var(--border);
+  color: var(--fg);
+}
+
+.ant-tabs-nav::before {
+  border-bottom-color: var(--border) !important;
+}
+
+.ant-tabs-tab {
+  color: var(--fg-secondary);
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--accent) !important;
+}
+
+.ant-empty-description,
+.ant-typography,
+.ant-form-item-label > label {
+  color: var(--fg-secondary);
+}
+
+.ant-divider {
+  border-color: var(--divider);
+}
+
+.ant-descriptions-item-label {
+  color: var(--fg-secondary);
+  background: var(--bg-elevated);
+}
+
+.ant-descriptions-item-content {
+  color: var(--fg);
+}
+
+.ant-tag {
+  border-radius: var(--radius-sm);
+}
+
+.ant-alert {
+  border-radius: var(--radius);
+}
+
+/* Scrollable areas inside drawers/modals feel cramped with default spacing. */
+.ant-drawer-body {
+  padding: 16px 20px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Utility helpers
+ * ------------------------------------------------------------------ */
+.mono {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-muted {
+  color: var(--fg-muted);
+}
+
+.text-secondary {
+  color: var(--fg-secondary);
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+}
+
+.gap-8 {
+  gap: 8px;
+}
+
+.gap-12 {
+  gap: 12px;
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.w-full {
+  width: 100%;
+}

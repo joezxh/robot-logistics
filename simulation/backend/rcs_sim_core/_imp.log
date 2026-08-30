@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+  File "D:\projects\robot-logic\simulation\backend\rcs_sim_core\python\rcs\__init__.py", line 19, in <module>
+    from rcs import _core as _core  # noqa: F401  (compiled extension)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: DLL load failed while importing _core: 找不到指定的模块。

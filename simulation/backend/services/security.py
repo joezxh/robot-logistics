@@ -12,7 +12,7 @@ from typing import Iterable
 
 from fastapi import HTTPException, Request, status
 
-from backend.config import settings
+from backend.utils.config import settings
 
 
 def _parse_keys() -> set[str]:

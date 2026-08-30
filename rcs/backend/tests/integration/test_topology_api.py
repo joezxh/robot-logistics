@@ -7,7 +7,9 @@ from rcs.models.floor_shell import FloorShell, Bounds
 
 @pytest.fixture
 def client():
-    return TestClient(create_app())
+    # Enter the lifespan (DB init + control loop) so tables are created.
+    with TestClient(create_app()) as c:
+        yield c
 
 
 def test_shell_get_missing_returns_404(client):

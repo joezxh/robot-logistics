@@ -37,7 +37,7 @@ pnpm test                  # 运行 vitest 单元测试
 pnpm run build             # vue-tsc 类型检查 + vite 生产构建
 ```
 
-前端通过 Vite 代理把 `/api/rcs` 转发到 RCS 后端（`http://localhost:8000`）。
+前端通过 Vite 代理把 `/api/rcs` 转发到 RCS 后端（`http://localhost:8100`）。
 生产环境由 nginx 反向代理（见 `nginx.conf`）。
 
 ## 与后端 API 的对应
@@ -55,7 +55,7 @@ pnpm run build             # vue-tsc 类型检查 + vite 生产构建
 
 ```bash
 docker compose up --build
-# 前端 http://localhost:8080 ，后端 http://localhost:8000
+# 前端 http://localhost:8080 ，后端 http://localhost:8100
 ```
 
 多阶段 `Dockerfile`：先 `pnpm build` 产出静态文件，再由 nginx 托管；

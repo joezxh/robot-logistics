@@ -6,7 +6,9 @@ from rcs.main import create_app
 
 @pytest.fixture
 def client():
-    return TestClient(create_app())
+    # Enter the lifespan (DB init + control loop) so tables are created.
+    with TestClient(create_app()) as c:
+        yield c
 
 
 def test_create_order(client):

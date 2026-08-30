@@ -1,0 +1,6 @@
+after reset ncon (stale?) 0
+after forward ncon 4
+qpos [0. 0. 0. 0. 0. 0. 0.]
+after set_qpos(current) ncon 4
+after set_qpos(j6=2) ncon 0
+DBG2_DONE

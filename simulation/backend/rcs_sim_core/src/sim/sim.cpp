@@ -84,9 +84,57 @@ void Sim::init_dynamic_joint_specs() {
   }
 }
 
-Sim::Sim(mjModel* m, mjData* d) : m(m), d(d), renderer(m) {
+Sim::Sim(mjModel* m, mjData* d) : m(m), d(d), renderer(nullptr) {
   this->init_dynamic_joint_specs();
 };
+
+Sim::Sim(const std::string& xml_path, const SimConfig& cfg)
+    : m(nullptr), d(nullptr), renderer(nullptr), owns_model_data(true) {
+  char error[1024];
+  this->m = mj_loadXML(xml_path.c_str(), nullptr, error, sizeof(error));
+  if (this->m == nullptr) {
+    throw std::runtime_error(std::string("Failed to load MuJoCo model '") +
+                             xml_path + "': " + error);
+  }
+  this->d = mj_makeData(this->m);
+  this->cfg = cfg;
+  this->init_dynamic_joint_specs();
+}
+
+Renderer* Sim::get_renderer() {
+  if (this->m == nullptr) {
+    throw std::runtime_error("Sim is closed; cannot create renderer.");
+  }
+  if (this->renderer == nullptr) {
+    this->renderer = new Renderer(this->m);
+  }
+  return this->renderer;
+}
+
+void Sim::close() {
+  // Free the renderer (GL scene/context) first, while the heap is valid.
+  if (this->renderer != nullptr) {
+    delete this->renderer;
+    this->renderer = nullptr;
+  }
+  if (this->owns_model_data) {
+    if (this->d != nullptr) {
+      mj_deleteData(this->d);
+      this->d = nullptr;
+    }
+    if (this->m != nullptr) {
+      mj_deleteModel(this->m);
+      this->m = nullptr;
+    }
+    this->owns_model_data = false;
+  }
+}
+
+Sim::~Sim() { this->close(); }
+
+void Sim::forward() { mj_forward(this->m, this->d); }
+
+int Sim::ncon() const { return static_cast<int>(this->d->ncon); }
 
 bool Sim::set_config(const SimConfig& cfg) {
   this->cfg = cfg;
@@ -133,8 +181,9 @@ void Sim::invoke_rendering_callbacks() {
       //                   &this->renderer.scene);
       //   scene_updated = true;
       // }
-      mjrContext* ctx = this->renderer.get_context(cb.id);
-      cb.cb(cb.id, *ctx, this->renderer.scene, this->renderer.opt);
+      rcs::sim::Renderer* r = this->get_renderer();
+      mjrContext* ctx = r->get_context(cb.id);
+      cb.cb(cb.id, *ctx, r->scene, r->opt);
       cb.last_call_timestamp = this->d->time;
     }
   }
@@ -176,6 +225,16 @@ void Sim::step(size_t k) {
 
 void Sim::reset() {
   mj_resetData(this->m, this->d);
+  this->reset_callbacks();
+}
+
+void Sim::reset_key(const std::string& name) {
+  int kid = mj_name2id(this->m, mjOBJ_KEY, name.c_str());
+  if (kid >= 0) {
+    mj_resetDataKeyframe(this->m, this->d, kid);
+  } else {
+    mj_resetData(this->m, this->d);
+  }
   this->reset_callbacks();
 }
 
@@ -346,7 +405,7 @@ void Sim::register_rendering_callback(
     std::function<void(const std::string&, mjrContext&, mjvScene&, mjvOption&)>
         cb,
     const std::string& id, int frame_rate, size_t width, size_t height) {
-  this->renderer.register_context(id, width, height);
+  this->get_renderer()->register_context(id, width, height);
   // in case frame_rate is zero, rendering needs to be triggered
   // manually
   if (frame_rate != 0) {

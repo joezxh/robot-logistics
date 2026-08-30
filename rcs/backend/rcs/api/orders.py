@@ -6,14 +6,13 @@ classes and per-scenario routing). The result is persisted via the order
 repository (in-memory or PostgreSQL depending on ``Settings.storage``).
 """
 from __future__ import annotations
-import time
 from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from rcs.control.orders.decomposer import decompose_order
-from rcs.control.orders.models import Order, OrderItem as CtrlOrderItem
-from rcs.api.order_repository import repo
+from rcs.services.control.control_orders_decomposer import decompose_order
+from rcs.models.control_orders import Order, OrderItem as CtrlOrderItem
+from rcs.services.control.order_repository import repo
 
 router = APIRouter()
 

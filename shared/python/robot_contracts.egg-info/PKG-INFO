@@ -1,7 +1,7 @@
 Metadata-Version: 2.4
 Name: robot-contracts
-Version: 1.0.0
+Version: 1.1.0
 Summary: Shared MQTT communication contracts between RCS and the robot-side application
 Requires-Python: >=3.11
-Requires-Dist: pydantic>=2.4
+Requires-Dist: pydantic>=2.13
 Requires-Dist: numpy>=1.26

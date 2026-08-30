@@ -11,10 +11,13 @@
 namespace rcs {
 namespace sim {
 
+// std::numbers::pi is C++20; this project targets C++17.
+constexpr double kPi = 3.14159265358979323846;
+
 struct SimRobotConfig : common::RobotConfig {
   common::RobotPlatform robot_platform = common::RobotPlatform::SIMULATION;
   double joint_rotational_tolerance =
-      .05 * (std::numbers::pi / 180.0);    // 0.05 degree
+      .05 * (kPi / 180.0);    // 0.05 degree
   double seconds_between_callbacks = 0.1;  // 10 Hz
   bool trajectory_trace = false;
   std::vector<std::string> arm_collision_geoms{
@@ -73,6 +76,9 @@ class SimRobot : public common::Robot {
   common::Pose get_cartesian_flange_position() override;
   void set_joint_position(const common::VectorXd& q) override;
   common::VectorXd get_joint_position() override;
+  common::VectorXd get_joint_velocity();
+  /// Lower/upper joint position limits (DoF,) read from mjModel::jnt_range.
+  std::pair<common::VectorXd, common::VectorXd> joint_limits();
   void move_home() override;
   void set_cartesian_position(const common::Pose& pose) override;
   common::Pose get_base_pose_in_world_coordinates() override;

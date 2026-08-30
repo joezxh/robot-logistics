@@ -13,8 +13,12 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      '/api/sys': {
+        target: 'http://localhost:8100',
+        changeOrigin: true,
+      },
       '/api/rcs': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8100',
         changeOrigin: true,
       },
     },

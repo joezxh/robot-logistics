@@ -1,6 +1,6 @@
 """6 scenario template factory."""
 import pytest
-from rcs.topology.templates import (
+from rcs.models.topology_templates import (
     list_templates, get_template, SCENARIO_IDS, TemplateBundle, TemplateInfo,
 )
 from rcs.models.floor_shell import FloorShell

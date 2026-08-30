@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robot-contracts"
-version = "1.0.0"
+version = "1.1.0"
 description = "Shared MQTT communication contracts between RCS and the robot-side application"
 requires-python = ">=3.11"
-dependencies = ["pydantic>=2.4", "numpy>=1.26"]
+dependencies = ["pydantic>=2.13", "numpy>=1.26"]
 
 [tool.setuptools.packages.find]
 where = ["."]

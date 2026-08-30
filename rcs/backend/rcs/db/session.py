@@ -1,31 +1,42 @@
 """Async PostgreSQL engine + session factory (asyncpg)."""
 from __future__ import annotations
+import asyncio
 from collections.abc import AsyncIterator
+from weakref import WeakKeyDictionary
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine,
 )
 
 from rcs.config import get_settings
-from rcs.db import models
+from rcs.db.models import Base
 
-_engine: AsyncEngine | None = None
-_sessionmaker: async_sessionmaker[AsyncSession] | None = None
+# asyncpg connection pools are bound to the event loop they were created on.
+# Cache one engine per loop so a pool is never reused across loops (pytest
+# creates a fresh loop per async test, TestClient runs its own portal loop).
+_engines: WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncEngine] = WeakKeyDictionary()
+_sessionmakers: WeakKeyDictionary[
+    asyncio.AbstractEventLoop, async_sessionmaker[AsyncSession]
+] = WeakKeyDictionary()
 _initialized = False
 
 
 def get_engine() -> AsyncEngine:
-    global _engine
-    if _engine is None:
-        _engine = create_async_engine(get_settings().database_url, echo=False, future=True)
-    return _engine
+    loop = asyncio.get_running_loop()
+    engine = _engines.get(loop)
+    if engine is None:
+        engine = create_async_engine(get_settings().database_url, echo=False, future=True)
+        _engines[loop] = engine
+    return engine
 
 
 def get_sessionmaker() -> async_sessionmaker[AsyncSession]:
-    global _sessionmaker
-    if _sessionmaker is None:
-        _sessionmaker = async_sessionmaker(get_engine(), expire_on_commit=False)
-    return _sessionmaker
+    loop = asyncio.get_running_loop()
+    maker = _sessionmakers.get(loop)
+    if maker is None:
+        maker = async_sessionmaker(get_engine(), expire_on_commit=False)
+        _sessionmakers[loop] = maker
+    return maker
 
 
 async def init_db() -> None:
@@ -33,7 +44,7 @@ async def init_db() -> None:
     if _initialized:
         return
     async with get_engine().begin() as conn:
-        await conn.run_sync(models.Base.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all)
     _initialized = True
 
 

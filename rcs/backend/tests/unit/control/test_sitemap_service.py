@@ -40,7 +40,7 @@ async def _prepare_db():
 
 
 async def test_create_import_export_version():
-    from rcs.control.topology import service as map_svc
+    from rcs.services.control import control_maps as map_svc
 
     m = await map_svc.create(name="wh1", nodes=[{"id": "A", "pos": [0, 0, 0]}], edges=[])
     await map_svc.import_json(m["map_id"], {
@@ -55,7 +55,7 @@ async def test_create_import_export_version():
 
 
 async def test_restore_version():
-    from rcs.control.topology import service as map_svc
+    from rcs.services.control import control_maps as map_svc
 
     m = await map_svc.create(name="wh2", nodes=[{"id": "X", "pos": [0, 0, 0]}], edges=[])
     m2 = await map_svc.update(m["map_id"], name=None,

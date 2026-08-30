@@ -8,7 +8,11 @@
 #include <unordered_map>
 #include <vector>
 
+// Boost.Interprocess is only needed by gui.h/gui_server (shared-memory GUI).
+// It is unavailable on many Windows setups, so keep it optional.
+#ifdef RCS_HAVE_BOOST
 #include "boost/interprocess/managed_shared_memory.hpp"
+#endif
 #include "gui.h"
 #include "mujoco/mujoco.h"
 #include "rcs/utils.h"
@@ -98,20 +102,44 @@ class Sim {
   bool converged = true;
   std::optional<GuiServer> gui;
   bool gui_callback_registered = false;
+  bool owns_model_data = false;
 
  public:
   // TODO: hide m & d, pass as parameter to callback (easier refactoring)
-  rcs::sim::Renderer renderer;
+  /// Renderer is created lazily (only when rendering is actually used) to avoid
+  /// allocating a MuJoCo GL scene at construction time and freeing it during
+  /// static teardown (which triggered a 0xc0000374 heap corruption on exit).
+  rcs::sim::Renderer* renderer{nullptr};
   mjModel* m;
   mjData* d;
   Sim(mjModel* m, mjData* d);
+  /// Construct directly from an MJCF/XMLA XML file path. Sim takes ownership of
+  /// the resulting mjModel/mjData and frees them on destruction.
+  explicit Sim(const std::string& xml_path, const SimConfig& cfg = SimConfig{});
+  ~Sim();
+  /// Release MuJoCo model/data/renderer explicitly. Safe to call multiple times
+  /// and during normal operation (before interpreter finalization) to avoid
+  /// late frees that corrupt the CRT heap at process exit.
+  void close();
+  /// Lazily construct (and return) the renderer; throws if the Sim was closed.
+  rcs::sim::Renderer* get_renderer();
   bool set_config(const SimConfig& cfg);
   SimConfig get_config();
   bool is_converged();
   void step_until_convergence();
   void step(size_t k);
+  /// Recompute forward dynamics (positions -> accelerations, body/site frames).
+  /// Useful after teleporting qpos via SimRobot::set_joints_hard().
+  void forward();
+  /// Number of active contacts in the current mjData.
+  int ncon() const;
   void reset_callbacks();
   void reset();
+  /// Reset mjData to the qpos/qvel stored in a named <key> keyframe (e.g. the
+  /// robot's "home" pose). Falls back to a plain mj_resetData if the keyframe
+  /// does not exist. Used so reset() lands the robot in its collision-free home
+  /// pose instead of the MJCF default (often all-zero qpos).
+  void reset_key(const std::string& name);
   DynamicJointSchema get_dynamic_joint_schema() const;
   DynamicJointState get_dynamic_joint_state() const;
   void set_dynamic_joint_state(const DynamicJointSchema& schema,

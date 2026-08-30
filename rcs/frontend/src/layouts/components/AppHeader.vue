@@ -1,0 +1,268 @@
+<script setup lang="ts">
+// Top bar: brand title, portal menu, theme + language switchers and the
+// user dropdown (profile / logout).
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import {
+  BulbFilled,
+  BulbOutlined,
+  DownOutlined,
+  FullscreenExitOutlined,
+  FullscreenOutlined,
+  GlobalOutlined,
+  IdcardOutlined,
+  LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+} from '@ant-design/icons-vue'
+import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
+import { LOCALE_LABELS, SUPPORTED_LOCALES, localise } from '@/i18n'
+import { resolveIcon } from '@/utils/icons'
+import { useI18n } from 'vue-i18n'
+import type { AppLocale } from '@/types'
+
+const { t } = useI18n()
+const auth = useAuthStore()
+const app = useAppStore()
+const router = useRouter()
+
+const currentTime = ref('')
+let timer: number | undefined
+
+function tick() {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  currentTime.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+}
+
+onMounted(() => {
+  tick()
+  timer = window.setInterval(tick, 1000)
+})
+onUnmounted(() => {
+  if (timer) window.clearInterval(timer)
+})
+
+const isFullscreen = ref(false)
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().then(() => (isFullscreen.value = true)).catch(() => {})
+  } else {
+    document.exitFullscreen().then(() => (isFullscreen.value = false)).catch(() => {})
+  }
+}
+
+const initial = computed(() => auth.profile?.realName?.charAt(0)?.toUpperCase() ?? 'U')
+
+function onUserMenu({ key }: { key: string | number }) {
+  if (key === 'profile') router.push('/profile')
+  if (key === 'logout') void onLogout()
+}
+
+async function onLogout() {
+  await auth.logout()
+  router.push({ name: 'login' })
+}
+
+function onLocale({ key }: { key: string }) {
+  app.setAppLocale(key as AppLocale)
+}
+
+function onPortalClick({ key }: { key: string | number }) {
+  const path = String(key)
+  if (path && path !== 'undefined') router.push(path)
+}
+</script>
+
+<template>
+  <header class="topbar">
+    <button class="icon-btn" type="button" @click="app.toggleSidebar()">
+      <MenuUnfoldOutlined v-if="app.sidebarCollapsed" />
+      <MenuFoldOutlined v-else />
+    </button>
+
+    <h1 class="title">{{ t('sys.brand') }}</h1>
+
+    <!-- Portal: direct access to the big-screen views granted to this user. -->
+    <a-dropdown v-if="auth.portalMenus.length">
+      <button class="portal-btn" type="button">
+        <GlobalOutlined />
+        <span>{{ t('sys.header.portal') }}</span>
+        <DownOutlined class="caret" />
+      </button>
+      <template #overlay>
+        <a-menu @click="onPortalClick">
+          <a-menu-item v-for="m in auth.portalMenus" :key="m.path">
+            <component :is="resolveIcon(m.icon)" />
+            {{ localise(m.i18n, m.name) }}
+          </a-menu-item>
+        </a-menu>
+      </template>
+    </a-dropdown>
+
+    <div class="spacer" />
+
+    <span class="clock mono">{{ currentTime }}</span>
+
+    <a-dropdown>
+      <button class="icon-btn" type="button" :title="t('sys.header.language')">
+        <GlobalOutlined />
+      </button>
+      <template #overlay>
+        <a-menu :selected-keys="[app.locale]" @click="onLocale">
+          <a-menu-item v-for="loc in SUPPORTED_LOCALES" :key="loc">
+            {{ LOCALE_LABELS[loc] }}
+          </a-menu-item>
+        </a-menu>
+      </template>
+    </a-dropdown>
+
+    <button class="icon-btn" type="button" :title="t('sys.header.theme')" @click="app.toggleTheme()">
+      <BulbFilled v-if="app.isDark" />
+      <BulbOutlined v-else />
+    </button>
+
+    <button class="icon-btn" type="button" @click="toggleFullscreen">
+      <FullscreenExitOutlined v-if="isFullscreen" />
+      <FullscreenOutlined v-else />
+    </button>
+
+    <a-dropdown placement="bottomRight">
+      <div class="user-chip">
+        <a-avatar :size="28" class="avatar">{{ initial }}</a-avatar>
+        <span class="user-name">{{ auth.profile?.realName ?? '-' }}</span>
+        <DownOutlined class="caret" />
+      </div>
+      <template #overlay>
+        <a-menu @click="onUserMenu">
+          <a-menu-item key="profile">
+            <IdcardOutlined />
+            {{ t('sys.header.profile') }}
+          </a-menu-item>
+          <a-menu-divider />
+          <a-menu-item key="logout">
+            <LogoutOutlined />
+            {{ t('sys.header.logout') }}
+          </a-menu-item>
+        </a-menu>
+      </template>
+    </a-dropdown>
+  </header>
+</template>
+
+<style scoped>
+.topbar {
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: 0.4px;
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.clock {
+  font-size: 12px;
+  color: var(--fg-secondary);
+  white-space: nowrap;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  font-size: 15px;
+  transition: all var(--transition);
+}
+
+.icon-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.portal-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all var(--transition);
+}
+
+.portal-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.caret {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.user-chip:hover {
+  background: var(--bg-hover);
+}
+
+.avatar {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: var(--fg-inverse);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.user-name {
+  font-size: 13px;
+  color: var(--fg);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .clock,
+  .title {
+    display: none;
+  }
+}
+</style>

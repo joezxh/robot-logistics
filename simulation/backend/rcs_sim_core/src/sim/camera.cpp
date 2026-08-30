@@ -93,10 +93,10 @@ std::optional<FrameSet> SimCameraSet::get_timestamp_frameset(float ts) {
 }
 
 void SimCameraSet::render_all() {
+  rcs::sim::Renderer* r = this->sim->get_renderer();
   for (auto const& [id, cam] : this->cameras_cfg) {
-    mjrContext* ctx = this->sim->renderer.get_context(id);
-    this->render_single(id, *ctx, this->sim->renderer.scene,
-                        this->sim->renderer.opt);
+    mjrContext* ctx = r->get_context(id);
+    this->render_single(id, *ctx, r->scene, r->opt);
   }
 }
 

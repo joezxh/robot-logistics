@@ -50,7 +50,7 @@ async def _prepare_db():
 
 
 async def test_register_and_get():
-    from rcs.control.devices import service as dev_svc
+    from rcs.services.control import control_devices as dev_svc
 
     dev = await dev_svc.register(
         device_id="dev-x", morphology="arm", num_joints=6, control_hz=1000,
@@ -66,7 +66,7 @@ async def test_register_and_get():
 
 
 async def test_list_and_update():
-    from rcs.control.devices import service as dev_svc
+    from rcs.services.control import control_devices as dev_svc
 
     await dev_svc.register(
         device_id="dev-y", morphology="agv", num_joints=2, control_hz=50,
@@ -82,7 +82,7 @@ async def test_list_and_update():
 
 
 async def test_delete():
-    from rcs.control.devices import service as dev_svc
+    from rcs.services.control import control_devices as dev_svc
 
     await dev_svc.register(
         device_id="dev-z", morphology="stacker", num_joints=2, control_hz=50,

@@ -1,5 +1,5 @@
 """FloorShell validation — bounds/overlap/zone-types."""
-from rcs.topology.validate import validate_shell, ValidationError, ValidationReport
+from rcs.services.topology.validate import validate_shell, ValidationError, ValidationReport
 from rcs.models.floor_shell import FloorShell, Bounds, WallSegment, Zone, ZONE_TYPES
 
 

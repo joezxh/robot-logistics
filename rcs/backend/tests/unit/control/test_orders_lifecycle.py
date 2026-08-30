@@ -41,7 +41,7 @@ async def _prepare_db():
 
 
 async def test_advance_and_list_status():
-    from rcs.api import order_repository as repo
+    from rcs.services.control.order_repository import repo
 
     rec = await repo.create(
         scenario_id="e", priority=5, deadline=None,
@@ -61,7 +61,7 @@ async def test_advance_and_list_status():
 
 
 async def test_set_task_status():
-    from rcs.api import order_repository as repo
+    from rcs.services.control.order_repository import repo
 
     rec = await repo.create(
         scenario_id="e", priority=5, deadline=None,

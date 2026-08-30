@@ -1,0 +1,85 @@
+"""Console dashboard summary (``/api/sys/dashboard``).
+
+A handful of cheap counts so the console landing page has something to show
+without inventing a metrics subsystem.
+"""
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from rcs.services.sys.sys_deps import get_current_user, get_db
+from rcs.db.sys_models import (
+    SysAuditLog,
+    SysDictionary,
+    SysMenu,
+    SysRole,
+    SysUser,
+)
+from rcs.services.sys.sys_schemas import Envelope
+
+router = APIRouter(prefix="/dashboard", tags=["sys-dashboard"])
+
+
+@router.get("/summary")
+async def get_summary(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+) -> Envelope[dict]:
+    """Counts for the dashboard cards plus the caller's recent activity."""
+    users = (
+        await db.execute(select(func.count()).select_from(SysUser).where(SysUser.is_deleted.is_(False)))
+    ).scalar_one()
+    roles = (
+        await db.execute(select(func.count()).select_from(SysRole).where(SysRole.is_deleted.is_(False)))
+    ).scalar_one()
+    menus = (
+        await db.execute(select(func.count()).select_from(SysMenu).where(SysMenu.is_deleted.is_(False)))
+    ).scalar_one()
+    dicts = (
+        await db.execute(
+            select(func.count()).select_from(SysDictionary).where(SysDictionary.is_deleted.is_(False))
+        )
+    ).scalar_one()
+    online = (
+        await db.execute(
+            select(func.count())
+            .select_from(SysUser)
+            .where(SysUser.is_deleted.is_(False), SysUser.status == "active")
+        )
+    ).scalar_one()
+
+    recent = (
+        (
+            await db.execute(
+                select(SysAuditLog)
+                .where(SysAuditLog.user_id == current_user.user_id)
+                .order_by(SysAuditLog.created_at.desc(), SysAuditLog.log_id.desc())
+                .limit(8)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    return Envelope(
+        data={
+            "userCount": int(users),
+            "roleCount": int(roles),
+            "menuCount": int(menus),
+            "dictCount": int(dicts),
+            "activeUserCount": int(online),
+            "recentOperations": [
+                {
+                    "logId": log.log_id,
+                    "operationType": log.operation_type,
+                    "operationModule": log.operation_module,
+                    "operationDesc": log.operation_desc,
+                    "responseStatus": log.response_status,
+                    "createdAt": log.created_at.isoformat() if log.created_at else None,
+                }
+                for log in recent
+            ],
+        }
+    )

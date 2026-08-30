@@ -316,7 +316,7 @@ def get_session():
 - [ ] **Step 4: Create models.py**
 
 ```python
-# backend/data/models.py
+# backend/data/topology-models.py
 from sqlalchemy import Column, String, Float, Integer, DateTime, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime

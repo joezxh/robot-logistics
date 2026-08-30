@@ -1,0 +1,43 @@
+WARNING Sun Aug 30 15:35:08 2026: Attach conflict when attaching 'green_cube' to 'fr3 scene', policy is 'warning'
+impratio: parent has 20, child has 10, keeping parent value
+
+WARNING Sun Aug 30 15:35:44 2026: Attach conflict when attaching 'green_cube' to 'fr3 scene', policy is 'warning'
+impratio: parent has 20, child has 10, keeping parent value
+
+WARNING Sun Aug 30 15:36:03 2026: Attach conflict when attaching 'green_cube' to 'fr3 scene', policy is 'warning'
+impratio: parent has 20, child has 10, keeping parent value
+
+WARNING Sun Aug 30 15:36:06 2026: Attach conflict when attaching 'green_cube' to 'fr3 scene', policy is 'warning'
+impratio: parent has 20, child has 10, keeping parent value
+
+WARNING Sun Aug 30 15:36:06 2026: Attach conflict when attaching 'green_cube' to 'fr3 scene', policy is 'warning'
+impratio: parent has 20, child has 10, keeping parent value
+
+WARNING Sun Aug 30 15:38:16 2026: Attach conflict when attaching 'green_cube' to 'fr3 scene', policy is 'warning'
+impratio: parent has 20, child has 10, keeping parent value
+
+WARNING Sun Aug 30 15:38:19 2026: Attach conflict when attaching 'green_cube' to 'fr3 scene', policy is 'warning'
+impratio: parent has 20, child has 10, keeping parent value
+
+WARNING Sun Aug 30 15:38:19 2026: Attach conflict when attaching 'green_cube' to 'fr3 scene', policy is 'warning'
+impratio: parent has 20, child has 10, keeping parent value
+
+WARNING Sun Aug 30 15:38:55 2026: Attach conflict when attaching 'green_cube' to 'fr3 scene', policy is 'warning'
+impratio: parent has 20, child has 10, keeping parent value
+
+WARNING Sun Aug 30 15:38:57 2026: Attach conflict when attaching 'green_cube' to 'fr3 scene', policy is 'warning'
+impratio: parent has 20, child has 10, keeping parent value
+
+WARNING Sun Aug 30 15:38:57 2026: Attach conflict when attaching 'green_cube' to 'fr3 scene', policy is 'warning'
+impratio: parent has 20, child has 10, keeping parent value
+
+WARNING Sun Aug 30 18:25:28 2026: Nan, Inf or huge value in QPOS at DOF 2. The simulation is unstable. Time = 0.0000.
+
+WARNING Sun Aug 30 18:27:47 2026: Nan, Inf or huge value in CTRL at ACTUATOR 4. The simulation is unstable. Time = 0.0000.
+
+WARNING Sun Aug 30 18:27:47 2026: Nan, Inf or huge value in QPOS at DOF 4. The simulation is unstable. Time = 0.0000.
+
+WARNING Sun Aug 30 18:29:26 2026: Nan, Inf or huge value in CTRL at ACTUATOR 6. The simulation is unstable. Time = 0.0180.
+
+WARNING Sun Aug 30 18:29:26 2026: Nan, Inf or huge value in QPOS at DOF 6. The simulation is unstable. Time = 0.0180.
+

@@ -47,7 +47,7 @@ cd rcs && pytest tests/unit/test_orders_models.py -v
 - [ ] **Step 3: 写实现**
 
 ```python
-# rcs/rcs/orders/models.py
+# rcs/rcs/orders/topology-models.py
 from __future__ import annotations
 from datetime import datetime
 from enum import Enum

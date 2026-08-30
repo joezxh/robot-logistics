@@ -1,39 +1,76 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+// Application root.
+//
+// Responsibilities:
+//   * provide the Ant Design theme (algorithm + component tokens) that follows
+//     the dark/light skin from the app store
+//   * provide the matching Ant Design *locale* so built-in component strings
+//     (pagination, empty state, date picker) follow the active language
+//   * keep <html data-theme> in sync so the CSS variables switch
+import { computed, watchEffect } from 'vue'
+import { theme as antdTheme } from 'ant-design-vue'
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import zhTW from 'ant-design-vue/es/locale/zh_TW'
+import enUS from 'ant-design-vue/es/locale/en_US'
+import jaJP from 'ant-design-vue/es/locale/ja_JP'
+import { useAppStore } from '@/stores/app'
+import type { AppLocale } from '@/types'
+
+const app = useAppStore()
+
+/** Ant Design locale packs, keyed by our own locale codes. */
+const ANTD_LOCALES: Record<AppLocale, unknown> = {
+  'zh-CN': zhCN,
+  'zh-TW': zhTW,
+  'en-US': enUS,
+  'ja-JP': jaJP,
+}
+
+const antdLocale = computed(() => ANTD_LOCALES[app.locale] ?? enUS)
+
+/**
+ * Component token overrides. Colours come from the CSS variables so a skin
+ * switch is a single attribute change; only the structural tokens are set here.
+ */
+const componentTokens = computed(() => ({
+  borderRadius: 8,
+  fontSize: 14,
+  controlHeight: 32,
+  // Let surfaces pick up our palette instead of AntD's fixed whites/greys.
+  colorBgContainer: 'var(--bg-surface)',
+  colorBgElevated: 'var(--bg-elevated)',
+  colorBorder: 'var(--border)',
+  colorBorderSecondary: 'var(--border)',
+  colorPrimary: 'var(--accent)',
+  colorText: 'var(--fg)',
+  colorTextSecondary: 'var(--fg-secondary)',
+}))
+
+const algorithm = computed(() =>
+  app.isDark ? [antdTheme.darkAlgorithm, antdTheme.compactAlgorithm] : [antdTheme.defaultAlgorithm],
+)
+
+// Mirror the skin onto <html> so `tokens.css` selects the right palette.
+watchEffect(() => {
+  if (typeof document === 'undefined') return
+  document.documentElement.setAttribute('data-theme', app.theme)
+  document.documentElement.style.colorScheme = app.theme
+})
 </script>
 
 <template>
-  <div class="app-shell">
-    <nav class="app-nav">
-      <span class="brand">RCS</span>
-      <RouterLink to="/devices" class="navlink">设备</RouterLink>
-      <RouterLink to="/admin/maps" class="navlink">地图</RouterLink>
-      <RouterLink to="/admin/orders" class="navlink">订单</RouterLink>
-      <RouterLink to="/admin/scheduler" class="navlink">调度</RouterLink>
-      <RouterLink to="/admin/logs" class="navlink">日志</RouterLink>
-      <span class="sep"></span>
-      <RouterLink to="/sitemap" class="navlink">站点地图</RouterLink>
-      <RouterLink to="/control" class="navlink">设备控制</RouterLink>
-    </nav>
-    <main class="app-main">
-      <RouterView />
-    </main>
-  </div>
+  <a-config-provider
+    :locale="antdLocale"
+    :theme="{ algorithm, token: componentTokens, cssVar: true, hashed: false }"
+  >
+    <a-app class="app-root">
+      <router-view />
+    </a-app>
+  </a-config-provider>
 </template>
 
-<style scoped>
-.app-shell { display: flex; flex-direction: column; height: 100%; }
-.app-nav { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--bg-card); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-.brand { font-weight: 700; color: var(--accent); letter-spacing: 1px; margin-right: 12px; }
-.navlink { color: var(--fg-soft); text-decoration: none; font-size: 14px; padding: 4px 8px; border-radius: 6px; }
-.navlink.router-link-active { color: var(--accent); background: var(--bg-card-alt); }
-.sep { width: 1px; height: 18px; background: var(--border); margin: 0 8px; }
-.app-main { flex: 1; min-height: 0; overflow: auto; }
-</style>
-
 <style>
-:root { color-scheme: dark; }
-html, body, #app { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--fg); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-#app { display: flex; flex-direction: column; }
+.app-root {
+  height: 100%;
+}
 </style>

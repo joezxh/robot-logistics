@@ -39,7 +39,7 @@ async def _prepare_db():
 
 
 async def test_crud_profile():
-    from rcs.control.planning import service as plan_svc
+    from rcs.services.control import control_planning as plan_svc
 
     p = await plan_svc.create(name="trap6", algo="trapezoidal", axes=6,
                               vel_max=[2.0] * 6, acc_max=[4.0] * 6, created_by="u1")
@@ -51,7 +51,7 @@ async def test_crud_profile():
 
 
 async def test_delete_profile():
-    from rcs.control.planning import service as plan_svc
+    from rcs.services.control import control_planning as plan_svc
 
     p = await plan_svc.create(name="quint6", algo="quintic", axes=6,
                               vel_max=[2.0] * 6, acc_max=[4.0] * 6)
