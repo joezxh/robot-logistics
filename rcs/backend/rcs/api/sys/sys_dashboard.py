@@ -17,7 +17,8 @@ from rcs.db.sys_models import (
     SysRole,
     SysUser,
 )
-from rcs.db.models import Device, Order, SiteMap, TopologyShell
+from rcs.db.models import Device, Order
+from rcs.db.unified_map import UnifiedMap
 from rcs.services.sys.sys_schemas import Envelope
 
 router = APIRouter(prefix="/dashboard", tags=["sys-dashboard"])
@@ -52,20 +53,22 @@ async def get_summary(
     ).scalar_one()
     devices = (await db.execute(select(func.count()).select_from(Device))).scalar_one()
     orders = (await db.execute(select(func.count()).select_from(Order))).scalar_one()
-    # Warehousetype templates share these tables with real records, so they must
-    # be filtered out or every counter silently inflates by the template count.
+    # UnifiedMap holds both real records and templates in one table. Templates
+    # are filtered via ``is_template.is_(False)`` so the counters do not silently
+    # inflate by the template count; the warehouse counter additionally filters
+    # ``kind == 'warehouse'``.
     maps = (
         await db.execute(
             select(func.count())
-            .select_from(SiteMap)
-            .where(SiteMap.is_template.is_(False))
+            .select_from(UnifiedMap)
+            .where(UnifiedMap.is_template.is_(False))
         )
     ).scalar_one()
     warehouses = (
         await db.execute(
             select(func.count())
-            .select_from(TopologyShell)
-            .where(TopologyShell.is_template.is_(False))
+            .select_from(UnifiedMap)
+            .where(UnifiedMap.is_template.is_(False), UnifiedMap.kind == "warehouse")
         )
     ).scalar_one()
 
