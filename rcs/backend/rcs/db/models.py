@@ -320,3 +320,8 @@ class WmsLogisticsTask(Base):
     eta: Mapped[int | None] = mapped_column(Integer, default=None)
     completed_at: Mapped[int | None] = mapped_column(Integer, default=None)
     created_at: Mapped[int] = mapped_column(Integer, default=0)
+
+
+# Imported last so the unified-map models register on ``Base.metadata`` after the
+# core models above are defined. ``init_db()`` then creates all of them.
+from .unified_map import UnifiedMap, MapDynamicState  # noqa: E402, F401
