@@ -11,15 +11,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from rcs.config import get_settings
 from rcs.api import (
-    topology_shell, topology_grid, topology_import,
-    topology_export, topology_templates, orders,
+    orders,
 )
 from rcs.api.warehouse_import_api import router as warehouse_router
 from rcs.api.warehouse_inventory_api import router as warehouse_inventory_router
 from rcs.control import lifespan as control_lifespan
 from rcs.control import router as control_router
 from rcs.api.control.control_devices import router as devices_router
-from rcs.api.control.control_maps import router as maps_router
+from rcs.api.control.control_unified_maps import router as unified_maps_router
 from rcs.api.control.control_planning import router as planning_router
 from rcs.api.control.control_scheduler import router as scheduler_router
 from rcs.api.control.control_logs import router as logs_router
@@ -60,11 +59,6 @@ def create_app() -> FastAPI:
     async def health() -> dict:
         return {"status": "ok", "version": "0.1.0"}
 
-    app.include_router(topology_shell, prefix="/api/rcs/topology", tags=["shell"])
-    app.include_router(topology_grid, prefix="/api/rcs/topology", tags=["grid"])
-    app.include_router(topology_import, prefix="/api/rcs/topology", tags=["import"])
-    app.include_router(topology_export, prefix="/api/rcs/topology", tags=["export"])
-    app.include_router(topology_templates, prefix="/api/rcs/topology", tags=["templates"])
     app.include_router(orders, prefix="/api/rcs", tags=["orders"])
     # Warehouse Theatre 3D integration
     app.include_router(warehouse_router, prefix="/api/rcs", tags=["warehouse"])
@@ -72,8 +66,8 @@ def create_app() -> FastAPI:
     app.include_router(warehouse_inventory_router, prefix="/api/rcs", tags=["warehouse-inventory"])
     # Phase C1: persistent device registry (CRUD under /api/rcs/devices).
     app.include_router(devices_router, prefix="/api/rcs", tags=["devices"])
-    # Phase C2-C6: site maps, planning profiles, scheduler configs, logs.
-    app.include_router(maps_router, prefix="/api/rcs", tags=["maps"])
+    # Phase C2: unified site map model (maps / templates / dynamic sub-resources).
+    app.include_router(unified_maps_router, prefix="/api/rcs", tags=["maps"])
     app.include_router(planning_router, prefix="/api/rcs", tags=["planning"])
     app.include_router(scheduler_router, prefix="/api/rcs", tags=["scheduler"])
     app.include_router(logs_router, prefix="/api/rcs", tags=["logs"])
