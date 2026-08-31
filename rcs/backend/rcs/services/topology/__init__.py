@@ -11,14 +11,15 @@ from rcs.services.topology.validate import validate_shell, ValidationError, Vali
 
 from rcs.models.topology_markings import generate_markings
 
-from rcs.models.topology_templates import (
-    list_templates, get_template, SCENARIO_IDS, TemplateInfo, TemplateBundle,
-)
+# NOTE: the scenario-template re-exports (list_templates / get_template /
+# SCENARIO_IDS / TemplateInfo / TemplateBundle) were dropped in Task 4 together
+# with the deleted ``rcs.models.topology_templates`` module. Scenario blueprints
+# now live as DB-backed UnifiedMap template rows seeded by
+# ``rcs.services.control.control_unified_maps``.
 
 __all__ = [
     "parse_dxf", "DxfEntity", "DxfDocument",
     "dxf_to_shell",
     "validate_shell", "ValidationError", "ValidationReport",
     "generate_markings",
-    "list_templates", "get_template", "SCENARIO_IDS", "TemplateInfo", "TemplateBundle",
 ]

@@ -7,8 +7,11 @@ sources:
 
 * 8 warehouse templates in ``rcs.models.site_map_templates`` (each carries a
   full navigation graph: nodes + edges).
-* 6 hardcoded scenarios in ``rcs.models.topology_templates`` (shell + grid +
-  metadata only; NO navigation graph).
+* 6 built-in scenarios built by the private ``_build_scenario_bundle`` helper in
+  THIS module (shell + grid + metadata only; NO navigation graph). Task 4 moved
+  these builders here verbatim from the now-deleted
+  ``rcs.models.topology_templates`` so the hardcoded module could be removed
+  while keeping scenario seeding byte-for-byte equivalent.
 
 The two sets use DIFFERENT ``map_id`` namespaces — the DB warehouse templates use
 ``tpl-<key>`` where keys look like ``ecommerce_large`` / ``theatre_ecommerce`` /
@@ -20,11 +23,210 @@ Per spec decision we deliberately do NOT de-duplicate across the two sets.
 from __future__ import annotations
 import copy
 import uuid
+from dataclasses import dataclass
 from typing import Optional
 
+from pydantic import BaseModel
 from sqlalchemy import delete as sa_delete, select
 
 from rcs.db import models, session as db_session
+from rcs.models.floor_shell import Bounds, Floor, FloorShell, Zone
+from rcs.models.site_grid import SiteGrid
+
+
+# ── Built-in scenario blueprints (moved here from rcs.models.topology_templates
+#    in Task 4, which deleted that module) ─────────────────────────────────────
+#
+# These are PRIVATE to the unified-map layer: the 6 scenarios exist only to be
+# seeded as ``kind="scenario"`` UnifiedMap rows. Behaviour is preserved verbatim
+# from the deleted module so seeded geometry/semantics are unchanged.
+
+SCENARIO_IDS: list[str] = [
+    "ecommerce", "manufacturing", "cold_chain",
+    "port", "reverse_logistics", "multi_floor",
+]
+
+
+class ScenarioInfo(BaseModel):
+    """Summary of one built-in scenario blueprint."""
+    scenario_id: str
+    name: str
+    bounds: dict
+    zone_count: int
+
+
+@dataclass
+class ScenarioBundle:
+    """shell + grid + metadata for one built-in scenario blueprint."""
+    shell: FloorShell
+    grid: SiteGrid
+    metadata: dict
+
+
+def _build_scenario_bundle(scenario_id: str) -> ScenarioBundle:
+    """Build one scenario blueprint. Raises KeyError for unknown ids."""
+    if scenario_id not in SCENARIO_IDS:
+        raise KeyError(f"unknown scenario: {scenario_id}")
+    builders = {
+        "ecommerce": _scn_ecommerce,
+        "manufacturing": _scn_manufacturing,
+        "cold_chain": _scn_cold_chain,
+        "port": _scn_port,
+        "reverse_logistics": _scn_reverse_logistics,
+        "multi_floor": _scn_multi_floor,
+    }
+    return builders[scenario_id]()
+
+
+def _list_scenario_infos() -> list[ScenarioInfo]:
+    """Summarise all 6 built-in scenario blueprints."""
+    out = []
+    for sid in SCENARIO_IDS:
+        b = _build_scenario_bundle(sid)
+        out.append(ScenarioInfo(
+            scenario_id=sid,
+            name=sid.replace("_", " ").title(),
+            bounds={"w": b.shell.bounds.w, "d": b.shell.bounds.d},
+            zone_count=len(b.shell.zones) + sum(len(f.zones) for f in b.shell.floors),
+        ))
+    return out
+
+
+def _scn_ecommerce() -> ScenarioBundle:
+    bounds = Bounds(w=160, d=100)
+    zones = [
+        Zone(id="z1", ref="R1", type="flow_rack", x=0, z=0, w=60, d=40),
+        Zone(id="z2", ref="R2", type="high_rack", x=60, z=0, w=60, d=40),
+        Zone(id="z3", ref="R3", type="mezzanine", x=120, z=0, w=40, d=40),
+        Zone(id="z4", ref="ASRS", type="automated", x=0, z=40, w=40, d=60),
+        Zone(id="z5", ref="TEMP", type="temp", x=40, z=40, w=30, d=20),
+        Zone(id="z6", ref="TEMP-BAG", type="temp_bagged", x=70, z=40, w=30, d=20),
+        Zone(id="z7", ref="RET", type="returns", x=100, z=40, w=30, d=20),
+        Zone(id="z8", ref="STG", type="staging", x=130, z=40, w=30, d=60),
+    ]
+    shell = FloorShell(
+        bounds=bounds, zones=zones,
+        metadata={"scenario": "ecommerce", "theme": "warm"},
+    )
+    grid = _default_scenario_grid(160, 100)
+    return ScenarioBundle(
+        shell=shell, grid=grid,
+        metadata={"alert_types": ["overstock", "stockout"], "highlight_color": "#f59e0b"},
+    )
+
+
+def _scn_manufacturing() -> ScenarioBundle:
+    bounds = Bounds(w=100, d=80)
+    zones = []
+    # 4 production lines + WIP + parts storage
+    for i in range(4):
+        zones.append(Zone(
+            id=f"pl{i+1}", ref=f"PL{i+1}", type="production_line",
+            x=10 + i * 22, z=10, w=20, d=15,
+        ))
+    zones += [
+        Zone(id="wip1", ref="WIP-A", type="wip_buffer", x=10, z=30, w=80, d=15),
+        Zone(id="ps1", ref="PS-A", type="parts_storage", x=10, z=50, w=40, d=20),
+        Zone(id="stg1", ref="STG-OUT", type="staging", x=55, z=50, w=35, d=20),
+    ]
+    shell = FloorShell(bounds=bounds, zones=zones, metadata={"scenario": "manufacturing"})
+    return ScenarioBundle(
+        shell=shell, grid=_default_scenario_grid(100, 80),
+        metadata={"alert_types": ["material_shortage", "line_stop"], "highlight_color": "#64748b"},
+    )
+
+
+def _scn_cold_chain() -> ScenarioBundle:
+    bounds = Bounds(w=80, d=60)
+    zones = [
+        Zone(id="fz", ref="FZ", type="frozen_zone", x=0, z=0, w=30, d=30,
+             temperature_range={"min": -25, "max": -18}, batch_tracking=True),
+        Zone(id="cz", ref="CZ", type="cold_zone", x=30, z=0, w=30, d=30,
+             temperature_range={"min": 2, "max": 8}, batch_tracking=True),
+        Zone(id="az", ref="AZ", type="ambient_zone", x=60, z=0, w=20, d=30),
+        Zone(id="lb1", ref="LB1", type="loading_bay", x=0, z=30, w=40, d=20),
+        Zone(id="lb2", ref="LB2", type="loading_bay", x=40, z=30, w=40, d=20),
+        Zone(id="stg", ref="STG", type="staging", x=0, z=50, w=80, d=10),
+    ]
+    shell = FloorShell(bounds=bounds, zones=zones, metadata={"scenario": "cold_chain"})
+    return ScenarioBundle(
+        shell=shell, grid=_default_scenario_grid(80, 60),
+        metadata={"alert_types": ["temp_exceed", "humidity_exceed"], "highlight_color": "#3b82f6"},
+    )
+
+
+def _scn_port() -> ScenarioBundle:
+    bounds = Bounds(w=200, d=150)
+    zones = [
+        Zone(id="cy1", ref="CY-A", type="container_yard", x=0, z=0, w=80, d=60),
+        Zone(id="cy2", ref="CY-B", type="container_yard", x=80, z=0, w=80, d=60),
+        Zone(id="ca", ref="CUSTOMS", type="customs_area", x=160, z=0, w=40, d=40,
+             customs_regulated=True),
+        Zone(id="lb1", ref="LB-IN", type="loading_bay", x=0, z=60, w=50, d=20),
+        Zone(id="lb2", ref="LB-OUT", type="loading_bay", x=50, z=60, w=50, d=20),
+        Zone(id="stg1", ref="STG-IM", type="staging", x=100, z=60, w=40, d=20,
+             hazard_level="medium"),
+        Zone(id="stg2", ref="STG-EX", type="staging", x=140, z=60, w=40, d=20),
+        Zone(id="cz", ref="REEFER", type="cold_zone", x=0, z=80, w=60, d=30,
+             temperature_range={"min": -25, "max": -18}),
+    ]
+    shell = FloorShell(bounds=bounds, zones=zones, metadata={"scenario": "port"})
+    return ScenarioBundle(
+        shell=shell, grid=_default_scenario_grid(200, 150),
+        metadata={"alert_types": ["customs_hold", "container_stuck"], "highlight_color": "#0ea5e9"},
+    )
+
+
+def _scn_reverse_logistics() -> ScenarioBundle:
+    bounds = Bounds(w=60, d=40)
+    zones = [
+        Zone(id="rr", ref="RR", type="returns_received", x=0, z=0, w=60, d=10),
+        Zone(id="qc1", ref="QC-A", type="qc_staging", x=0, z=10, w=30, d=15),
+        Zone(id="qc2", ref="QC-B", type="qc_staging", x=30, z=10, w=30, d=15),
+        Zone(id="rs", ref="RS", type="reshelving", x=0, z=25, w=40, d=15),
+        Zone(id="dp", ref="DP", type="disposal", x=40, z=25, w=20, d=15),
+    ]
+    shell = FloorShell(bounds=bounds, zones=zones, metadata={"scenario": "reverse_logistics"})
+    return ScenarioBundle(
+        shell=shell, grid=_default_scenario_grid(60, 40),
+        metadata={"alert_types": ["return_surge", "disposal_exceeded"], "highlight_color": "#ef4444"},
+    )
+
+
+def _scn_multi_floor() -> ScenarioBundle:
+    bounds = Bounds(w=80, d=60, h=12)
+    floors = []
+    for i, z_floor in enumerate([0.0, 4.0, 8.0]):
+        floors.append(Floor(
+            id=f"L{i+1}", z=z_floor,
+            bounds=Bounds(w=80, d=60),
+            zones=[
+                Zone(id=f"f{i+1}-s", ref=f"STG-{i+1}", type="staging",
+                     x=0, z=0, w=30, d=20),
+                Zone(id=f"f{i+1}-r", ref=f"RACK-{i+1}",
+                     type="floor_1" if i == 0 else ("floor_2" if i == 1 else "floor_3"),
+                     x=30, z=0, w=50, d=40),
+            ],
+        ))
+    zones = [Zone(id="el1", ref="EL-1", type="elevator_shaft", x=70, z=50, w=5, d=5)]
+    shell = FloorShell(bounds=bounds, zones=zones, floors=floors, metadata={"scenario": "multi_floor"})
+    return ScenarioBundle(
+        shell=shell, grid=_default_scenario_grid(80, 60),
+        metadata={"alert_types": ["elevator_fault"], "highlight_color": "#475569"},
+    )
+
+
+def _default_scenario_grid(w: float, d: float, resolution: float = 2.0) -> SiteGrid:
+    """Build a basic EMPTY-cell grid covering w×d meters at the given resolution.
+
+    Uses SiteGrid's built-in ``_auto_populate``, which fills an empty grid with
+    EMPTY cells at the requested resolution.
+    """
+    return SiteGrid(
+        site_id="default",
+        bounds={"w": w, "d": d},
+        resolution=resolution,
+    )
 
 
 async def create(name: str, geometry: Optional[dict] = None,
@@ -98,7 +300,6 @@ async def seed_templates() -> list[dict]:
     Returns the seeded template dicts.
     """
     from rcs.models import site_map_templates
-    from rcs.models import topology_templates as tt
 
     async for s in db_session.session():
         out: list[models.UnifiedMap] = []
@@ -129,7 +330,7 @@ async def seed_templates() -> list[dict]:
             m.data = {}
             out.append(m)
 
-        # ── 6 hardcoded scenarios (topology_templates, no nav graph) ────────
+        # ── 6 built-in scenarios (local builders, no nav graph) ─────────────
         # NOTE: two scenario ids (``cold_chain``, ``reverse_logistics``) ALSO
         # exist as warehouse template keys, so their naive ``tpl-<id>`` id would
         # collide with the warehouse row and the upsert below would silently
@@ -139,8 +340,8 @@ async def seed_templates() -> list[dict]:
         # namespaces never collide — that is false for these two keys; this is
         # the minimal fix that preserves both sources.)
         _SCENARIO_COLLISIONS = {"cold_chain", "reverse_logistics"}
-        for sid in tt.SCENARIO_IDS:  # noqa: B020 (re-uses frozen set, cheap)
-            b = tt.get_template(sid)
+        for sid in SCENARIO_IDS:  # noqa: B020 (re-uses frozen set, cheap)
+            b = _build_scenario_bundle(sid)
             map_id = f"tpl-scn-{sid}" if sid in _SCENARIO_COLLISIONS else f"tpl-{sid}"
             m = await s.get(models.UnifiedMap, map_id)
             if m is None:
@@ -176,11 +377,10 @@ async def create_from_template(key: str, name: Optional[str] = None,
 
     ``key`` is the template key WITHOUT the ``tpl-`` prefix. For warehouse
     templates it resolves via ``site_map_templates.get_template``; for scenario
-    templates it resolves via ``topology_templates.get_template``. Returns None
+    templates it resolves via the local ``_build_scenario_bundle``. Returns None
     when ``key`` is unknown to both sources.
     """
     from rcs.models import site_map_templates
-    from rcs.models import topology_templates as tt
 
     # Warehouse DB template?
     try:
@@ -202,8 +402,8 @@ async def create_from_template(key: str, name: Optional[str] = None,
 
     # Scenario template? (only if not a warehouse key)
     if t is None:
-        if key in tt.SCENARIO_IDS:
-            b = tt.get_template(key)
+        if key in SCENARIO_IDS:
+            b = _build_scenario_bundle(key)
             title = name or key.replace("_", " ").title()
             geometry = b.shell.model_dump(mode="json")
             topology = {}  # scenario templates carry no graph
