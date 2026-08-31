@@ -8,7 +8,7 @@ import DeviceMap2D from '@/components/DeviceMap2D/DeviceMap2D.vue'
 import DeviceMap3D from '@/components/DeviceMap3D/DeviceMap3D.vue'
 import ScenarioPanel from '@/components/scenarios/ScenarioPanel.vue'
 import OrderPanel from '@/components/orders/OrderPanel.vue'
-import { templateDisplayName } from '@/api/warehouseTemplates'
+import { templateDisplayName } from '@/api/map'
 
 const { t, locale } = useI18n()
 const scenarioStore = useScenarioStore()
@@ -23,15 +23,15 @@ const floorCount = computed(() => shell.value?.floors?.length ?? 0)
 const showFloorSelector = computed(() => floorCount.value > 0)
 
 /**
- * Load a database template. The FloorShell is stored under the template's
- * `site_id` (identical to its `map_id`), so it comes from the shell endpoint
- * rather than from a hard-coded scenario bundle.
+ * Load a database template. The FloorShell lives under the template's `map_id`
+ * in the unified maps table, so it is fetched from the maps endpoint rather
+ * than from a hard-coded scenario bundle.
  */
-async function selectTemplate(key: string) {
-  scenarioStore.select(key)
+async function selectTemplate(mapId: string) {
+  scenarioStore.select(mapId)
   floorIndex.value = undefined
-  const tpl = scenarioStore.templateByKey(key)
-  if (tpl) await floorStore.loadBySite(tpl.site_id)
+  const tpl = scenarioStore.templateByKey(mapId)
+  if (tpl) await floorStore.loadBySite(tpl.map_id)
 }
 
 function onViewModeChange(e: { target: { value: '2d' | '3d' } }) {
@@ -50,7 +50,7 @@ watch(selected, (key) => {
 // Names come from the backend (zh + en), so no i18n key is needed per template.
 const templateOptions = computed(() =>
   templates.value.map((tpl) => ({
-    key: tpl.key,
+    key: tpl.map_id,
     name: templateDisplayName(tpl, locale.value),
   })),
 )
@@ -99,7 +99,6 @@ const templateOptions = computed(() =>
       <aside class="side">
         <ScenarioPanel
           v-if="selectedTemplate"
-          :category="selectedTemplate.category"
           :title="templateDisplayName(selectedTemplate, locale)"
           :shell="shell"
         />

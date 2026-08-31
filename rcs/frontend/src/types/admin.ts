@@ -31,21 +31,37 @@ export interface SiteEdge {
   bidirectional?: boolean
 }
 
-export interface MapRow {
-  map_id: string
-  name: string | null
-  current_version: number
-  nodes: SiteNode[]
-  edges: SiteEdge[]
-  created_at?: string | null
-  updated_at?: string | null
-}
-
 export interface MapVersionRow {
   version_id: string
   version: number
   note: string | null
   created_at?: string | null
+}
+
+/** Unified map DTO returned by GET /api/rcs/maps/{id} and list endpoints. */
+export interface UnifiedMapDTO {
+  map_id: string
+  name: string
+  name_en?: string | null
+  is_template: boolean
+  kind?: string | null
+  current_version: number
+  bounds: { w: number; d: number } | null
+  geometry: import('./floorShell').FloorShell
+  topology: { nodes: SiteNode[]; edges: SiteEdge[] }
+  semantic: Record<string, unknown>
+  dynamic?: Record<string, unknown> | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+/** Portable export bundle returned by GET /api/rcs/maps/{id}/export. */
+export interface MapExportBundle {
+  map_id: string
+  name: string
+  geometry: import('./floorShell').FloorShell
+  topology: { nodes: SiteNode[]; edges: SiteEdge[] }
+  semantic: Record<string, unknown>
 }
 
 export interface OrderItem {

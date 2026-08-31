@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getShell } from '@/api/topologyShell'
-import { getTemplate } from '@/api/templates'
+import { getMap } from '@/api/map'
 import type { FloorShell, ScenarioId } from '@/types'
 
 export const useFloorShellStore = defineStore('floorShell', () => {
@@ -13,8 +12,8 @@ export const useFloorShellStore = defineStore('floorShell', () => {
     loading.value = true
     error.value = null
     try {
-      const b = await getTemplate(id)
-      shell.value = b.shell
+      const m = await getMap('tpl-' + id)
+      shell.value = m.geometry
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -26,7 +25,8 @@ export const useFloorShellStore = defineStore('floorShell', () => {
     loading.value = true
     error.value = null
     try {
-      shell.value = await getShell(siteId)
+      const m = await getMap(siteId)
+      shell.value = m.geometry
     } catch (e) {
       error.value = (e as Error).message
     } finally {

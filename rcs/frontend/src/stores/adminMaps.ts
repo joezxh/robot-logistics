@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import * as api from '@/api/maps'
-import type { MapRow, MapVersionRow } from '@/types'
+import * as api from '@/api/map'
+import type { MapExportBundle, MapVersionRow, UnifiedMapDTO } from '@/types'
 
 export const useAdminMapStore = defineStore('admin-maps', () => {
-  const maps = ref<MapRow[]>([])
+  const maps = ref<UnifiedMapDTO[]>([])
   const versions = ref<MapVersionRow[]>([])
-  const current = ref<MapRow | null>(null)
+  const current = ref<UnifiedMapDTO | null>(null)
   const loading = ref(false)
 
   async function load() {
@@ -21,7 +21,7 @@ export const useAdminMapStore = defineStore('admin-maps', () => {
     await api.importMap(id, payload)
     await select(id)
   }
-  async function exportJson(id: string): Promise<MapRow | null> {
+  async function exportJson(id: string): Promise<MapExportBundle | null> {
     return await api.exportMap(id)
   }
   async function restore(mapId: string, versionId: string) {
@@ -29,7 +29,7 @@ export const useAdminMapStore = defineStore('admin-maps', () => {
     await select(mapId)
   }
   async function create(body: { name: string }) {
-    await api.createMap({ name: body.name, nodes: [], edges: [] })
+    await api.createMap({ name: body.name })
     await load()
   }
   async function remove(id: string) {

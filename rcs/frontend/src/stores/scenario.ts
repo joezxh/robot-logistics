@@ -1,25 +1,24 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
-  listWarehouseTemplates,
-  seedWarehouseTemplates,
-  type WarehouseTemplateInfo,
-} from '@/api/warehouseTemplates'
+  listTemplates,
+  seedTemplates,
+  type MapTemplateInfo,
+} from '@/api/map'
 
 /**
- * Catalogue of database-backed warehouse templates.
+ * Catalogue of database-backed unified-map templates.
  *
- * These replace the six hard-coded demo scenarios on the map page. Templates
- * live in the backend (robot_topology_shell + robot_topology_grid +
- * robot_site_maps, flagged `is_template`) and are served by
- * GET /api/rcs/maps/templates, so adding one server-side needs no UI change.
+ * Templates live in the backend `robot_unified_maps` table (flagged
+ * `is_template`) and are served by GET /api/rcs/maps/templates, so adding one
+ * server-side needs no UI change. Selection is keyed by `map_id`.
  *
  * The store only tracks the catalogue and the selection; the FloorShell itself
- * belongs to `floorShell.loadBySite(template.site_id)`.
+ * belongs to `floorShell.loadBySite(template.map_id)`.
  */
 export const useScenarioStore = defineStore('scenario', () => {
-  const templates = ref<WarehouseTemplateInfo[]>([])
-  /** Template key, e.g. "port_terminal". */
+  const templates = ref<MapTemplateInfo[]>([])
+  /** Template map_id, e.g. "tpl-ecommerce". */
   const selected = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -28,15 +27,15 @@ export const useScenarioStore = defineStore('scenario', () => {
     loading.value = true
     error.value = null
     try {
-      templates.value = await listWarehouseTemplates()
+      templates.value = await listTemplates()
       // Seeding is idempotent, so calling it on an empty catalogue is a safe
       // way to self-heal a fresh database without an extra ops step.
       if (templates.value.length === 0) {
-        await seedWarehouseTemplates()
-        templates.value = await listWarehouseTemplates()
+        await seedTemplates()
+        templates.value = await listTemplates()
       }
       if (!selected.value && templates.value.length > 0) {
-        selected.value = templates.value[0].key
+        selected.value = templates.value[0].map_id
       }
     } catch (e) {
       error.value = (e as Error).message
@@ -45,17 +44,17 @@ export const useScenarioStore = defineStore('scenario', () => {
     }
   }
 
-  function select(key: string): void {
-    selected.value = key
+  function select(mapId: string): void {
+    selected.value = mapId
   }
 
-  const selectedTemplate = computed<WarehouseTemplateInfo | null>(
-    () => templates.value.find((t) => t.key === selected.value) ?? null,
+  const selectedTemplate = computed<MapTemplateInfo | null>(
+    () => templates.value.find((t) => t.map_id === selected.value) ?? null,
   )
 
-  function templateByKey(key: string | null): WarehouseTemplateInfo | null {
-    if (!key) return null
-    return templates.value.find((t) => t.key === key) ?? null
+  function templateByKey(mapId: string | null): MapTemplateInfo | null {
+    if (!mapId) return null
+    return templates.value.find((t) => t.map_id === mapId) ?? null
   }
 
   return {

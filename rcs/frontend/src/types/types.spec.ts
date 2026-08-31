@@ -14,8 +14,7 @@ import {
 } from '@/types/siteGrid'
 import {
   SCENARIO_IDS,
-  isScenarioId,
-  type ScenarioBundle,
+  type ScenarioId,
 } from '@/types/scenario'
 
 describe('floorShell types', () => {
@@ -103,19 +102,8 @@ describe('scenario types', () => {
     ])
   })
 
-  it('isScenarioId validates the id list', () => {
-    expect(isScenarioId('ecommerce')).toBe(true)
-    expect(isScenarioId('warehouse')).toBe(false)
-  })
-
-  it('ScenarioBundle composes shell + grid + metadata', () => {
-    const bundle: ScenarioBundle = {
-      scenario_id: 'ecommerce',
-      shell: { bounds: { w: 160, d: 100 } },
-      grid: { site_id: 'ecommerce', bounds: { w: 160, d: 100 }, resolution: 2, cells: [[]] },
-      metadata: { alert_types: ['overstock'], highlight_color: '#f59e0b' },
-    }
-    expect(bundle.scenario_id).toBe('ecommerce')
-    expect(bundle.metadata.highlight_color).toBe('#f59e0b')
+  it('ScenarioId is the union of SCENARIO_IDS', () => {
+    const id: ScenarioId = 'port'
+    expect(SCENARIO_IDS).toContain(id)
   })
 })

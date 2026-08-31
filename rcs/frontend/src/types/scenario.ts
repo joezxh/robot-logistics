@@ -1,4 +1,7 @@
-// Scenario template types — mirror rcs_backend.topology.templates.
+// Scenario id namespace. These ids were historically hard-coded demo scenarios;
+// they now serve as i18n keys for localized scenario labels (scenarioName).
+// Floor-shell / grid payloads are no longer bundled here — they are served from
+// the unified `robot_unified_maps` table via the `/api/rcs/maps` endpoints.
 
 export const SCENARIO_IDS = [
   'ecommerce',
@@ -10,21 +13,3 @@ export const SCENARIO_IDS = [
 ] as const
 
 export type ScenarioId = (typeof SCENARIO_IDS)[number]
-
-export interface ScenarioTemplateInfo {
-  scenario_id: ScenarioId
-  name: string
-  bounds: { w: number; d: number }
-  zone_count: number
-}
-
-export interface ScenarioBundle {
-  scenario_id: ScenarioId
-  shell: import('./floorShell').FloorShell
-  grid: import('./siteGrid').SiteGrid
-  metadata: Record<string, unknown>
-}
-
-export function isScenarioId(value: string): value is ScenarioId {
-  return (SCENARIO_IDS as readonly string[]).includes(value)
-}

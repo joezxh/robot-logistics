@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getTemplate } from '@/api/templates'
+import { getMap } from '@/api/map'
 import type { SiteGrid, ScenarioId } from '@/types'
 
 export const useSiteGridStore = defineStore('siteGrid', () => {
@@ -12,8 +12,15 @@ export const useSiteGridStore = defineStore('siteGrid', () => {
     loading.value = true
     error.value = null
     try {
-      const b = await getTemplate(id)
-      grid.value = b.grid
+      const m = await getMap('tpl-' + id)
+      const w = m.bounds?.w ?? 0
+      const d = m.bounds?.d ?? 0
+      grid.value = {
+        site_id: 'tpl-' + id,
+        bounds: { w, d },
+        resolution: 2,
+        cells: [],
+      }
     } catch (e) {
       error.value = (e as Error).message
     } finally {

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { HttpClient } from '@/api/http'
 import { listShells, getShell } from '@/api/topologyShell'
-import { listTemplates, getTemplate } from '@/api/templates'
 import { createOrder, getOrder } from '@/api/orders'
 import { http } from '@/api/http'
 
@@ -60,35 +59,6 @@ describe('topologyShell API', () => {
     ;(http as unknown as { fetchFn: typeof fetch }).fetchFn = fetchFn as unknown as typeof fetch
     const shell = await getShell('my/site')
     expect(shell.bounds.w).toBe(5)
-  })
-})
-
-describe('templates API', () => {
-  it('listTemplates GET /topology/templates', async () => {
-    const fetchFn = makeFetch((url) => {
-      expect(url).toBe('/api/rcs/topology/templates')
-      return okRes([{ scenario_id: 'ecommerce', name: 'Ecommerce', bounds: { w: 160, d: 100 }, zone_count: 8 }])
-    })
-    ;(http as unknown as { fetchFn: typeof fetch }).fetchFn = fetchFn as unknown as typeof fetch
-    const out = await listTemplates()
-    expect(out[0].scenario_id).toBe('ecommerce')
-  })
-
-  it('getTemplate returns a bundle with shell+grid+metadata', async () => {
-    const fetchFn = makeFetch((url) => {
-      expect(url).toBe('/api/rcs/topology/templates/port')
-      return okRes({
-        scenario_id: 'port',
-        shell: { bounds: { w: 200, d: 150 } },
-        grid: { site_id: 'port', bounds: { w: 200, d: 150 }, resolution: 2, cells: [[]] },
-        metadata: { alert_types: ['customs_hold'] },
-      })
-    })
-    ;(http as unknown as { fetchFn: typeof fetch }).fetchFn = fetchFn as unknown as typeof fetch
-    const b = await getTemplate('port')
-    expect(b.scenario_id).toBe('port')
-    expect(b.metadata.alert_types).toContain('customs_hold')
-    expect(b.grid.resolution).toBe(2)
   })
 })
 

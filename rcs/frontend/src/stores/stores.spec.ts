@@ -20,40 +20,23 @@ beforeEach(() => {
   setActivePinia(createPinia())
 })
 
-// Mirrors the backend /maps/templates payload for a database warehouse template.
-function tpl(key: string, name: string, category: string) {
-  return {
-    key,
-    map_id: `tpl-${key}`,
-    site_id: `tpl-${key}`,
-    name,
-    name_en: key,
-    category,
-    description: '',
-    bounds: { w: 160, d: 100 },
-    node_count: 60,
-    edge_count: 60,
-    node_types: {},
-    zone_count: 8,
-    facility_count: 10,
-    dock_count: 4,
-    wall_count: 4,
-    grid_row_count: 8,
-  }
+// Mirrors the backend /maps/templates payload (MapTemplateInfo).
+function tpl(mapId: string, name: string, nameEn: string, kind = 'warehouse') {
+  return { map_id: mapId, name, name_en: nameEn, kind }
 }
 
 const WAREHOUSE_TEMPLATES = [
-  tpl('ecommerce_large', '大型电商仓', 'ecommerce'),
-  tpl('port_terminal', '港口集装箱码头', 'port'),
+  tpl('tpl-ecommerce_large', '大型电商仓', 'ecommerce_large'),
+  tpl('tpl-port_terminal', '港口集装箱码头', 'port_terminal'),
 ]
 
 describe('useScenarioStore', () => {
-  it('loadTemplates populates the list and auto-selects the first key', async () => {
+  it('loadTemplates populates the list and auto-selects the first map_id', async () => {
     fakeFetch(WAREHOUSE_TEMPLATES)
     const store = useScenarioStore()
     await store.loadTemplates()
     expect(store.templates).toHaveLength(2)
-    expect(store.selected).toBe('ecommerce_large')
+    expect(store.selected).toBe('tpl-ecommerce_large')
     expect(store.loading).toBe(false)
   })
 
@@ -74,19 +57,19 @@ describe('useScenarioStore', () => {
     await store.loadTemplates()
     expect(seeded).toBe(true)
     expect(store.templates).toHaveLength(2)
-    expect(store.selected).toBe('ecommerce_large')
+    expect(store.selected).toBe('tpl-ecommerce_large')
   })
 
   it('selectedTemplate and templateByKey resolve the chosen template', async () => {
     fakeFetch(WAREHOUSE_TEMPLATES)
     const store = useScenarioStore()
     await store.loadTemplates()
-    expect(store.selectedTemplate?.category).toBe('ecommerce')
-    expect(store.templateByKey('port_terminal')?.site_id).toBe('tpl-port_terminal')
+    expect(store.selectedTemplate?.map_id).toBe('tpl-ecommerce_large')
+    expect(store.templateByKey('tpl-port_terminal')?.map_id).toBe('tpl-port_terminal')
     expect(store.templateByKey('nope')).toBeNull()
 
-    store.select('port_terminal')
-    expect(store.selectedTemplate?.category).toBe('port')
+    store.select('tpl-port_terminal')
+    expect(store.selectedTemplate?.map_id).toBe('tpl-port_terminal')
   })
 
   it('select does not throw for an unknown key', async () => {
@@ -109,44 +92,61 @@ describe('useScenarioStore', () => {
 })
 
 describe('useFloorShellStore', () => {
-  it('loadByScenario pulls shell from the template bundle', async () => {
-    fakeFetch({
-      scenario_id: 'ecommerce',
-      shell: { bounds: { w: 160, d: 100 }, zones: [{ id: 'z1', ref: 'R1', type: 'flow_rack', x: 0, z: 0, w: 60, d: 40 }] },
-      grid: { site_id: 'ecommerce', bounds: { w: 160, d: 100 }, resolution: 2, cells: [[]] },
-      metadata: {},
-    })
+  it('loadByScenario pulls geometry from the unified map', async () => {
+    const body = {
+      map_id: 'tpl-ecommerce',
+      name: 'Ecommerce',
+      is_template: true,
+      kind: 'warehouse',
+      current_version: 1,
+      bounds: { w: 160, d: 100 },
+      geometry: { bounds: { w: 160, d: 100 }, zones: [{ id: 'z1', ref: 'R1', type: 'flow_rack', x: 0, z: 0, w: 60, d: 40 }] },
+      topology: { nodes: [], edges: [] },
+      semantic: {},
+    }
+    fakeFetch(body)
     const store = useFloorShellStore()
     await store.loadByScenario('ecommerce')
     expect(store.shell?.bounds.w).toBe(160)
     expect(store.shell?.zones?.[0].type).toBe('flow_rack')
   })
 
-  it('loadBySite fetches via the shell endpoint', async () => {
+  it('loadBySite fetches via the maps endpoint', async () => {
     let captured = ''
     const fn = vi.fn(async (url: string) => {
       captured = url
-      return { ok: true, status: 200, json: async () => ({}), text: async () => JSON.stringify({ bounds: { w: 5, d: 5 } }) } as unknown as Response
+      const body = { map_id: 'site-1', name: '', is_template: false, current_version: 1, bounds: { w: 5, d: 5 }, geometry: { bounds: { w: 5, d: 5 } }, topology: { nodes: [], edges: [] }, semantic: {} }
+      return {
+        ok: true, status: 200,
+        json: async () => body,
+        text: async () => JSON.stringify(body),
+      } as unknown as Response
     })
     ;(http as unknown as { fetchFn: typeof fetch }).fetchFn = fn as unknown as typeof fetch
     const store = useFloorShellStore()
     await store.loadBySite('site-1')
-    expect(captured).toContain('/topology/shell/site-1')
+    expect(captured).toContain('/maps/site-1')
     expect(store.shell?.bounds.w).toBe(5)
   })
 })
 
 describe('useSiteGridStore', () => {
-  it('loadByScenario pulls grid from the template bundle', async () => {
+  it('loadByScenario derives an empty grid from the unified map bounds', async () => {
     fakeFetch({
-      scenario_id: 'multi_floor',
-      shell: { bounds: { w: 80, d: 60, h: 12 } },
-      grid: { site_id: 'multi_floor', bounds: { w: 80, d: 60 }, resolution: 2, cells: [[], []] },
-      metadata: {},
+      map_id: 'tpl-multi_floor',
+      name: 'Multi Floor',
+      is_template: true,
+      kind: 'warehouse',
+      current_version: 1,
+      bounds: { w: 80, d: 60 },
+      geometry: { bounds: { w: 80, d: 60 } },
+      topology: { nodes: [], edges: [] },
+      semantic: {},
     })
     const store = useSiteGridStore()
     await store.loadByScenario('multi_floor')
+    expect(store.grid?.site_id).toBe('tpl-multi_floor')
     expect(store.grid?.resolution).toBe(2)
-    expect(store.grid?.cells).toHaveLength(2)
+    expect(store.grid?.cells).toEqual([])
   })
 })

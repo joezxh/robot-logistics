@@ -37,10 +37,10 @@
             <a-tag>v{{ (record as SiteMapRow).current_version }}</a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'nodes'">
-            {{ ((record as SiteMapRow).nodes ?? []).length }}
+            {{ ((record as SiteMapRow).topology?.nodes ?? []).length }}
           </template>
           <template v-else-if="column.dataIndex === 'edges'">
-            {{ ((record as SiteMapRow).edges ?? []).length }}
+            {{ ((record as SiteMapRow).topology?.edges ?? []).length }}
           </template>
           <template v-else-if="column.dataIndex === 'action'">
             <a-popconfirm :title="t('common.deleteConfirm')" @confirm="remove((record as SiteMapRow).map_id)">
@@ -59,12 +59,12 @@
         <h3>{{ store.current.name || store.current.map_id }} (v{{ store.current.current_version }})</h3>
       </div>
       <svg :viewBox="`0 0 ${vbW} ${vbH}`" width="100%" height="320" class="canvas">
-        <g v-for="e in store.current.edges" :key="`${e.from}-${e.to}`">
+        <g v-for="e in store.current.topology.edges" :key="`${e.from}-${e.to}`">
           <line :x1="nodeXY(e.from).x" :y1="nodeXY(e.from).y"
                 :x2="nodeXY(e.to).x" :y2="nodeXY(e.to).y"
                 stroke="var(--border-strong, #888)" stroke-width="1" />
         </g>
-        <g v-for="n in store.current.nodes" :key="n.id">
+        <g v-for="n in store.current.topology.nodes" :key="n.id">
           <circle :cx="nodeXY(n.id).x" :cy="nodeXY(n.id).y" r="6" fill="var(--accent, #3b82f6)" />
           <text :x="nodeXY(n.id).x + 8" :y="nodeXY(n.id).y + 4" font-size="10">{{ n.id }}</text>
         </g>
@@ -149,8 +149,7 @@ type SiteMapRow = {
   map_id: string
   name: string
   current_version: number
-  nodes?: unknown[]
-  edges?: unknown[]
+  topology?: { nodes: unknown[]; edges: unknown[] }
 }
 
 const jsonText = ref('')
@@ -168,11 +167,11 @@ const columns = [
   { title: t('common.actions'), dataIndex: 'action', width: 90, fixed: 'right' as const },
 ]
 
-const vbW = computed(() => Math.max(800, ...(store.current?.nodes.map(n => (n.pos[0] || 0) + 60) || [0])))
-const vbH = computed(() => Math.max(400, ...(store.current?.nodes.map(n => (n.pos[1] || 0) + 60) || [0])))
+const vbW = computed(() => Math.max(800, ...(store.current?.topology.nodes.map((n: SiteNode) => (n.pos[0] || 0) + 60) || [0])))
+const vbH = computed(() => Math.max(400, ...(store.current?.topology.nodes.map((n: SiteNode) => (n.pos[1] || 0) + 60) || [0])))
 
 function nodeXY(id: string): { x: number; y: number } {
-  const n: SiteNode | undefined = store.current?.nodes.find(x => x.id === id)
+  const n: SiteNode | undefined = store.current?.topology.nodes.find(x => x.id === id)
   if (!n) return { x: 0, y: 0 }
   return { x: (n.pos[0] || 0) + 20, y: (n.pos[1] || 0) + 20 }
 }

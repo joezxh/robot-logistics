@@ -74,45 +74,48 @@ beforeAll(() => {
 })
 
 // Mirrors GET /api/rcs/maps/templates — the database warehouse templates.
-function tpl(key: string, name: string, category: string, bounds: { w: number; d: number }) {
-  return {
-    key,
-    map_id: `tpl-${key}`,
-    site_id: `tpl-${key}`,
-    name,
-    name_en: key,
-    category,
-    description: '',
-    bounds,
-    node_count: 40,
-    edge_count: 40,
-    node_types: {},
-    zone_count: 1,
-    facility_count: 2,
-    dock_count: 2,
-    wall_count: 4,
-    grid_row_count: 1,
-  }
+function tpl(key: string, name: string, nameEn: string, kind = 'warehouse') {
+  return { map_id: `tpl-${key}`, name, name_en: nameEn, kind }
 }
 
 const TEMPLATES = [
-  tpl('ecommerce_large', '大型电商仓', 'ecommerce', { w: 160, d: 100 }),
-  tpl('multi_floor_demo', '多层仓', 'multi_floor', { w: 80, d: 60 }),
+  tpl('ecommerce_large', '大型电商仓', 'ecommerce_large'),
+  tpl('multi_floor_demo', '多层仓', 'multi_floor_demo'),
 ]
 
-// Mirrors GET /api/rcs/topology/shell/{site_id} — keyed by template site_id.
-const SHELLS: Record<string, unknown> = {
+// Mirrors GET /api/rcs/maps/{map_id} — geometry is the FloorShell.
+const MAPS: Record<string, unknown> = {
   'tpl-ecommerce_large': {
+    map_id: 'tpl-ecommerce_large',
+    name: '大型电商仓',
+    is_template: true,
+    kind: 'warehouse',
+    current_version: 1,
     bounds: { w: 160, d: 100 },
-    zones: [{ id: 'z1', ref: 'R1', type: 'flow_rack', x: 0, z: 0, w: 60, d: 40 }],
+    geometry: {
+      bounds: { w: 160, d: 100 },
+      zones: [{ id: 'z1', ref: 'R1', type: 'flow_rack', x: 0, z: 0, w: 60, d: 40 }],
+    },
+    topology: { nodes: [], edges: [] },
+    semantic: {},
   },
   'tpl-multi_floor_demo': {
-    bounds: { w: 80, d: 60, h: 12 },
-    zones: [{ id: 'el1', ref: 'EL-1', type: 'elevator_shaft', x: 70, z: 50, w: 5, d: 5 }],
-    floors: [
-      { id: 'L1', z: 0, bounds: { w: 80, d: 60 }, zones: [] },
-      { id: 'L2', z: 4, bounds: { w: 80, d: 60 }, zones: [] },
-    ],
+    map_id: 'tpl-multi_floor_demo',
+    name: '多层仓',
+    is_template: true,
+    kind: 'warehouse',
+    current_version: 1,
+    bounds: { w: 80, d: 60 },
+    geometry: {
+      bounds: { w: 80, d: 60, h: 12 },
+      zones: [{ id: 'el1', ref: 'EL-1', type: 'elevator_shaft', x: 70, z: 50, w: 5, d: 5 }],
+      floors: [
+        { id: 'L1', z: 0, bounds: { w: 80, d: 60 }, zones: [] },
+        { id: 'L2', z: 4, bounds: { w: 80, d: 60 }, zones: [] },
+      ],
+    },
+    topology: { nodes: [], edges: [] },
+    semantic: {},
   },
 }
 
@@ -120,8 +123,9 @@ function routeFetch() {
   const fn = vi.fn(async (url: string) => {
     let body: unknown = {}
     if (url.endsWith('/maps/templates')) body = TEMPLATES
-    else if (url.includes('/topology/shell/')) {
-      body = SHELLS[url.split('/topology/shell/')[1]] ?? {}
+    else if (url.includes('/maps/tpl-')) {
+      const id = url.split('/maps/')[1]
+      body = MAPS[id] ?? {}
     }
     return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) } as unknown as Response
   })
@@ -183,7 +187,7 @@ describe('SiteMapView', () => {
     await store.loadTemplates()
     const wrapper = mount(SiteMapView, { global: { plugins: [i18n, Antd] } })
     await new Promise((r) => setTimeout(r, 10))
-    await store.select('multi_floor_demo')
+    await store.select('tpl-multi_floor_demo')
     await new Promise((r) => setTimeout(r, 20))
     // template select + floor select
     expect(wrapper.findAll('.ant-select').length).toBeGreaterThanOrEqual(2)
