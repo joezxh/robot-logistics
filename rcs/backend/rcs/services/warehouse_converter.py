@@ -106,7 +106,7 @@ def convert_to_floor_shell() -> dict[str, Any]:
     """Convert the embedded blueprint to an RCS FloorShell dict.
 
     The returned dict is compatible with ``rcs.models.floor_shell.FloorShell``
-    and can be stored directly into ``robot_topology_shell.data``.
+    and is stored as the UnifiedMap ``geometry_json``.
     """
     bp = BLUEPRINT
 
@@ -253,8 +253,7 @@ def _nearest_node(pos: tuple[float, float],
 def convert_to_site_map() -> tuple[list[dict], list[dict]]:
     """Convert the embedded blueprint to a site-map graph.
 
-    Returns ``(nodes, edges)`` ready for ``robot_site_maps.nodes_json`` /
-    ``edges_json``.
+    Returns ``(nodes, edges)`` stored as the UnifiedMap ``topology_json``.
 
     Node types:
       - ``zone`` — center of each storage zone

@@ -1,118 +1,72 @@
-"""REST endpoints for importing warehouse_theatre_3d data into RCS backend."""
+"""REST endpoints for importing warehouse_theatre_3d data into RCS backend.
+
+The imported blueprint is persisted as a single ``UnifiedMap`` row — its
+FloorShell lives in ``geometry_json`` and the node/edge graph for path planning
+lives in ``topology_json``.
+"""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter
 
 from rcs.services.warehouse_converter import convert_to_floor_shell, convert_to_site_map
-from rcs.db import models, session as db_session
+from rcs.services.control import control_unified_maps as um
 
 router = APIRouter()
+
+MAP_ID = "warehouse-theatre-3d"
+MAP_NAME = "E-Commerce Warehouse (WT3D)"
 
 
 @router.post("/import/warehouse-theatre", summary="Import warehouse_theatre_3d blueprint")
 async def import_warehouse_theatre() -> dict:
-    """One-shot import: convert the embedded DEFAULT_SHELL blueprint and
-    persist it as both a TopologyShell (3-D visualisation) and a SiteMap
-    (node/edge graph for path planning).
+    """One-shot import: convert the embedded DEFAULT_SHELL blueprint and persist
+    it as a UnifiedMap (geometry = FloorShell, topology = node/edge graph).
 
-    The operation is idempotent — it uses ``site_id = "warehouse-theatre-3d"``
-    and ``map_name = "warehouse-theatre-3d"``.  Re-running replaces the
-    existing data (shell data is overwritten; site map nodes/edges are
-    updated and a new version snapshot is created).
+    The operation is idempotent — it targets ``map_id = "warehouse-theatre-3d"``.
+    Re-running replaces the existing data (geometry/topology are overwritten and
+    ``current_version`` is bumped).
     """
     shell_data = convert_to_floor_shell()
     nodes, edges = convert_to_site_map()
+    bounds = shell_data.get("bounds", {})
 
-    site_id = "warehouse-theatre-3d"
-    map_name = "E-Commerce Warehouse (WT3D)"
-
-    async for s in db_session.session():
-        # ── 1. Save / update TopologyShell ────────────────────────────────
-        shell_row = await s.get(models.TopologyShell, site_id)
-        if shell_row is None:
-            shell_row = models.TopologyShell(site_id=site_id)
-        shell_row.name = map_name
-        shell_row.width_m = shell_data["bounds"]["w"]
-        shell_row.depth_m = shell_data["bounds"]["d"]
-        shell_row.height_m = shell_data["bounds"].get("h", 0)
-        shell_row.data = shell_data
-        s.add(shell_row)
-
-        # ── 2. Save / update SiteMap ──────────────────────────────────────
-        result = await s.execute(
-            select(models.SiteMap).where(models.SiteMap.name == map_name)
+    existing = await um.get(MAP_ID)
+    if existing is None:
+        created = await um.create(
+            map_id=MAP_ID,
+            name=MAP_NAME,
+            kind="warehouse",
+            is_template=False,
+            bounds=bounds,
+            geometry=shell_data,
+            topology={"nodes": nodes, "edges": edges},
         )
-        map_row = result.scalar_one_or_none()
-        if map_row is None:
-            map_row = models.SiteMap(
-                name=map_name,
-                nodes_json=nodes,
-                edges_json=edges,
-                current_version=1,
-            )
-            s.add(map_row)
-            await s.flush()
-            # initial version snapshot
-            s.add(models.SiteMapVersion(
-                map_id=map_row.map_id, version=1,
-                nodes_json=nodes, edges_json=edges,
-                note="import from warehouse_theatre_3d",
-            ))
-        else:
-            map_row.nodes_json = nodes
-            map_row.edges_json = edges
-            map_row.current_version += 1
-            s.add(map_row)
-            s.add(models.SiteMapVersion(
-                map_id=map_row.map_id, version=map_row.current_version,
-                nodes_json=nodes, edges_json=edges,
-                note=f"re-import v{map_row.current_version}",
-            ))
-
-        # ── 3. Save / update TopologyGrid (zone records) ──────────────────
-        # Remove old grid rows for this site, then insert fresh ones.
-        from sqlalchemy import delete as sql_delete
-        await s.execute(
-            sql_delete(models.TopologyGrid)
-            .where(models.TopologyGrid.site_id == site_id)
+        version = created["current_version"]
+    else:
+        updated = await um.update(
+            MAP_ID,
+            name=MAP_NAME,
+            geometry=shell_data,
+            topology={"nodes": nodes, "edges": edges},
         )
-        for z in shell_data.get("zones", []):
-            grid_row = models.TopologyGrid(
-                site_id=site_id,
-                zone_id=z["id"],
-                zone_type=_zone_type_int(z["type"]),
-                center_m=[z["x"] + z["w"] / 2, z["z"] + z["d"] / 2],
-                size_m=[z["w"], z["d"]],
-                rotation_deg=0.0,
-                data={"ref": z["ref"], "type": z["type"]},
-            )
-            s.add(grid_row)
+        version = updated["current_version"]
 
-        await s.commit()
-
-        # Refresh to get generated IDs
-        await s.refresh(shell_row)
-        await s.refresh(map_row)
-
-        return {
-            "ok": True,
-            "site_id": site_id,
-            "map_id": map_row.map_id,
-            "map_version": map_row.current_version,
+    return {
+        "ok": True,
+        "site_id": MAP_ID,
+        "map_id": MAP_ID,
+        "map_version": version,
+        "zone_count": len(shell_data.get("zones", [])),
+        "node_count": len(nodes),
+        "edge_count": len(edges),
+        "shell": {
+            "bounds": bounds,
+            "wall_count": len(shell_data.get("walls", [])),
             "zone_count": len(shell_data.get("zones", [])),
-            "node_count": len(nodes),
-            "edge_count": len(edges),
-            "shell": {
-                "bounds": shell_data["bounds"],
-                "wall_count": len(shell_data.get("walls", [])),
-                "zone_count": len(shell_data.get("zones", [])),
-                "facility_count": len(shell_data.get("facilities", [])),
-                "dock_count": len(shell_data.get("docks", [])),
-            },
-        }
-
-    raise RuntimeError("db session closed")
+            "facility_count": len(shell_data.get("facilities", [])),
+            "dock_count": len(shell_data.get("docks", [])),
+        },
+    }
 
 
 @router.get("/import/warehouse-theatre/preview",
@@ -137,14 +91,3 @@ async def preview_warehouse_theatre() -> dict:
             "edge_count": len(edges),
         },
     }
-
-
-# Map zone type string → integer code (matches TopologyGrid.zone_type convention)
-_ZONE_TYPE_MAP = {
-    "flow_rack": 1, "high_rack": 2, "mezzanine": 3, "automated": 4,
-    "temp": 5, "temp_bagged": 6, "returns": 7, "rack": 8,
-}
-
-
-def _zone_type_int(ztype: str) -> int:
-    return _ZONE_TYPE_MAP.get(ztype, 0)

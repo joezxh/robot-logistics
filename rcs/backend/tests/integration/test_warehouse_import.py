@@ -53,11 +53,11 @@ class TestImportEndpoint:
 
     def test_import_creates_shell(self, client):
         client.post("/api/rcs/import/warehouse-theatre")
-        r = client.get("/api/rcs/topology/shell/warehouse-theatre-3d")
+        r = client.get("/api/rcs/maps/warehouse-theatre-3d")
         assert r.status_code == 200
-        shell = r.json()
-        assert shell["bounds"]["w"] == 160
-        assert len(shell["zones"]) == 8
+        geometry = r.json()["geometry"]
+        assert geometry["bounds"]["w"] == 160
+        assert len(geometry.get("zones", [])) == 8
 
     def test_import_creates_site_map(self, client):
         result = client.post("/api/rcs/import/warehouse-theatre").json()
@@ -65,8 +65,8 @@ class TestImportEndpoint:
         r = client.get(f"/api/rcs/maps/{map_id}")
         assert r.status_code == 200
         map_data = r.json()
-        assert len(map_data["nodes"]) > 0
-        assert len(map_data["edges"]) > 0
+        assert len(map_data["topology"]["nodes"]) > 0
+        assert len(map_data["topology"]["edges"]) > 0
 
     def test_import_idempotent(self, client):
         r1 = client.post("/api/rcs/import/warehouse-theatre").json()
@@ -75,11 +75,11 @@ class TestImportEndpoint:
         assert r1["site_id"] == r2["site_id"]
         assert r2["map_version"] == r1["map_version"] + 1
 
-    def test_import_creates_topology_grid_in_db(self, client):
-        """TopologyGrid rows are written to DB (not the in-memory grid API)."""
+    def test_import_persists_zones_in_unified_map(self, client):
+        """Zone data is persisted inside the UnifiedMap geometry (no separate
+        TopologyGrid table anymore)."""
         client.post("/api/rcs/import/warehouse-theatre")
-        # Verify via the shell endpoint that zone data was persisted
-        r = client.get("/api/rcs/topology/shell/warehouse-theatre-3d")
+        r = client.get("/api/rcs/maps/warehouse-theatre-3d")
         assert r.status_code == 200
-        zones = r.json().get("zones", [])
+        zones = r.json().get("geometry", {}).get("zones", [])
         assert len(zones) == 8

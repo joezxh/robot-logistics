@@ -62,10 +62,6 @@ def _wipe_all():
             # Order matters for FK chains.
             await s.execute(delete(M.MapDynamicState))
             await s.execute(delete(M.UnifiedMap))
-            await s.execute(delete(M.SiteMapVersion))
-            await s.execute(delete(M.SiteMap))
-            await s.execute(delete(M.TopologyGrid))
-            await s.execute(delete(M.TopologyShell))
             await s.commit()
 
     asyncio.run(_do())

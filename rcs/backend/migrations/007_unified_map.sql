@@ -131,13 +131,18 @@ BEGIN
     END IF;
 END $$;
 
--- OPTIONAL: run only after Tasks 3-7 are complete and old ORM models removed.
--- These legacy tables are still referenced by the ORM/models during the
--- multi-task transition, so the DROP is intentionally NOT auto-applied above.
--- Uncomment and run by hand once nothing references them anymore:
+-- ---------------------------------------------------------------------------
+-- Part C: drop legacy tables. Safe to run once the unified-maps migration is
+-- complete and the old ORM models (TopologyShell / TopologyGrid / SiteMap /
+-- SiteMapVersion) have been removed from `rcs.db.models`. The new model lives
+-- in `robot_unified_maps` (+ `robot_map_dynamic_state`), so these tables are
+-- fully superseded.
 --
--- DROP TABLE IF EXISTS robot_map_dynamic_state;
--- DROP TABLE IF EXISTS robot_topology_grid;
--- DROP TABLE IF EXISTS robot_site_map_versions;
--- DROP TABLE IF EXISTS robot_site_maps;
--- DROP TABLE IF EXISTS robot_topology_shell;
+-- Dynamic-state table is dropped first (FK target of nothing), then the two
+-- legacy graph tables, then the last legacy schema tables.
+-- ---------------------------------------------------------------------------
+DROP TABLE IF EXISTS robot_map_dynamic_state;
+DROP TABLE IF EXISTS robot_topology_grid;
+DROP TABLE IF EXISTS robot_site_map_versions;
+DROP TABLE IF EXISTS robot_site_maps;
+DROP TABLE IF EXISTS robot_topology_shell;

@@ -1,10 +1,11 @@
-"""Unified Map Model ORM (Task 1 of unified-map-model plan).
+"""Unified Map Model ORM.
 
 Adds :class:`UnifiedMap` (the single unified map table that converges the old
 site-map / topology-shell / warehouse-map concepts) and :class:`MapDynamicState`
-(the new dynamic layer). ``TopologyGrid`` / ``SiteMapVersion`` already exist in
-``rcs.db.models`` and are parented to their old tables; Task 3 will re-parent
-them to ``UnifiedMap`` and add the corresponding one-to-many relationships then.
+(the dynamic per-element state layer). The legacy ``TopologyShell`` /
+``TopologyGrid`` / ``SiteMap`` / ``SiteMapVersion`` ORM classes have been removed;
+their data now lives inside ``UnifiedMap`` (``geometry_json`` + ``topology_json``)
+plus ``MapDynamicState``.
 
 JSON columns use ``JSON`` (not ``JSONB``) to match the existing models in
 ``rcs.db.models`` and keep asyncpg compatibility.
