@@ -60,3 +60,7 @@ Thumbs.db
 docs/logitics/
 .gstack/
 .gitkeep
+
+# Brainstorming visual companion session scratch (root only; note that
+# docs/superpowers/ holds committed design specs and must stay tracked).
+/.superpowers/
