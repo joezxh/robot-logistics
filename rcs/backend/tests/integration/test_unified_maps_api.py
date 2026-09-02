@@ -181,3 +181,35 @@ def test_full_lifecycle(app_client):
     # 12. delete map → 204
     dm = app_client.delete(f"/api/rcs/maps/{new_id}")
     assert dm.status_code == 204
+
+
+# ── 13. MJCF scene generation ─────────────────────────────────────────────────
+
+
+def test_get_map_mjcf(app_client):
+    _seed(app_client)
+    r = app_client.get("/api/rcs/maps/tpl-train_unload/mjcf")
+    assert r.status_code == 200
+    assert "<mujoco" in r.text and "worldbody" in r.text
+    # a body per floor + zone/dock should be present
+    assert r.text.count("<body") >= 2
+
+
+def test_get_map_mjcf_from_sql_template(app_client):
+    # the 13 SQL-seeded wt_floor_shell templates also render (e.g. ecommerce)
+    _seed(app_client)
+    r = app_client.get("/api/rcs/maps/tpl-ecommerce/mjcf")
+    assert r.status_code == 200
+    assert "<mujoco" in r.text
+
+
+def test_get_map_mjcf_download_header(app_client):
+    _seed(app_client)
+    r = app_client.get("/api/rcs/maps/tpl-train_unload/mjcf?download=true")
+    assert r.status_code == 200
+    assert "attachment" in r.headers.get("content-disposition", "")
+
+
+def test_get_map_mjcf_404(app_client):
+    r = app_client.get("/api/rcs/maps/does-not-exist/mjcf")
+    assert r.status_code == 404

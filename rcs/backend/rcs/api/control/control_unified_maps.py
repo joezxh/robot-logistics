@@ -16,13 +16,14 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel
 from sqlalchemy import select
 
 from rcs.db import session as db_session
 from rcs.db.unified_map import MapDynamicState
 from rcs.services.control import control_unified_maps as map_svc
+from rcs.services.control.map_mjcf import build_mjcf
 
 router = APIRouter()
 
@@ -165,6 +166,24 @@ async def import_map(map_id: str, payload: dict):
     if updated is None:
         raise HTTPException(404, "map not found")
     return updated
+
+
+@router.get("/maps/{map_id}/mjcf",
+             summary="Generate an MJCF scene XML for the 3D map viewer")
+async def get_map_mjcf(map_id: str, download: bool = Query(False)):
+    """Render the map's ``geometry_json`` (wt_floor_shell) into a mujoco MJCF
+    scene. The frontend ``MjcfLoader`` loads this URL directly; ``?download=1``
+    returns it as an attachment.
+    """
+    m = await map_svc.get(map_id)
+    if m is None:
+        raise HTTPException(404, "map not found")
+    # map_svc.get already returns a dict carrying geometry_json (wt_floor_shell)
+    xml = build_mjcf(m)
+    headers = {}
+    if download:
+        headers["Content-Disposition"] = f'attachment; filename="{map_id}.mjcf.xml"'
+    return Response(content=xml, media_type="application/xml", headers=headers)
 
 
 @router.get("/maps/{map_id}/export")
