@@ -32,6 +32,7 @@ from sqlalchemy import delete as sa_delete, select
 from rcs.db import models, session as db_session
 from rcs.models.floor_shell import Bounds, Floor, FloorShell, Zone
 from rcs.models.site_grid import SiteGrid
+from .map_mjcf import build_mjcf, _floor_shell_to_wt  # wt_floor_shell converter
 
 
 # ── Built-in scenario blueprints (moved here from rcs.models.topology_templates
@@ -43,7 +44,7 @@ from rcs.models.site_grid import SiteGrid
 
 SCENARIO_IDS: list[str] = [
     "ecommerce", "manufacturing", "cold_chain",
-    "port", "reverse_logistics", "multi_floor",
+    "port", "reverse_logistics", "multi_floor", "train_unload",
 ]
 
 
@@ -63,6 +64,44 @@ class ScenarioBundle:
     metadata: dict
 
 
+class ShellAdapter:
+    """Wrap a ``wt_floor_shell`` dict so legacy shell-consuming code works.
+
+    Scenario builders (e.g. ``_scn_train_unload``) ship a pre-built wt dict
+    instead of a ``FloorShell``. This adapter exposes the small surface the
+    seeder / scenario-info helper read (``bounds.w/d``, ``zones``, ``floors``,
+    ``model_dump``) without forcing every caller to special-case dicts.
+    """
+
+    def __init__(self, d: dict):
+        self.shell = d
+        b = d.get("bounds", {}) or {}
+        self.bounds = Bounds(w=b.get("w", 0), d=b.get("d", 0))
+        self.zones = d.get("zones", []) or []
+        self.floors = []
+
+    def model_dump(self, mode: str = "python") -> dict:
+        return self.shell
+
+
+def _shell_to_wt_input(shell: FloorShell) -> dict:
+    """Convert a legacy ``FloorShell`` into the dict shape ``_floor_shell_to_wt`` expects."""
+    bounds = {"w": shell.bounds.w, "d": shell.bounds.d}
+    if getattr(shell.bounds, "h", None) is not None:
+        bounds["h"] = shell.bounds.h
+    return {
+        "bounds": bounds,
+        "walls": getattr(shell, "walls", []) or [],
+        "facilities": getattr(shell, "facilities", []) or [],
+        "corridors": getattr(shell, "corridors", []) or [],
+        "zones": [z.model_dump() for z in shell.zones],
+        "floors": [
+            {"z": f.z, "zones": [z.model_dump() for z in f.zones]}
+            for f in shell.floors
+        ],
+    }
+
+
 def _build_scenario_bundle(scenario_id: str) -> ScenarioBundle:
     """Build one scenario blueprint. Raises KeyError for unknown ids."""
     if scenario_id not in SCENARIO_IDS:
@@ -74,6 +113,7 @@ def _build_scenario_bundle(scenario_id: str) -> ScenarioBundle:
         "port": _scn_port,
         "reverse_logistics": _scn_reverse_logistics,
         "multi_floor": _scn_multi_floor,
+        "train_unload": _scn_train_unload,
     }
     return builders[scenario_id]()
 
@@ -216,6 +256,46 @@ def _scn_multi_floor() -> ScenarioBundle:
     )
 
 
+def _scn_train_unload() -> ScenarioBundle:
+    """Rail unload -> platform -> truck. Ships a ready ``wt_floor_shell`` dict."""
+    wt = {
+        "bounds": {"w": 180, "d": 80},
+        "walls": [
+            {"ref": "w_n", "type": "wall", "x": 0, "z": 0, "w": 180, "d": 1, "h": 6, "y": 0, "rot": 0, "color": "#6b7280", "label": "北墙"},
+            {"ref": "w_s", "type": "wall", "x": 0, "z": 79, "w": 180, "d": 1, "h": 6, "y": 0, "rot": 0, "color": "#6b7280", "label": "南墙"},
+            {"ref": "w_w", "type": "wall", "x": 0, "z": 0, "w": 1, "d": 80, "h": 6, "y": 0, "rot": 0, "color": "#6b7280", "label": "西墙"},
+            {"ref": "w_e", "type": "wall", "x": 179, "z": 0, "w": 1, "d": 80, "h": 6, "y": 0, "rot": 0, "color": "#6b7280", "label": "东墙"},
+        ],
+        "docks": [
+            {"ref": "truck_dock_1", "type": "truck_dock", "x": 133, "z": 20, "w": 4, "d": 40, "h": 0.4, "y": 0.3, "rot": 0, "color": "#fbbf24", "label": "卡车月台"},
+        ],
+        "facilities": [],
+        "zones": [
+            {"ref": "rail_track_1", "type": "rail_track", "x": 5, "z": 10, "w": 10, "d": 60, "h": 0.3, "y": 0, "rot": 0, "color": "#44403c", "label": "铁轨"},
+            {"ref": "train_car_1", "type": "train_car", "x": 20, "z": 20, "w": 15, "d": 12, "h": 4.0, "y": 0, "rot": 0, "color": "#7c2d12", "label": "车厢1"},
+            {"ref": "train_car_2", "type": "train_car", "x": 40, "z": 20, "w": 15, "d": 12, "h": 4.0, "y": 0, "rot": 0, "color": "#7c2d12", "label": "车厢2"},
+            {"ref": "train_car_3", "type": "train_car", "x": 60, "z": 20, "w": 15, "d": 12, "h": 4.0, "y": 0, "rot": 0, "color": "#7c2d12", "label": "车厢3"},
+            {"ref": "platform_1", "type": "staging", "x": 85, "z": 20, "w": 45, "d": 40, "h": 0.3, "y": 0.3, "rot": 0, "color": "#0ea5e9", "label": "月台"},
+            {"ref": "truck_1", "type": "truck", "x": 140, "z": 30, "w": 12, "d": 4, "h": 3.5, "y": 0, "rot": 0, "color": "#1f2937", "label": "大卡车1"},
+            {"ref": "truck_2", "type": "truck", "x": 160, "z": 30, "w": 12, "d": 4, "h": 3.5, "y": 0, "rot": 0, "color": "#1f2937", "label": "大卡车2"},
+            {"ref": "staging_1", "type": "staging", "x": 85, "z": 65, "w": 45, "d": 13, "h": 0.6, "y": 0, "rot": 0, "color": "#9ca3af", "label": "暂存区"},
+        ],
+        "corridors": [],
+    }
+    return ScenarioBundle(
+        shell=ShellAdapter(wt),
+        grid=_default_scenario_grid(180, 80),
+        metadata={
+            "scenario": "train_unload",
+            "variant": "primary",
+            "reference": "warehouse_theatre_3d",
+            "flow": ["rail_track", "train_car", "platform", "truck_dock", "truck"],
+            "alert_types": ["rail_blocked", "truck_delay"],
+            "highlight_color": "#f59e0b",
+        },
+    )
+
+
 def _default_scenario_grid(w: float, d: float, resolution: float = 2.0) -> SiteGrid:
     """Build a basic EMPTY-cell grid covering w×d meters at the given resolution.
 
@@ -352,14 +432,18 @@ async def seed_templates() -> list[dict]:
             m.is_template = True
             m.kind = "scenario"
             m.current_version = 1
-            m.geometry_json = b.shell.model_dump(mode="json")
+            if isinstance(b.shell, ShellAdapter):
+                wt_geo = b.shell.shell  # already wt_floor_shell
+            else:
+                wt_geo = _floor_shell_to_wt(_shell_to_wt_input(b.shell), b.metadata)
+            m.geometry_json = wt_geo
             m.topology_json = {}  # scenario templates carry no graph
             m.semantic_json = {
                 "scenario": b.metadata.get("scenario", sid),
                 "alert_types": b.metadata.get("alert_types", []),
                 "highlight_color": b.metadata.get("highlight_color", "#888"),
             }
-            m.bounds_json = {"w": b.shell.bounds.w, "d": b.shell.bounds.d}
+            m.bounds_json = wt_geo["bounds"]
             m.dynamic_json = {}
             m.data = {}
             out.append(m)

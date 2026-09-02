@@ -47,22 +47,22 @@ async def test_seed_templates_creates_fourteen_rows():
     from rcs.services.control import control_unified_maps as svc
 
     rows = await svc.seed_templates()
-    assert len(rows) >= 14
+    assert len(rows) >= 15
 
     expected_ids = {
         # 8 DB warehouse templates
         "tpl-ecommerce_large", "tpl-theatre_ecommerce", "tpl-port_terminal",
         "tpl-factory_warehouse", "tpl-highway_freight_hub",
         "tpl-third_party_logistics", "tpl-cold_chain", "tpl-reverse_logistics",
-        # 6 hardcoded scenarios (cold_chain / reverse_logistics collide with
+        # 7 hardcoded scenarios (cold_chain / reverse_logistics collide with
         # warehouse keys, so they are namespaced as tpl-scn-<id> to keep all
-        # 14 templates distinct and preserve both sources' data).
+        # 15 templates distinct and preserve both sources' data).
         "tpl-ecommerce", "tpl-manufacturing", "tpl-port", "tpl-multi_floor",
-        "tpl-scn-cold_chain", "tpl-scn-reverse_logistics",
+        "tpl-train_unload", "tpl-scn-cold_chain", "tpl-scn-reverse_logistics",
     }
     got_ids = {r["map_id"] for r in rows}
     assert expected_ids <= got_ids, got_ids - expected_ids
-    assert len(got_ids) == 14
+    assert len(got_ids) == 15
 
 
 async def test_seed_templates_is_idempotent_and_content_ok():
@@ -70,7 +70,7 @@ async def test_seed_templates_is_idempotent_and_content_ok():
 
     rows1 = await svc.seed_templates()
     rows2 = await svc.seed_templates()
-    assert len(rows2) == 14
+    assert len(rows2) == 15
 
     by_id = {r["map_id"]: r for r in rows2}
 
