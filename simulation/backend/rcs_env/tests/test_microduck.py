@@ -75,3 +75,85 @@ def test_variant_registry_covers_all_seven():
     }
     for name, v in VARIANTS.items():
         assert os.path.exists(v.mjcf_path), v.mjcf_path
+
+
+def test_freebase_engine_loads_walk():
+    from rcs_env.freebase_engine import FreeBaseMuJoCoEngine
+    eng = FreeBaseMuJoCoEngine.from_variant("walk")
+    eng.reset()
+    assert eng.nq == 21 and eng.nu == 14 and eng.nv == 20
+    # freejoint quaternion must be valid (unit length) after reset ...
+    assert np.isclose(np.linalg.norm(eng.qpos()[3:7]), 1.0, atol=1e-6)
+    # ... and must survive a ctrl step. A 14-element command must NOT be written
+    # into qpos (that is what MuJoCoEngine.step() does, and it would clobber the
+    # freejoint pose because nq=21 > nu=14).
+    eng.step_ctrl(np.zeros(14))
+    assert eng.qpos().shape == (21,)
+    assert np.isclose(np.linalg.norm(eng.qpos()[3:7]), 1.0, atol=1e-6)
+
+
+def test_freebase_engine_ctrl_moves_joints_toward_target():
+    from rcs_env.freebase_engine import FreeBaseMuJoCoEngine
+    from rcs_env.envs.microduck_cfg import HOME_POSE, POLICY_JOINTS
+    eng = FreeBaseMuJoCoEngine.from_variant("walk")
+    eng.reset()
+    target = np.array([HOME_POSE[j] for j in POLICY_JOINTS])
+    err_before = float(np.abs(eng.joint_qpos(POLICY_JOINTS) - target).max())
+    for _ in range(2000):
+        eng.step_ctrl(target)
+    err_after = float(np.abs(eng.joint_qpos(POLICY_JOINTS) - target).max())
+    assert err_after < err_before, f"no convergence: {err_before} -> {err_after}"
+    assert err_after < 0.1, f"tracking error too large: {err_after}"
+
+
+def test_env_observation_is_61_dim():
+    from rcs_env.envs.microduck import MicroduckEnv
+    env = MicroduckEnv(variant="walk")
+    obs, _ = env.reset(seed=0)
+    assert env.observation_space.shape == (61,)
+    assert env.action_space.shape == (14,)
+    assert obs.shape == (61,)
+    assert np.all(np.isfinite(obs))
+
+
+def test_env_observation_blocks_are_correct():
+    from rcs_env.envs.microduck import MicroduckEnv
+    env = MicroduckEnv(variant="walk")
+    obs, _ = env.reset(seed=0)
+    g = obs[3:6]
+    assert np.isclose(np.linalg.norm(g), 1.0, atol=1e-6)   # projected gravity is unit
+    assert np.allclose(obs[6:20], 0.0, atol=1e-6)          # joint pos == home at reset
+    assert np.allclose(obs[20:34], 0.0, atol=1e-6)         # zero velocity
+    assert np.allclose(obs[34:48], 0.0)                    # no previous action
+    assert np.allclose(obs[48:61], 0.0)                    # zero command
+
+
+def test_env_step_returns_five_tuple_and_terminates_on_fall():
+    from rcs_env.envs.microduck import MicroduckEnv
+    env = MicroduckEnv(variant="walk")
+    env.reset(seed=0)
+    obs, reward, term, trunc, info = env.step(np.zeros(14))
+    assert obs.shape == (61,)
+    assert isinstance(float(reward), float)
+    assert isinstance(bool(term), bool) and isinstance(bool(trunc), bool)
+    # holding home pose should NOT immediately terminate
+    assert not term, "robot should survive at least one control step at home pose"
+
+
+def test_env_terminates_when_trunk_drops():
+    from rcs_env.envs.microduck import MicroduckEnv
+    env = MicroduckEnv(variant="walk")
+    env.reset(seed=0)
+    env.set_state_qpos_base_z(0.05)      # slam the trunk below the 0.15 m floor
+    assert env._terminated()
+
+
+def test_microduck_gym_ids_registered():
+    import gymnasium as gym
+    from rcs_env.envs.base import register_envs
+    register_envs()
+    for variant in ("walk", "groundcontact", "groundcontact_rollers"):
+        env = gym.make(f"rcs/microduck-{variant}-v0")
+        obs, _ = env.reset(seed=0)
+        assert obs.shape == (61,)
+        env.close()
