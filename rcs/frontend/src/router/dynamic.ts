@@ -40,6 +40,20 @@ const BUILT_IN_VIEWS: Record<string, BuiltInView> = {
     name: 'SimulationWarehouse',
     title: '仓储仿真',
   },
+  // Scene maps console. Same rationale as the simulation console: the unified
+  // map templates live in robot_unified_maps (seeded by the management backend,
+  // not the simulation backend), so they are not rows in sys_menu. Registered as
+  // built-ins; the sidebar renders them from a synthetic node (see AppSidebar).
+  '/maps': {
+    component: 'views/maps/MapsListView.vue',
+    name: 'MapsList',
+    title: '场景地图',
+  },
+  '/maps/:id': {
+    component: 'views/maps/MapDetailView.vue',
+    name: 'MapDetail',
+    title: '地图详情',
+  },
 }
 
 function resolveComponent(componentPath: string | null | undefined): RouteRecordRaw['component'] | undefined {

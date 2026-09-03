@@ -31,6 +31,23 @@ export interface MapBounds {
   d: number
 }
 
+/**
+ * wt_floor_shell geometry carried by `geometry`.
+ *
+ * Replaces the old `FloorShell` shape: a flat list of layout elements
+ * (walls / docks / facilities / zones / corridors) each with
+ * `{ref,type,x,z,w,d,h,y,rot,color,label}`. The 3D viewer (`MjcfLoader`)
+ * consumes it after the backend renders it to MJCF at `/maps/{id}/mjcf`.
+ */
+export interface WtFloorShellGeometry {
+  bounds: { w: number; d: number; h?: number }
+  walls?: any[]
+  docks?: any[]
+  facilities?: any[]
+  zones?: any[]
+  corridors?: any[]
+}
+
 /** GET/POST/PUT /maps — one row of the `robot_unified_maps` table. */
 export interface UnifiedMapDTO {
   map_id: string
@@ -40,7 +57,7 @@ export interface UnifiedMapDTO {
   kind?: string | null
   current_version: number
   bounds: MapBounds | null
-  geometry: FloorShell
+  geometry: WtFloorShellGeometry
   topology: UnifiedTopology
   semantic: Record<string, any>
   dynamic?: Record<string, any>
@@ -60,6 +77,7 @@ export interface MapTemplateInfo {
   name: string
   name_en?: string | null
   kind?: string | null
+  is_template?: boolean
 }
 
 /**
@@ -111,7 +129,7 @@ export interface PutDynamicBody {
 export interface MapExportBundle {
   map_id: string
   name: string
-  geometry: FloorShell
+  geometry: WtFloorShellGeometry
   topology: UnifiedTopology
   semantic: Record<string, any>
 }
@@ -155,6 +173,21 @@ export function seedTemplates(): Promise<UnifiedMapDTO[]> {
 export function createFromTemplate(templateKey: string, name?: string): Promise<UnifiedMapDTO> {
   return http.post<UnifiedMapDTO>('/maps/from-template', { template_key: templateKey, name })
 }
+
+// ── MJCF 3D scene ────────────────────────────────────────────────────────────
+
+/**
+ * Absolute URL of the MJCF scene XML for a map, consumed directly by the
+ * frontend `MjcfLoader` (and `ThreeMapViewer`). Root-relative because the
+ * browser `fetch` inside MjcfLoader does not go through `http.baseUrl`.
+ */
+export function getMapMjcfUrl(id: string): string {
+  return `/api/rcs/maps/${encodeURIComponent(id)}/mjcf`
+}
+
+/** Convenience aliases used by the maps UI. */
+export const getTemplates = listTemplates
+export const cloneMap = createFromTemplate
 
 // ── Import / export ──────────────────────────────────────────────────────────
 

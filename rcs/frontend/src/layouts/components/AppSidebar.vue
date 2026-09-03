@@ -56,7 +56,28 @@ const SIMULATION_MENU: MenuNode = {
   ],
 }
 
-const menus = computed(() => [...auth.menus, SIMULATION_MENU])
+/**
+ * Scene maps console. Mirrors SIMULATION_MENU: the unified map templates are not
+ * `sys_menu` rows (they are seeded by the management backend), so a synthetic
+ * node gives them a stable home in the rail. Display-only — the actual routes
+ * are registered as built-ins in `router/dynamic.ts`.
+ */
+const MAPS_MENU: MenuNode = {
+  id: -2000,
+  name: '场景地图',
+  i18n: {},
+  path: '/maps',
+  icon: 'GlobalOutlined',
+  type: 1,
+  sort: 998,
+  status: 1,
+  visible: 1,
+  keepAlive: 0,
+  alwaysShow: 1,
+  children: [leaf(-2001, '场景地图', '/maps', 'GlobalOutlined')],
+}
+
+const menus = computed(() => [...auth.menus, SIMULATION_MENU, MAPS_MENU])
 const collapsed = computed(() => app.sidebarCollapsed)
 
 const roleText = computed(() => {
