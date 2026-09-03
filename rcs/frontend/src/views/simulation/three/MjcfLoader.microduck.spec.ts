@@ -41,7 +41,7 @@ function makeStlBytes(): ArrayBuffer {
 
 describe('MjcfLoader STL meshes', () => {
   beforeEach(() => {
-    global.fetch = vi.fn(async (u: any) => {
+    globalThis.fetch = vi.fn(async (u: any) => {
       // three's FileLoader calls fetch(new Request(url, ...)) — so `u` is a
       // Request object, and the URL lives on `u.url`, not on the arg itself.
       const url = (u && typeof u.url === 'string') ? u.url : String(u)
@@ -83,7 +83,7 @@ const FREE_XML = `<?xml version="1.0"?>
 
 describe('MjcfLoader freejoint 6-DOF', () => {
   beforeEach(() => {
-    global.fetch = vi.fn(async () => ({
+    globalThis.fetch = vi.fn(async () => ({
       ok: true,
       status: 200,
       text: async () => FREE_XML,

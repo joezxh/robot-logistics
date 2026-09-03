@@ -35,7 +35,7 @@ import SceneStage from './SceneStage.vue'
 import { useSceneAPI } from './composables/useSceneAPI'
 
 interface TabSpec {
-  name: 'pallet' | 'box' | 'bag'
+  name: 'pallet' | 'box' | 'bag' | 'microduck'
   label: string
 }
 
@@ -43,15 +43,20 @@ const tabs: TabSpec[] = [
   { name: 'pallet', label: '📦 托盘 (🥇)' },
   { name: 'box', label: '📦 箱装 (🥈)' },
   { name: 'bag', label: '📦 袋装 (🥉)' },
+  { name: 'microduck', label: '🦆 Microduck' },
 ]
 
-const currentTab = ref<'' | 'pallet' | 'box' | 'bag'>('pallet')
+const currentTab = ref<'' | 'pallet' | 'box' | 'bag' | 'microduck'>('pallet')
 const currentScene = ref<string>('')
 const { load, list } = useSceneAPI()
 
-async function onSwitch(name: 'pallet' | 'box' | 'bag') {
+async function onSwitch(name: 'pallet' | 'box' | 'bag' | 'microduck') {
   currentTab.value = name
-  await load(name)
+  // Microduck is an independent viewer/scene; it does not drive the backend
+  // task/KPI flow, so skip the scene load API for it.
+  if (name !== 'microduck') {
+    await load(name)
+  }
   currentScene.value = name
 }
 

@@ -38,7 +38,7 @@ import DeviceStatus from '../dashboard/DeviceStatus.vue'
 import { useSceneKPI } from './composables/useSceneKPI'
 
 interface Props {
-  sceneName: 'pallet' | 'box' | 'bag'
+  sceneName: 'pallet' | 'box' | 'bag' | 'microduck'
 }
 const props = defineProps<Props>()
 
@@ -50,6 +50,8 @@ const sceneComponent = computed(() => {
       return () => import('./SceneBox.vue')
     case 'bag':
       return () => import('./SceneBag.vue')
+    case 'microduck':
+      return () => import('./SceneMicroduck.vue')
     default:
       return null
   }
