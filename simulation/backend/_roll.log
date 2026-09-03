@@ -1,0 +1,4 @@
+[vec] 2 x rcs/microduck-walk-v0
+[random] mean_ep_return=4.289 episodes=12
+[twin] 68 telemetry records buffered in-memory
+[done]

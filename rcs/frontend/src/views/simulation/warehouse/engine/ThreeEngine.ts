@@ -492,7 +492,9 @@ export class ThreeEngine {
   }
 
   setDarkMode(isDark: boolean): void {
-    const bgCol = isDark ? 0x0c0e14 : 0xf0f2f5
+    // Keep the 3D scene background in lockstep with the global explorer palette:
+    // dark  -> --bg-base (#07111f), light -> --bg-base (#f2f5f9).
+    const bgCol = isDark ? 0x07111f : 0xf2f5f9
     // Scene.background is `Color | Texture | CubeTexture | null`, so it cannot be
     // mutated via setHex without narrowing. Assigning a fresh Color is both
     // type-safe and equivalent for the "solid background" case.

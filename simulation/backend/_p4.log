@@ -1,0 +1,7 @@
+.                                                                        [100%]
+============================== warnings summary ===============================
+rcs_env/tests/test_microduck_onnx.py::test_onnx_policy_matches_torch
+  C:\Program Files\Python311\Lib\copyreg.py:105: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+    return cls.__new__(cls, *args)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

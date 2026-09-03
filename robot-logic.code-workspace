@@ -8,6 +8,15 @@
 		},
 		{
 			"path": "../github/warehouse_theatre_3d"
+		},
+		{
+			"path": "../github/microduck"
+		},
+		{
+			"path": "../github/microduck_rl"
+		},
+		{
+			"path": "../github/microduck-replica"
 		}
 	],
 	"settings": {}

@@ -44,9 +44,9 @@ describe('i18n zone labels', () => {
 describe('i18n runtime toggle', () => {
   it('switches global locale and resolves t()', () => {
     setLocale('en-US')
-    expect(i18n.global.t('app.title')).toBe('RCS Site Map')
+    expect(i18n.global.t('app.title')).toBe('RCS Console')
     setLocale('zh-CN')
-    expect(i18n.global.t('app.title')).toBe('RCS 站点地图')
+    expect(i18n.global.t('app.title')).toBe('RCS 控制台')
   })
 
   it('falls back to en-US for missing keys', () => {

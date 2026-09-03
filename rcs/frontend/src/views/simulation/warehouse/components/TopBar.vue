@@ -56,8 +56,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useWarehouseStore } from '../store/warehouse'
+import { useAppStore } from '@/stores/app'
 
 const store = useWarehouseStore()
+const app = useAppStore()
 const searchQuery = ref('')
 
 const t = computed(() => ({
@@ -78,7 +80,8 @@ function clearSearch() {
 }
 
 function toggleTheme() {
-  store.setTheme(!store.isDark)
+  // Delegate to the global console theme so the whole app switches together.
+  app.toggleTheme()
 }
 
 // Geometry + inventory together decide the badge. Both from RCS → green RCS;

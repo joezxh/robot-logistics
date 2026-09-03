@@ -509,6 +509,132 @@
 }
 
 /* ------------------------------------------------------------------ *
+ * Brand / marketing primitives
+ *
+ * Shared "dark-tech mission-control" building blocks used by RcsLandingView
+ * and available to any page that wants the same editorial, high-contrast
+ * treatment. Everything resolves through the explorer tokens, so these are
+ * automatically light/dark aware and consistent with .app-card / .data-panel.
+ * ------------------------------------------------------------------ */
+
+/* Frosted panel — same language as .app-card but with a stronger, larger
+ * radius for hero / feature blocks. */
+.glass-panel {
+  background: var(--bg-surface);
+  -webkit-backdrop-filter: var(--glass);
+  backdrop-filter: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel {
+    background: var(--bg-elevated);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Display heading using the HUD face. */
+.display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+}
+
+/* Tech label — uppercase, tracked-out monospace readouts. */
+.tech-label {
+  font-family: var(--font-tech);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 12px;
+  color: var(--fg-secondary);
+}
+
+/* Asymmetric editorial grid (the "bento" layout). 12-col base; spans are
+ * tuned so cards are deliberately uneven, avoiding the 3-equal-card trap. */
+.bento {
+  display: grid;
+  gap: clamp(12px, 1.4vw, 22px);
+  grid-template-columns: repeat(12, 1fr);
+}
+
+.bento > * {
+  grid-column: span 4;
+  min-width: 0;
+}
+
+.bento :nth-child(4n + 1) { grid-column: span 7; }
+.bento :nth-child(4n + 2) { grid-column: span 5; }
+.bento :nth-child(4n + 3) { grid-column: span 5; }
+.bento :nth-child(4n + 4) { grid-column: span 7; }
+
+@media (max-width: 720px) {
+  .bento > * { grid-column: span 12 !important; }
+}
+
+/* Pill / CTA buttons in the brand language. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-family: var(--font-tech);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--fg-inverse);
+  box-shadow: var(--glow-accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  color: var(--fg-inverse);
+  box-shadow: 0 0 26px rgba(74, 163, 255, 0.55);
+}
+
+.btn-ghost {
+  border: 1px solid var(--border-strong);
+  color: var(--fg);
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+/* Scroll-reveal hook. GSAP (or any observer) toggles .is-in; the rule below is
+ * the static fallback so content is always visible if motion never triggers. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+
+.reveal:not(.is-in) {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ------------------------------------------------------------------ *
  * Backward-compatible aliases
  *
  * Pre-existing pages (dashboard, system management, profile…) still use the

@@ -37,20 +37,53 @@ Branch: `feat/scene-map-management` (feature branch, not main/master).
 - `python -m pytest rcs_env/tests/test_envs.py -q` → **11 passed**
 - Full suite: `cd simulation/backend && python -m pytest -q` → (to capture at Task 1)
 
-## Completed Tasks (1/21)
+## Completed Tasks (15/21)
+
+> **P1+P2+P3 complete (15 tasks).** Verified: `pytest rcs_env/tests/` → 24 passed
+> (11 baseline env tests + 13 Microduck-specific); frontend vitest 110 passed; vue-tsc clean.
+> Next: P4/P5 Training (6 tasks).
 
 | # | Plan | Task | Commit(s) | Status |
 |---|------|------|-----------|--------|
-| 1 | P1+P2 | vendor 7 MJCF variants + 43 STL meshes + asset test | (this commit) | ✅ assets present, `test_microduck.py::test_all_variants_present_and_load` pass, joint-order test skips until T3; baseline 11 still pass |
+| 1 | P1+P2 | vendor 7 MJCF variants + 43 STL meshes + asset test | 375a26b | ✅ assets present, asset test pass, joint-order test now active (passes); baseline 11 still pass |
+| 2 | P1+P2 | RobotType.MICRODUCK enum + get_all() | (this commit) | ✅ test_robot_type.py: MICRODUCK.value=="Microduck", in get_all() |
+| 3 | P1+P2 | microduck_cfg.py contract + variant registry | (this commit) | ✅ POLICY_JOINTS, HOME_POSE, VARIANTS(7), build_microduck_obs, policy_action_to_motor_targets, home_pose_vector, quat_wxyz_to_rot |
+| 4 | P1+P2 | 14→15 slot mapping tests (impl in T3) | committed | ✅ 3 contract tests green |
+| 5 | P1+P2 | FreeBaseMuJoCoEngine (ctrl-driven freejoint) | (this commit) | ✅ loads walk (nq21/nu14/nv20), freejoint valid post-step, ctrl converges joints to home |
+| 6 | P1+P2 | MicroduckEnv (61 obs/14 act, reward, term) | (this commit) | ✅ 4 env tests; gyro/gravity unit, home-aligned blocks, 5-tuple step, fall termination. Deviations: gravity normalized (match contract); MIN_TRUNK_HEIGHT 0.07 (model stands ~0.099 m); home_pose_vector skips passive wheel joints (rollers) |
+| 7 | P1+P2 | gym ids rcs/microduck-*-v0 | (this commit) | ✅ register_envs + package exports; 7 variant ids resolvable |
+| 8 | P1+P2 | rollout + twin smoke script | committed | ✅ run smoke: 2x walk obs(61)/act(14), random rollout runs w/o error. telemetry wiring deferred to P5 (sink constructed, not fed by random_rollout) |
+| 9 | P3 | MjcfLoader STL meshes | committed | ✅ MjcfLoader.microduck.spec.ts (STL + freejoint, 3 tests); loadMesh extension-aware; meshKey; freejoint filter+6DOF |
+| 10 | P3 | MjcfLoader freejoint 6-DOF | committed | ✅ JointNode.dof/freejoint; setFreeJointPose; plan bugs fixed: freejoint tag not caught by joint filter; setFreeJointPose quaternion order (fromArray x,y,z,w) |
+| 11 | P3 | microduckQpos.ts viewer mapping | committed | ✅ 2 tests; qpos(21) -> {freeJoint[7], joints[14]} |
+| 12 | P3 | SceneMicroduck.vue viewer | committed | ✅ Three.js viewer; qpos identity-init fix (qw=1); SSE /sim/stream toggle |
+| 13 | P3 | register Microduck scene tab | committed | ✅ ScenesPage + SceneStage; load() skipped for microduck (no backend scene) |
+| 14 | P3 | SSE qpos stream server + vite /sim proxy | committed | ✅ rcs_env/serve/sse_qpos.py (stdlib) + 1 test; vite proxy /sim -> 8110 |
+| 15 | P3 | verification (vitest + vue-tsc + build) | committed | ✅ vitest 110 passed; vue-tsc --noEmit clean; vite build OK (dist/ bundled) |
+| 16 | P4+P5 | MicroduckEnv velocity-command sampling | (this commit) | ✅ T1: cmd_vx/vy/vyaw ranges + cmd_period; `_sample_command`/`_step_command`; reset `_n_steps`=1; `config.robot_type=MICRODUCK`; 2 new tests (nonzero cmd + 13-slot block) |
+| 17 | P4+P5 | PPO training entry `train_microduck.py` | (this commit) | ✅ T2: SB3 PPO train/eval/export CLI (`--total-timesteps`,`--export`,`--policy`,`--out`); 2048-step smoke saved `_smoke/md.zip` |
+| 18 | P4+P5 | digital-twin telemetry wired into rollout | (this commit) | ✅ T3: `DigitalTwinWrapper` around sub-env in `microduck_rollout`; 68 telemetry records on smoke |
+| 19 | P4+P5 | digital-twin telemetry tests | (this commit) | ✅ T4: `test_digital_twin.py` — push / forward-to-sink round-trip |
+| 20 | P4+P5 | ONNX export/inference bridge | (this commit) | ✅ T5: `rcs_env/onnx/microduck_onnx.py` `export_microduck_onnx` (deterministic actor MLP, opset13) + `MicroduckOnnxPolicy.predict`; `onnxruntime` dep; matches torch within tol |
+| 21 | P4+P5 | SSE server `--policy` + ONNX playback | (this commit) | ✅ T6: `sse_qpos.make_server` accepts `--policy` (.onnx/.zip); wrapped env emits digital-twin telemetry into sink (62 records on smoke); README run note |
 
-## Pending Tasks (21)
+## Pending Tasks (0)
 
-P1+P2 backend: 1 vendor assets · 2 RobotType · 3 contract registry · 4 slot mapping ·
-5 FreeBaseMuJoCoEngine · 6 MicroduckEnv · 7 gym registration · 8 vec+twin smoke
-P3 frontend: 1 STL loader · 2 freejoint · 3 qpos mapping · 4 SceneMicroduck.vue ·
-5 scene registration · 6 SSE telemetry · 7 browser verification
-P4+P5 training: 1 command sampling · 2 PPO script · 3 training record ·
-4 onnxruntime · 5 OnnxPolicy · 6 ONNX playback
+P1+P2 backend: ✅ all 8 committed
+P3 frontend: ✅ all 7 committed
+P4+P5 training: ✅ all 6 committed (this session)
+
+### P4+P5 deviations from plan (intentional)
+- Plan named the SSE server `rcs_env/serve/microduck_stream.py`; implementation lives in
+  existing `rcs_env/serve/sse_qpos.py` (P3 T6) extended with `--policy` — no new file.
+- Plan named the ONNX policy `rcs_env/envs/microduck_policy.py` (`OnnxPolicy`);
+  implementation is `rcs_env/onnx/microduck_onnx.py` (`MicroduckOnnxPolicy`) so the
+  `onnx/` package owns all export/inference code.
+- ONNX export exports only the deterministic actor MLP (`_ActorMean`) — torch dynamo
+  exporter fails on the `Normal` action distribution's data-dependent guard.
+- SSE server wraps the env in `DigitalTwinWrapper` so the `sink` actually receives
+  telemetry (previously the sink was constructed but never fed). `QposHandler` reads
+  `env.unwrapped.engine`.
 
 ---
 

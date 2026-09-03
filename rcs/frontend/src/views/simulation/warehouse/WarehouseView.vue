@@ -1,5 +1,5 @@
 <template>
-  <div id="wt-app" :class="store.isDark ? 'dark' : 'light'">
+  <div id="wt-app" :class="appStore.isDark ? 'dark' : 'light'">
     <!-- 3D View -->
     <div id="wt-cw" :style="{ display: store.curView === '3d' ? 'block' : 'none' }">
       <canvas ref="canvasRef" id="wt-c"></canvas>
@@ -68,8 +68,10 @@ import View2D from './components/View2D.vue'
 import AislePicker from './components/AislePicker.vue'
 import AGVGridModal from './components/AGVGridModal.vue'
 import FloorPlanModal from './components/FloorPlanModal.vue'
+import { useAppStore } from '@/stores/app'
 
 const store = useWarehouseStore()
+const appStore = useAppStore()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let engine: ThreeEngine | null = null
 
@@ -162,8 +164,11 @@ function initEngine() {
 }
 
 watch(
-  () => store.isDark,
+  () => appStore.isDark,
   (dark) => {
+    // Keep the warehouse store + 3D engine in sync with the global theme so the
+    // whole console (incl. this module) switches skin together.
+    store.setTheme(dark)
     if (engine) {
       engine.setDarkMode(dark)
     }
@@ -202,43 +207,50 @@ onUnmounted(() => {
 </script>
 
 <style>
-/* Warehouse Theatre 3D Styles */
+/*
+ * Warehouse Theatre 3D Styles — unified with the global explorer design system.
+ * The --wt-* tokens are now ALIASES of the shared RCS tokens (defined in
+ * tokens.css), so this module inherits the exact same palette, typography and
+ * glass treatment as every other console page (incl. RcsLandingView).
+ * Only the few values that are scene-specific (floor/grid accents) keep a
+ * dedicated shade, still derived from the global accent family.
+ */
 #wt-app.dark {
-  --wt-bg: #0c0e14;
-  --wt-bg2: #13151e;
-  --wt-bg3: #1a1e2a;
-  --wt-border: rgba(255, 255, 255, 0.08);
-  --wt-text: #fff;
-  --wt-text2: rgba(255, 255, 255, 0.6);
-  --wt-text3: rgba(255, 255, 255, 0.3);
-  --wt-sb: rgba(10, 12, 18, 0.96);
-  --wt-card: rgba(255, 255, 255, 0.04);
-  --wt-cb: rgba(255, 255, 255, 0.08);
-  --wt-accent: #3b82f6;
-  --wt-accent2: #60a5fa;
-  --wt-pill: rgba(255, 255, 255, 0.06);
-  --wt-pillb: rgba(255, 255, 255, 0.1);
-  --wt-floor: #0a0c12;
-  --wt-grid: #181c28;
+  --wt-bg: var(--bg-base);
+  --wt-bg2: var(--bg-deep);
+  --wt-bg3: var(--bg-elevated);
+  --wt-border: var(--border);
+  --wt-text: var(--fg);
+  --wt-text2: var(--fg-secondary);
+  --wt-text3: var(--fg-muted);
+  --wt-sb: var(--bg-deep);
+  --wt-card: var(--bg-surface);
+  --wt-cb: var(--bg-elevated);
+  --wt-accent: var(--accent);
+  --wt-accent2: var(--accent-hover);
+  --wt-pill: var(--bg-surface);
+  --wt-pillb: var(--border-strong);
+  --wt-floor: var(--bg-deep);
+  --wt-grid: var(--hud-grid);
 }
 
 #wt-app.light {
-  --wt-bg: #f0f2f5;
-  --wt-bg2: #fff;
-  --wt-bg3: #f7f9fc;
-  --wt-border: #e2e8f0;
-  --wt-text: #1a202c;
-  --wt-text2: #4a5568;
-  --wt-text3: #a0aec0;
-  --wt-sb: #fff;
-  --wt-card: #fff;
-  --wt-cb: #e2e8f0;
-  --wt-accent: #2563eb;
-  --wt-accent2: #3b82f6;
-  --wt-pill: #eff6ff;
-  --wt-pillb: #dbeafe;
-  --wt-floor: #f0f2f5;
-  --wt-grid: #dde1e7;
+  --wt-bg: var(--bg-base);
+  --wt-bg2: var(--bg-deep);
+  --wt-bg3: var(--bg-elevated);
+  --wt-border: var(--border);
+  --wt-text: var(--fg);
+  --wt-text2: var(--fg-secondary);
+  --wt-text3: var(--fg-muted);
+  --wt-sb: var(--bg-deep);
+  --wt-card: var(--bg-surface);
+  --wt-cb: var(--bg-elevated);
+  --wt-accent: var(--accent);
+  --wt-accent2: var(--accent-hover);
+  --wt-pill: var(--bg-surface);
+  --wt-pillb: var(--border-strong);
+  --wt-floor: var(--bg-deep);
+  --wt-grid: var(--hud-grid);
 }
 
 #wt-app {
@@ -247,7 +259,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background: var(--wt-bg);
-  font-family: -apple-system, "Inter", sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   color: var(--wt-text);
   position: relative;
@@ -303,8 +315,8 @@ onUnmounted(() => {
 .wt-spinner {
   width: 28px;
   height: 28px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #3b82f6;
+  border: 2px solid var(--border);
+  border-top-color: var(--wt-accent);
   border-radius: 50%;
   animation: wtSpin 0.7s linear infinite;
 }

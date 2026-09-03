@@ -2,6 +2,7 @@
 // Console landing page: platform counters plus the caller's recent activity.
 import { computed, onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useRouter } from 'vue-router'
 import {
   ApiOutlined,
@@ -55,6 +56,24 @@ onMounted(() => {
   reduceMotion.value =
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   load()
+
+  // Scroll-reveal: same motion language as RcsLandingView. Every block marked
+  // .reveal fades+slides in as it enters the viewport. Honours reduced-motion.
+  gsap.registerPlugin(ScrollTrigger)
+  const root = document.querySelector('.app-page')
+  if (!root) return
+  if (reduceMotion.value) {
+    root.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-in'))
+    return
+  }
+  root.querySelectorAll('.reveal').forEach((el) => {
+    ScrollTrigger.create({
+      trigger: el,
+      start: 'top 86%',
+      once: true,
+      onEnter: () => el.classList.add('is-in'),
+    })
+  })
 })
 
 const stats = computed(() => [
@@ -148,7 +167,7 @@ function statusColor(status?: number | null): string {
 
 <template>
   <div class="app-page">
-    <header class="page-hero">
+    <header class="page-hero reveal">
       <div class="hero-text">
         <span class="hero-kicker">{{ t('common.kicker') }}</span>
         <h1 class="hero-title">
@@ -161,7 +180,7 @@ function statusColor(status?: number | null): string {
       </div>
     </header>
 
-    <div class="stat-grid">
+    <div class="stat-grid reveal">
       <div v-for="(s, i) in stats" :key="s.key" class="stat-tile clip-notch">
         <span class="stat-label">{{ s.label }}</span>
         <span class="stat-value">{{ displayValues[i] ?? 0 }}</span>
@@ -169,7 +188,7 @@ function statusColor(status?: number | null): string {
       </div>
     </div>
 
-    <div class="data-panel">
+    <div class="data-panel reveal">
       <div class="panel-head">
         <h3>{{ t('sys.dashboard.quickActions') }}</h3>
       </div>
@@ -187,7 +206,7 @@ function statusColor(status?: number | null): string {
       </div>
     </div>
 
-    <div class="data-panel">
+    <div class="data-panel reveal">
       <div class="panel-head">
         <h3>{{ t('sys.dashboard.recentOps') }}</h3>
       </div>

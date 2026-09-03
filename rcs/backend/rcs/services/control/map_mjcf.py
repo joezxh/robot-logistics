@@ -60,6 +60,18 @@ ZONE_BODY_TEMPLATES: dict[str, dict[str, Any]] = {
     "floor_1":         {"shape": "box", "default_h": 0.4, "color": "#9ca3af", "opacity": 0.4},
     "floor_2":         {"shape": "box", "default_h": 0.4, "color": "#9ca3af", "opacity": 0.4},
     "floor_3":         {"shape": "box", "default_h": 0.4, "color": "#9ca3af", "opacity": 0.4},
+    # domestic / room furniture (书房·办公室·儿童房·幼儿园)
+    "desk":            {"shape": "box", "default_h": 0.75, "color": "#b45309", "opacity": 0.9},
+    "chair":           {"shape": "box", "default_h": 0.5, "color": "#57534e", "opacity": 0.9},
+    "bed":             {"shape": "box", "default_h": 0.55, "color": "#e2e8f0", "opacity": 0.9},
+    "bookshelf":       {"shape": "box", "default_h": 2.0, "color": "#92400e", "opacity": 0.85},
+    "wardrobe":        {"shape": "box", "default_h": 2.2, "color": "#a8a29e", "opacity": 0.85},
+    "table":           {"shape": "box", "default_h": 0.75, "color": "#b45309", "opacity": 0.9},
+    "sofa":            {"shape": "box", "default_h": 0.8, "color": "#64748b", "opacity": 0.9},
+    "toy_shelf":       {"shape": "box", "default_h": 1.2, "color": "#fb7185", "opacity": 0.85},
+    "play_mat":        {"shape": "box", "default_h": 0.06, "color": "#f59e0b", "opacity": 0.55},
+    "crib":            {"shape": "box", "default_h": 1.0, "color": "#bae6fd", "opacity": 0.85},
+    "rug":             {"shape": "box", "default_h": 0.04, "color": "#f472b6", "opacity": 0.5},
 }
 
 
@@ -174,10 +186,11 @@ def build_mjcf(map_or_geo: dict | str) -> str:
     if isinstance(map_or_geo, str):
         geo = json.loads(map_or_geo)
     else:
-        # A raw wt_floor_shell dict carries "zones"/"docks"/"bounds" at the top
-        # level; a map dict from the service carries it under "geometry_json"
-        # (or legacy "geometry"). Detect which shape we got.
-        if "zones" in map_or_geo or "docks" in map_or_geo or "bounds" in map_or_geo:
+        # A raw wt_floor_shell dict carries "zones"/"docks" at the top level; a
+        # map dict from the service carries geometry under "geometry" /
+        # "geometry_json". (A map dict also has a "bounds" key, so we must NOT
+        # key detection on "bounds".)
+        if "zones" in map_or_geo or "docks" in map_or_geo:
             geo = map_or_geo
         else:
             geo = map_or_geo.get("geometry") or map_or_geo.get("geometry_json")

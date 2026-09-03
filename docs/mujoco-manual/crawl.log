@@ -1,0 +1,71 @@
+C:\Users\joezxh\AppData\Roaming\Python\Python311\site-packages\requests\__init__.py:109: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.6) doesn't match a supported version!
+  warnings.warn(
+[23:30:12] === MuJoCo manual crawl start ===
+[23:30:12] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/overview.html
+[23:30:12]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/overview.html
+[23:30:13] FETCH https://mujoco.readthedocs.io/en/stable/index.html
+[23:30:13]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/index.html
+[23:30:13]   NO BODY after 0.1s: https://mujoco.readthedocs.io/en/stable/index.html
+[23:30:13] FETCH https://mujoco.readthedocs.io/en/stable/models.html
+[23:30:13]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/models.html
+[23:30:14]   GET attempt 1/2 -> https://raw.githubusercontent.com/google-deepmind/mujoco_menagerie/main/flybody/flybody.png
+[23:30:49]   GET attempt 1/2 -> https://raw.githubusercontent.com/google-deepmind/mujoco_menagerie/main/ms_human_700/ms_human_700.png
+[23:30:58]   SAVED https://mujoco.readthedocs.io/en/stable/models.html -> D:\projects\robot-logic\docs\mujoco-manual\models.md (9388 chars, 0.2s)
+[23:30:58] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/computation/index.html
+[23:30:58]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/computation/index.html
+[23:30:59] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/OpenUSD/building.html
+[23:30:59]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/OpenUSD/building.html
+[23:30:59] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/OpenUSD/mjcf_file_format_plugin.html
+[23:30:59]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/OpenUSD/mjcf_file_format_plugin.html
+[23:30:59] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/APIreference/APIfunctions.html
+[23:30:59]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/APIreference/APIfunctions.html
+[23:31:00] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/mjx.html
+[23:31:00]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/mjx.html
+[23:31:01] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/programming/modeledit.html
+[23:31:01]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/programming/modeledit.html
+[23:31:01] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/mjwarp/index.html
+[23:31:01]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/mjwarp/index.html
+[23:31:02] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/programming/simulation.html
+[23:31:02]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/programming/simulation.html
+[23:31:02] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/programming/extension.html
+[23:31:02]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/programming/extension.html
+[23:31:03] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/programming/visualization.html
+[23:31:03]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/programming/visualization.html
+[23:31:03] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/OpenUSD/exporting.html
+[23:31:03]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/OpenUSD/exporting.html
+[23:31:03] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/modeling.html
+[23:31:03]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/modeling.html
+[23:31:04] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/APIreference/APItypes.html
+[23:31:04]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/APIreference/APItypes.html
+[23:31:05] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/APIreference/index.html
+[23:31:05]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/APIreference/index.html
+[23:31:06] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/programming/ui.html
+[23:31:06]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/programming/ui.html
+[23:31:07] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/OpenUSD/importing.html
+[23:31:07]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/OpenUSD/importing.html
+[23:31:07] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/unity.html
+[23:31:07]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/unity.html
+[23:31:07] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/OpenUSD/mjcPhysics.html
+[23:31:07]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/OpenUSD/mjcPhysics.html
+[23:31:08] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/computation/fluid.html
+[23:31:08]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/computation/fluid.html
+[23:31:08] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/changelog.html
+[23:31:08]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/changelog.html
+[23:31:09] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/mjx_api.html
+[23:31:09]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/mjx_api.html
+[23:31:09] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/XMLreference.html
+[23:31:09]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/XMLreference.html
+[23:31:11] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/programming/index.html
+[23:31:11]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/programming/index.html
+[23:31:11] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/programming/samples.html
+[23:31:11]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/programming/samples.html
+[23:31:11] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/python.html
+[23:31:11]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/python.html
+[23:31:11] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/mjwarp/api.html
+[23:31:11]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/mjwarp/api.html
+[23:31:12] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/OpenUSD/index.html
+[23:31:12]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/OpenUSD/index.html
+[23:31:13] SKIP (already on disk): https://mujoco.readthedocs.io/en/stable/APIreference/APIglobals.html
+[23:31:13]   GET attempt 1/2 -> https://mujoco.readthedocs.io/en/stable/APIreference/APIglobals.html
+[23:31:13] DONE. visited=31 saved=1 images=33
+[23:31:13] === crawl finished ===

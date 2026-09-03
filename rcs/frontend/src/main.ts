@@ -18,6 +18,9 @@ import '@fontsource/chakra-petch/latin-600.css'
 // Order matters: tokens define the variables, global.css consumes them.
 import './styles/tokens.css'
 import './styles/global.css'
+// taste.css: anti-slop frontend guardrails from the design-taste-frontend skill.
+// Loaded after tokens so its utility classes can consume the same CSS variables.
+import './styles/taste.css'
 
 const app = createApp(App)
 

@@ -103,13 +103,7 @@ MENU_SEED: list[dict[str, Any]] = [
         "path": "/wms", "component": None, "component_name": None,
         "icon": "AppstoreOutlined", "type": 1, "sort": 20, "parent": None,
     },
-    {
-        "permission": "sys:map:list",
-        "i18n": {"zh-CN": "场景地图", "zh-TW": "場景地圖", "en-US": "Site Maps", "ja-JP": "サイトマップ"},
-        "path": "/admin/maps", "component": "views/topology/AdminMapsView.vue",
-        "component_name": "AdminMapsView", "icon": "EnvironmentOutlined",
-        "type": 2, "sort": 1, "parent": "wms:menu",
-    },
+
     {
         "permission": "sys:order:list",
         "i18n": {"zh-CN": "订单管理", "zh-TW": "訂單管理", "en-US": "Orders", "ja-JP": "オーダー管理"},
@@ -131,27 +125,7 @@ MENU_SEED: list[dict[str, Any]] = [
         "component_name": "AdminLogsView", "icon": "FileTextOutlined",
         "type": 2, "sort": 4, "parent": "wms:menu",
     },
-    # --- 数字孪生 -----------------------------------------------------------
-    {
-        "permission": "twin:menu",
-        "i18n": {"zh-CN": "数字孪生", "zh-TW": "數位孿生", "en-US": "Digital Twin", "ja-JP": "デジタルツイン"},
-        "path": "/twin", "component": None, "component_name": None,
-        "icon": "ClusterOutlined", "type": 1, "sort": 30, "parent": None,
-    },
-    {
-        "permission": "twin:sitemap:view",
-        "i18n": {"zh-CN": "站点地图", "zh-TW": "站點地圖", "en-US": "Site Map", "ja-JP": "サイトマップビュー"},
-        "path": "/sitemap", "component": "views/topology/SiteMapView.vue",
-        "component_name": "SiteMapView", "icon": "GlobalOutlined",
-        "type": 2, "sort": 1, "parent": "twin:menu",
-    },
-    {
-        "permission": "twin:warehouse:view",
-        "i18n": {"zh-CN": "仓库视图", "zh-TW": "倉庫視圖", "en-US": "Warehouse View", "ja-JP": "倉庫ビュー"},
-        "path": "/warehouse", "component": "views/topology/WarehouseView.vue",
-        "component_name": "WarehouseView", "icon": "FundProjectionScreenOutlined",
-        "type": 2, "sort": 2, "parent": "twin:menu",
-    },
+
     # --- 系统管理 -----------------------------------------------------------
     {
         "permission": "system:menu",
@@ -249,8 +223,7 @@ ROLE_SEED: list[dict[str, Any]] = [
         "menus": [
             "dashboard:view",
             "device:menu", "sys:device:list", "sys:device:control",
-            "wms:menu", "sys:map:list", "sys:order:list", "sys:scheduler:list", "sys:log:list",
-            "twin:menu", "twin:sitemap:view", "twin:warehouse:view",
+            "wms:menu", "sys:order:list", "sys:scheduler:list", "sys:log:list",
             "system:menu",
             "sys:user:list", "sys:user:create", "sys:user:update", "sys:user:delete",
             "sys:user:reset-password", "sys:user:assign-role",
@@ -271,8 +244,7 @@ ROLE_SEED: list[dict[str, Any]] = [
         "menus": [
             "dashboard:view",
             "device:menu", "sys:device:list", "sys:device:control",
-            "wms:menu", "sys:map:list", "sys:order:list", "sys:scheduler:list", "sys:log:list",
-            "twin:menu", "twin:sitemap:view", "twin:warehouse:view",
+            "wms:menu", "sys:order:list", "sys:scheduler:list", "sys:log:list",
             "profile:view",
         ],
     },
@@ -282,8 +254,7 @@ ROLE_SEED: list[dict[str, Any]] = [
                       "en-US": "Read-only Viewer", "ja-JP": "閲覧者"},
         "description": "仅可查看控制台与孪生视图",
         "sort_order": 4,
-        "menus": ["dashboard:view", "twin:menu", "twin:sitemap:view",
-                  "twin:warehouse:view", "profile:view"],
+        "menus": ["dashboard:view", "profile:view"],
     },
 ]
 

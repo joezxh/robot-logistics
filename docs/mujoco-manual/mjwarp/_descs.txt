@@ -1,0 +1,936 @@
+# MuJoCo Warp API
+(row, col) -> CSR madr addresses; -1 if not a chain ancestor
+(x, y, z_top, z_bottom) (nhfield, 4)
+* **M** – Input matrix: M @ vec.
+* **active** – Per-world bitmask for getting state.
+* **active** – Per-world bitmask for setting state.
+* **background_color** – The color to use for background pixels when no skybox is rendered.
+* **body** – Body ID for each world.
+* **bodyexclude** – Ignore geoms on specified body id (-1 to disable).
+* **bodyexclude** – Per-ray body exclusion array of shape (nray,). Geoms on the specified body ids are ignored (-1 to disable for that ray).
+* **cam_active** – List of booleans indicating which cameras to include in rendering. If None, all cameras are included.
+* **cam_res** – The width and height to render each camera image. If None, uses the MuJoCo model values.
+* **camera_index** – The index of the camera to get the RGB data for.
+* **camera_index** – The index of the camera to get the depth data for.
+* **camera_index** – The index of the camera to get the segmentation data for.
+* **contact_ids** – IDs for each contact.
+* **ctrlid** – actuator index.
+* **d** – The data object (unused, kept for API compatibility with MuJoCo C).
+* **d** – The data object containing factorization results.
+* **d** – The data object containing the current state (device).
+* **d** – The data object containing the current state and output arrays (device).
+* **d** – The data object containing the current state and output arrays.
+* **d** – The data object containing the current state and output information (device).
+* **d** – The data on device.
+* **depth_out** – The output array to store the scaled and clamped depth data in with shape (nworld, height, width).
+* **depth_scale** – The scale factor to apply to the depth data.
+* **dist** – Output array for distances from ray origins to geom surfaces, shape (nworld, nray). -1 indicates no intersection.
+* **enable_backface_culling** – Drop primitive-ray hits whose normal faces away from the ray (ray origin inside the geom). Matches MuJoCo’s mesh-ray rule. Default True. Disable for a small performance gain when no camera is ever inside a geom.
+* **enabled_geom_groups** – The geom groups to render.
+* **factorize** – Flag to factorize inertia matrix.
+* **flex_render_smooth** – Whether to render flex meshes smoothly.
+* **flg_acc** – If True, includes joint accelerations in the computation.
+* **flg_static** – If True, allows rays to intersect with static geoms.
+* **force** – Contact forces.
+* **geomgroup** – Group inclusion/exclusion mask.
+* **geomgroup** – Group inclusion/exclusion mask. Set all elements to -1 to ignore.
+* **geomid** – Output array for IDs of intersected geoms, shape (nworld, nray). -1 indicates no intersection.
+* **index** – Actuator index to compute for, or -1 for all actuators.
+* **interp** – interpolation mode (-1=model default, 0=ZOH, 1=linear, 2=cubic).
+* **jacp** – Output translational Jacobian (optional).
+* **jacr** – Output rotational Jacobian (optional).
+* **m** – The model containing inertia and factorization information.
+* **m** – The model containing kinematic and dynamic information (device).
+* **m** – The model containing kinematic and dynamic information.
+* **m** – The model on device.
+* **mjd** – The data object containing current state and output arrays (host).
+* **mjm** – The model containing kinematic and dynamic information (host).
+* **mjm** – The model containing kinematic and dynamic information on host.
+* **naccdmax** – Maximum number of CCD contacts. Defaults to naconmax.
+* **naconmax** – Number of contacts to allocate for all worlds. Overrides nconmax.
+* **nccdmax** – Number of CCD contacts to allocate per world. Same semantics as nconmax.
+* **nconmax** – Number of contacts to allocate per world. Contacts exist in large heterogeneous arrays: one world may have more than nconmax contacts.
+* **nconmax** – Number of contacts to allocate per world. Contacts exist in large heterogenous arrays: one world may have more than nconmax contacts.
+* **njmax** – Number of constraints to allocate per world. Constraint arrays are batched by world: no world may have more than njmax constraints.
+* **njmax_nnz** – Number of non-zeros in constraint Jacobian (sparse). Defaults to njmax * nv.
+* **normal** – Output array for normals at intersection points, shape (nworld, nray).
+* **nvmax** – Capacity for compacted active DOFs per world. Defaults to nv.
+* **nworld** – Number of worlds.
+* **nworld** – The number of worlds.
+* **out** – M - dt * qDeriv (derivatives of smooth forces w.r.t velocities).
+* **phase** – user slot value per world (nworld,).
+* **pnt** – Ray origin points, shape (nworld, nray).
+* **pnt** – Ray origin points.
+* **point** – 3D point in global coordinates.
+* **qfrc** – Total applied force mapped to dof space.
+* **rc** – Optional Render context containing BVH information for BVH accelerated ray intersections.
+* **rc** – The render context on device.
+* **render_depth** – Whether to render depth images. If None, uses the MuJoCo model values.
+* **render_rgb** – Whether to render RGB images. If None, uses the MuJoCo model values.
+* **render_seg** – Whether to render segmentation (per-pixel object ID/type pairs). If None, uses the MuJoCo model values.
+* **res** – Result: M @ vec.
+* **reset** – Per-world bitmask. Reset if True.
+* **restore** – Whether to restore state fields to correspond to d.qpos.
+* **result** – The data object containing the current state and output arrays (host).
+* **result** – output buffer (nworld, dim).
+* **result** – output buffer (nworld,).
+* **rgb_out** – The output array to store the RGB data in, with shape (nworld, height, width).
+* **sensorid** – sensor index.
+* **sig** – Bitflag specifying state components.
+* **skip** – Per-world bitmask to skip computing output.
+* **state** – Concatenation of state components.
+* **time** – query time per world (nworld,).
+* **times** – timestamps or None (nsample,).
+* **to_world_frame** – If True, map force from contact to world frame.
+* **use_ambient_lighting** – Top-level ambient switch. When False, skips all ambient contributions, including headlight ambient, the no-light fallback, and per-light ambient.
+* **use_fast_math** – Whether to enable fast math for the render kernel.
+* **use_precomputed_rays** – Use precomputed rays instead of computing during rendering. When using domain randomization for camera intrinsics, set to False.
+* **use_shadows** – Whether to use shadows.
+* **use_textures** – Whether to use textures.
+* **values** – ctrl values (nworld, nsample).
+* **values** – sensor values (nworld, nsample * dim).
+* **vec** – Input vector to multiply by M.
+* **vec** – Ray directions, shape (nworld, nray).
+* **vec** – Ray directions.
+* **world_id** – The id of the world to get the data from.
+* **x** – Output array for the solution.
+* **y** – Input right-hand side array.
+* Fixed quantities (via set_const_fixed): \- body_subtreemass: mass of body and all descendants
+* actuator_acc0: acceleration from unit actuator force
+* actuator_biasprm[2] (dampratio resolution): for position actuators where gainprm[0] == -biasprm[1] and biasprm[2] > 0, converts dampratio to damping via biasprm[2] = -dampratio * 2 * sqrt(kp * reflected_mass)
+* body_invweight0: inverse spatial inertia for bodies
+* body_subtreemass: mass of body and all descendants (depends on body_mass)
+* cam_pos0, cam_poscom0, cam_mat0: camera references
+* dof_invweight0: inverse inertia for DOFs
+* eq_data: connect/weld anchor data, recomputed so the constraint is satisfied at qpos0
+* light_pos0, light_poscom0, light_dir0: light references
+* qpos0-dependent quantities (via set_const_0): \- tendon_length0: tendon resting lengths \- dof_invweight0: inverse inertia for DOFs \- body_invweight0: inverse spatial inertia for bodies \- tendon_invweight0: inverse weight for tendons \- cam_pos0, cam_poscom0, cam_mat0: camera references \- light_pos0, light_poscom0, light_dir0: light references \- actuator_acc0: acceleration from unit actuator force \- actuator_biasprm[2] (dampratio resolution)
+* tendon_invweight0: inverse weight for tendons
+* tendon_length0: tendon resting lengths
+* tendon_lengthspring: spring resting length range
+**ValueError** – If times are not strictly increasing.
+---|---
+-2 if skipped
+1: lines, 2: triangles, 3: tetrahedra (nflex,)
+4th-order Runge Kutta
+Accumulates composite rigid body inertias up the kinematic tree and computes the joint-space inertia matrix in either sparse or dense format, depending on model options.
+Actuation-dependent computations.
+Add up all non-constraint forces, compute qacc_smooth.
+Additionally, collisions between planes and convex hulls.
+Adds all passive forces.
+Advance simulation in two phases: after input is set by user.
+Advance simulation in two phases: before input is set by user.
+Advance simulation.
+Analytical derivative of smooth forces w.r.t. velocities.
+Bitmask specifying which collision functions to run during broadphase.
+Broad phase checking all pairs
+C(qpos,qvel) (nworld, nv)
+CG/Newton linesearch tolerance
+CTRL | QFRC_APPLIED | XFRC_APPLIED | EQ_ACTIVE | MOCAP_POS | MOCAP_QUAT | USERDATA
+Callable | None
+Callbacks for custom physics behavior.
+Cartesian 3D points in all paths (nworld, nwrap, 6)
+Cartesian camera orientation (nworld, ncam, 3, 3)
+Cartesian camera position (nworld, ncam, 3)
+Cartesian geom orientation (nworld, ngeom, 3, 3)
+Cartesian geom position (nworld, ngeom, 3)
+Cartesian joint axis (nworld, njnt, 3)
+Cartesian light direction (nworld, nlight, 3)
+Cartesian light position (nworld, nlight, 3)
+Cartesian orientation of body frame (nworld, nbody, 3, 3)
+Cartesian orientation of body frame (nworld, nbody, 4)
+Cartesian orientation of body inertia (nworld, nbody, 3, 3)
+Cartesian position of body com (nworld, nbody, 3)
+Cartesian position of body frame (nworld, nbody, 3)
+Cartesian position of joint anchor (nworld, njnt, 3)
+Cartesian site orientation (nworld, nsite, 3, 3)
+Cartesian site position (nworld, nsite, 3)
+Clear data, set defaults; optionally by world.
+Compact blocks use reciprocal diagonals, full small blocks use scalar Cholesky, larger dense blocks use tile Cholesky, and oversized blocks use sparse LDL.
+Compute acceleration-dependent sensor values.
+Compute feasible actuator length ranges from joint/tendon limits.
+Compute fixed quantities (independent of qpos0).
+Compute forces for contacts in Data.
+Compute position-dependent sensor values.
+Compute quantities that depend on qpos0.
+Compute quantities that depend on qpos_spring.
+Compute translational and rotational Jacobian for point on body.
+Compute velocity-dependent sensor values.
+Computes actuator/transmission lengths and moments.
+Computes backsubstitution: x = qLD * y.
+Computes camera and light positions and orientations.
+Computes composite rigid body inertias for each body and the joint-space inertia matrix.
+Computes forward kinematics for all bodies, sites, geoms, and flexible elements.
+Computes inverse dynamics using the recursive Newton-Euler algorithm.
+Computes subtree center of mass positions.
+Computes subtree linear velocity and angular momentum.
+Computes tendon lengths and moments.
+Computes the linear momentum and angular momentum for each subtree, accumulating contributions up the kinematic tree.
+Computes the recursive Newton-Euler algorithm after constraints are applied.
+Computes:
+Conjugate gradient (primal)
+Constraint data.
+Constraint solver algorithm.
+Contact data.
+ContactType (naconmax,)
+Context for rendering.
+Copy concatenated state components specified by sig from Data into state.
+Copy concatenated state components specified by sig from state into Data.
+Creates a data object on device.
+Creates a model on device.
+Creates a render context on device.
+Creates constraint jacobians and other supporting data.
+D-structure column indices for RNE derivatives
+D-structure row indices for RNE derivatives
+DC motor back-EMF bias
+DC motor dynamics
+DC motor gain
+DOFs per island (nworld, ntree)
+Disable default feature bitflags.
+Discover constraint islands.
+Distances from ray origins to geom surfaces, IDs of intersected geoms (-1 if none), and normals at intersection points.
+Dynamic state that updates each step.
+Enable optional feature bitflags.
+Euler integrator, semi-implicit in velocity.
+FULLPHYSICS | USER | WARMSTART
+Factorization of inertia-like matrix M, assumed spd.
+Field | Notes
+For joint and tendon transmissions with limits, copies the range directly from jnt_range or tendon_range scaled by gear. Actuators without limits keep (0, 0). This covers the common robotics use case; simulation-based computation for general transmissions is not yet implemented.
+For selective updates, use the sub-functions directly based on what changed:
+Forward dynamics.
+Get the RGB data output from the render context buffers for a given camera index.
+Get the depth data output from the render context buffers for a given camera index.
+Get the segmentation data from the render context buffers for a given camera index.
+Gets data from a device into an existing mujoco.MjData.
+Includes several convenient combinations of these flags.
+Initialize history buffer for 1 actuator across all worlds.
+Initialize history buffer for 1 sensor across all worlds.
+Integrates fully implicit in velocity.
+Integrator mode.
+Inverse dynamics.
+J*qvel (nworld, njmax)
+Kinematics-dependent computations.
+M*qacc (nworld, nv)
+Map applied forces at each body via Jacobians to dof space and accumulate.
+Model definition and parameters.
+Model fields that can be modified safely with set_const:
+Model statistics (in qpos0).
+Modified Field | Call
+Moves data from host to a device.
+Multiply vectors by inertia matrix; optionally skip per world.
+Newton (primal)
+OR over all geom conaffinities (nbody,)
+OR over all geom contypes (nbody,)
+Outputs are stored in buffers within the render context.
+Parameters:
+Physics options.
+Position-dependent computations.
+Position-dependent energy (potential).
+Propagates velocities down the kinematic tree, updating the spatial velocity and derivative for each body.
+Public API for MJWarp.
+RGB addresses
+RGB ambient color of the headlight (from vis.headlight).
+RGB data
+RGB diffuse color of the headlight.
+RGB specular color of the headlight.
+Raises:
+Ray intersection for multiple worlds and multiple rays.
+Rayleigh’s damping coefficient (nflex,)
+Read delayed ctrl for 1 actuator across all worlds.
+Read delayed sensor for 1 sensor across all worlds.
+Recomputes qpos0-dependent constant model fields.
+Refit the dynamic BVH structures in the render context.
+Render the current frame.
+Returns the distance at which rays intersect with primitive geoms.
+Returns:
+Runge-Kutta explicit order 4 integrator.
+Runs broadphase collision detection using a brute-force N-squared approach.
+Runs broadphase collision detection using a sweep-and-prune (SAP) algorithm.
+Runs collision detection on primitive geom pairs discovered during broadphase.
+Runs the full collision detection pipeline.
+Skips: actuator_length0 (not in mjwarp).
+State component elements as integer bitflags.
+Sweep and prune broad phase using segment sort
+Sweep and prune broad phase using tile sort
+TIME | PHYSICS | PLUGIN
+TIME | QPOS | QVEL | ACT | HISTORY
+The bits of the integer sig correspond to element fields of State.
+The data object containing the current state and output arrays (device).
+The model containing kinematic and dynamic information (device).
+The render context containing rendering fields and output arrays on device.
+This function iterates through a pre-filtered list of all possible geometry pairs and performs a quick bounding sphere check to identify potential collisions.
+This function propagates changes from some model fields to derived fields, allowing modifications that would otherwise be unsafe. It should be called after modifying model parameters at runtime.
+This function updates the global positions and orientations of all bodies, as well as the derived positions and orientations of geoms, sites, and flexible elements, based on the current joint positions and any attached mocap bodies.
+This method is more efficient than the N-squared approach for large numbers of objects. It works by projecting the bounding spheres of all geoms onto a single axis and sorting them. It then sweeps along the axis, only checking for overlaps between geoms whose projections are close to each other.
+To improve performance, it dynamically builds and launches a kernel tailored to the specific primitive collision types present in the model, avoiding unnecessary checks for non-existent collision pairs.
+Transforms inertia and motion to global frame centered at subtree CoM. Accumulates the mass-weighted positions up the kinematic tree, divides by total mass, and computes composite inertias and motion degrees of freedom in the subtree CoM frame.
+True if wind, density, or viscosity are non-zero at put_model time
+Type of actuator bias.
+Type of actuator dynamics.
+Type of actuator gain.
+Type of actuator transmission.
+Type of broadphase algorithm.
+Type of degree of freedom.
+Type of friction cone.
+Type of geometry.
+Type of object.
+Updates the actuator length and moments for all actuators in the model, including joint and tendon transmissions.
+Updates the global positions and orientations for all cameras and lights in the model, including special handling for tracking and target modes.
+Updates the tendon length and moment arrays for all tendons in the model, including joint, site, and geom tendons.
+Velocity-dependent computations.
+Velocity-dependent energy (kinetic).
+acceleration (nworld, nv)
+acceleration used for warmstart
+acceleration used for warmstart (nworld, nv)
+active subset of nxn_pairid
+actuator activation
+actuator activation (nworld, na)
+actuator force (nworld, nv)
+actuator force in actuation space (nworld, nu)
+actuator lengths (nworld, nu)
+actuator moments (nworld, nJmom)
+actuator velocities (nworld, nu)
+actuator_gainprm, actuator_biasprm | For position actuators with dampratio.
+address for limit force sensors
+address for limit position sensors
+address for limit velocity sensors
+address for sensor’s first item in collision
+address for tactile sensors
+address for tendonactfrc sensor
+address in efc; -1: not included (naconmax, nmaxpyramid)
+address in sensor array (nsensor,)
+address of first object in tendon’s path (ntendon,)
+addresses for acceleration sensors
+addresses for actuators with body transmission
+addresses for contact sensors (nsensorcontact,)
+addresses for geom tendon wrap object
+addresses for joint tendon wrap object
+addresses for limited tendons
+addresses for position sensors
+addresses for rangefinder sensors
+addresses for site tendon wrap object
+addresses for touch sensors
+addresses for velocity sensors (excluding limit velocity sensors)
+adhesion force on body’s geoms
+adjacent vertex ids (dim=2 only) (nflexedge, 2)
+all polygon normals (nmeshpoly, 3)
+all polygon vertices (nmeshpolyvert,)
+angular momentum about subtree com (nworld, nbody, 3)
+applied Cartesian force/torque
+applied Cartesian force/torque (nworld, nbody, 6)
+applied generalized force
+applied generalized force (nworld, nv)
+apply actuation forces
+bending stiffness (nflexbending,)
+bias type (BiasType) (nu,)
+bit flags for disabling standard features
+bit flags for enabling optional features
+block dim options
+body ids with box fluid (nbody_fluid_box,)
+body ids with ellipsoid fluid (nbody_fluid_ellipsoid,)
+body simple type (nbody,)
+body sleep state (SleepState) (nworld, nbody)
+body, used to access regular frame instead of i-frame
+body1 << 16 + body2 (nexclude,)
+body_gravcomp | If changing from 0 to >0 bodies, required.
+body_gravcomp | set_const_fixed
+body_inertia | set_const_0
+body_ipos, body_iquat | since inertia is sum(m * r^2).
+body_mass | set_const
+body_mass, body_inertia, | Mass and inertia are usually scaled together
+body_pos, body_quat | Unsafe for static bodies (invalidates BVH).
+bodyid for rangefinder (nrangefinder,)
+broadphase filter bitflag (BroadphaseFilter)
+broadphase type (BroadphaseType)
+camera id map
+camera resolution for actively rendering cameras
+camera tracking mode (CamLightType) (ncam,)
+capacity for compacted active DOFs per world
+cartesian flex face orientations (nworld, nflexface, 4)
+cartesian flex face positions (nworld, nflexface, 9, 3)
+cartesian flex node positions (nworld, nflexnode, 3)
+cartesian flex vertex positions (nworld, nflexvert, 3)
+cell count per dimension (nflex, 3)
+center of mass of each subtree (nworld, nbody, 3)
+clamp control to specified range
+col index of compacted Hessian dof-pairs (nvmax_pad_sq,)
+collision between axis-aligned bounding boxes
+collision between bounding sphere and plane
+collision between bounding spheres
+collision between oriented bounding boxes
+collision count from broadphase (1,)
+collision id, else -1
+collision pair geom ids [-2, ngeom-1]
+color used for missed rays when no skybox is rendered
+column indices in D-structure (nD,)
+column indices in J (nworld, 0, 0) dense (nworld, 1, njmax_nnz) sparse
+column indices in sparse Jacobian (nJfe,)
+column indices in sparse actuator_moment (nworld, nJmom)
+column indices in sparse flex strain Jacobian (nJfs,)
+column indices in sparse ten_J (nJten,)
+column indices of non-zeros in M (nC,)
+com-based acceleration (nworld, nbody, 6)
+com-based body inertia and mass (nworld, nbody, 10)
+com-based composite inertia and mass (nworld, nbody, 10)
+com-based external force on body (nworld, nbody, 6)
+com-based interaction force with parent (nworld, nbody, 6)
+com-based motion axis of each dof (rot:lin) (nworld, nv, 6)
+com-based velocity (rot:lin) (nworld, nbody, 6)
+compacted DOF -> global DOF; -1 if unused (nworld, nvmax_pad)
+compacted M @ qacc workspace (nworld, nvmax_pad)
+compacted acceleration (solve output) (nworld, nvmax_pad)
+compacted constraint force (nworld, nvmax_pad)
+compacted dense constraint Jacobian (nworld, njmax_pad, nvmax_pad)
+compacted dense inertia (nworld, nvmax_pad, nvmax_pad)
+compacted net unconstrained force (nworld, nvmax_pad)
+compacted smooth-solve right-hand side (nworld, nvmax_pad, 1)
+compacted smooth-solve solution (nworld, nvmax_pad, 1)
+compacted unconstrained acceleration (nworld, nvmax_pad)
+compacted upper Cholesky factor (nworld, nvmax_pad, nvmax_pad)
+compacted warmstart acceleration (nworld, nvmax_pad)
+compacted-solve linesearch tolerance (1,)
+compacted-solve main tolerance (nv/nvmax_pad scaled) (1,)
+config attributes of geom plugin (nplugin, _NPLUGINATTR)
+const + kp*length + kv*velocity
+constraint Jacobian (nworld, njmax_pad, nv_pad) dense (nworld, 1, njmax_nnz) sparse
+constraint Jacobian/Hessian layout (sparse vs dense). Does not affect M, whose factorization is a per-block decision – see M_tiles and m_block_layout
+constraint data
+constraint force (nworld, nv)
+constraint force in constraint space (nworld, njmax)
+constraint islands
+constraint mass (nworld, njmax_pad)
+constraint position (equality, contact) (nworld, njmax)
+constraint solver impedance (naconmax, 5)
+constraint solver impedance: contact (nflex, mjNIMP)
+constraint solver reference, friction directions (naconmax, 2)
+constraint solver reference, normal direction (naconmax, 2)
+constraint solver reference: contact (nflex, mjNREF)
+constraint state (nworld, njmax_pad)
+constraint type (ConstraintType) (nworld, njmax)
+constraint type (EqType) (neq,)
+constraints per island (nworld, ntree)
+contact constraints
+contact data
+contact dimensionality (1, 3, 4, 6) (nflex,)
+contact dimensionality (1, 3, 4, 6) (ngeom,)
+contact dimensionality (npair,)
+contact pair id, -1 if not predefined,
+contact space dimensionality: 1, 3, 4 or 6 (naconmax,)
+control (nworld, nu)
+convex collision detection tolerance
+convex graph data (nmeshgraph,)
+count of max number of each potential collision
+custom physics callbacks
+custom user data (nworld, nuserdata)
+cutoff for real and positive; 0: ignore (nsensor,)
+delay in seconds (nsensor,)
+delay in seconds (nu,)
+delay/interval history buffers
+density of medium
+depth addresses
+depth data
+detect contact if dist<margin (nflex,)
+diagonal element index within each row (nv,)
+disable collisions between parent and child bodies
+disable multiple contacts with CCD
+discrete-time inverse dynamics
+distance between nearest points; neg: penetration (naconmax,)
+divisor, joint coef, or site id (nwrap,)
+does body use ellipsoid fluid (nbody,)
+does joint have actuator force limits (njnt,)
+does joint have limits (njnt,)
+does ten have actuator force limit (ntendon,)
+does tendon have length limits (ntendon,)
+dof address in M-diagonal (nv,)
+dof length for weighting velocity norm (nv,)
+dof upper triangle col (used in solver)
+dof upper triangle row (used in solver)
+dof_armature |
+drop primitive ray hits whose normal faces away from the ray (i.e. the ray origin is inside the geom). Matches MuJoCo’s mesh-ray rule. When False, the renderer reports inner-surface hits, which is faster but causes a camera placed inside a geom to render that geom’s back wall.
+dynamic flex object bounding box max (nworld, nflex, 3)
+dynamic flex object bounding box min (nworld, nflex, 3)
+dynamics type (DynType) (nu,)
+edge equality type (0:none,1:edge,2:vert,3:strain) (nflex,)
+edge length Jacobian (nworld, nJfe)
+edge lengths in qpos0 (nflexedge,)
+edge vertex ids (2 per edge) (nflexedge, 2)
+efc rows per JTDAJ block (nworld, njmax)
+element edge ids (nflexelemedge,)
+element ids; -1 for geom or flex vertex (naconmax, 2)
+element vertex ids (dim+1 per elem) (nflexelemdata,)
+element-vertex pair indices (nflexevpair, 2)
+elevation data (nhfielddata,)
+enable/disable constraints
+enable/disable constraints (nworld, neq)
+enabled geometry ids
+energy computation
+entire constraint solver
+eq_data | For connect/weld, offsets computed if not set.
+equality constraints
+equality constraints per island (nworld, ntree)
+evaluate energy_pos
+evaluate energy_vel
+evaluate rne_postconstraint
+evaluate subtree_vel
+face indices for all meshes (nface, 3)
+finite element stiffness matrix (nflexstiffness,)
+first activation address; -1: stateless (nu,)
+first address for site wrap pair
+first bending data address (nflex,)
+first edge address (nflex,)
+first efc row of each JTDAJ block (nworld, njmax)
+first element address (nflex,)
+first element edge id address (nflex,)
+first element vertex id address (nflex,)
+first element-vertex pair address (nflex,)
+first face address (nmesh,)
+first node address (nflex,)
+first normal address (nmesh,)
+first polygon address per mesh (nmesh,)
+first polygon address per vertex (nmeshvert,)
+first shell data address (nflex,)
+first vertex address (nflex,)
+first vertex address (nmesh,)
+fixed gain
+flag to use cuda graph conditional
+flattened body ids for all branches
+flex contact affinity (nflex,)
+flex contact type (nflex,)
+flex dimension per flex (1D/2D/3D)
+flex edge lengths (nworld, nflexedge)
+flex edge velocities (nworld, nflexedge)
+flex ids; -1 for geom (naconmax, 2)
+flex rgba
+flex vertices are centered at body origin (nflex,)
+fluid interaction parameters (ngeom, mjNFLUID)
+force on joint
+force on joint, expressed in parent frame
+force on site
+force on tendon
+force via slider-crank linkage
+friction constraints per island (nworld, ntree)
+friction for (slide, spin, roll) (nflex, 3)
+frictionloss (friction) (nworld, njmax)
+gain type (GainType) (nu,)
+geom contact affinity (ngeom,)
+geom contact priority (nflex,)
+geom contact priority (ngeom,)
+geom contact type (ngeom,)
+geom group inclusion/exclusion mask (ngeom,)
+geom ids; -1 for flex (naconmax, 2)
+geom index in plugin array (ngeom,)
+geom size for rendering (nsite, 3)
+geom tendon address
+geom type for rendering (GeomType) (nsite,)
+geometric type (GeomType) (ngeom,)
+geomid; -1: site; -2: pulley (nworld, nwrap, 2)
+global DOF -> compacted DOF; -1 if inactive (nworld, nv)
+global DOF -> island-local DOF (nworld, nv)
+global EFC -> island-local EFC (nworld, njmax)
+global magnetic flux
+global node indices of each face (nflexface, 9)
+global position and orientation (quat) (7,)
+globally registered plugin slot number (nplugin,)
+graph data address; -1: no graph (nmesh,)
+gravitational acceleration
+gravitational forces
+group roots
+hfield BVH id to warp mesh mapping
+hfield BVH ids
+hfield bounds half-extents
+hfield_size |
+history buffer address (nsensor,)
+history buffer address (nu,)
+history buffer for delays (nworld, nhistory)
+history buffer sizes (nsensor, 2)
+history buffer sizes (nu, 2)
+i-th contact generated for geom (naconmax,) helps uniquely identity contact when multiple contacts are generated for geom pair
+id of body for mocap (nmocap,)
+id of body that this body is welded to (nbody,)
+id of body’s parent (nbody,)
+id of body’s tree; -1: static (nbody,)
+id of camera’s body (ncam,)
+id of dof’s body (nv,)
+id of dof’s joint (nv,)
+id of dof’s parent; -1: none (nv,)
+id of dof’s tree (nv,)
+id of geom1 (npair,)
+id of geom2 (npair,)
+id of geom’s body (ngeom,)
+id of joint’s body (njnt,)
+id of light’s body (nlight,)
+id of mocap data; -1: none (nbody,)
+id of object 1 (neq,)
+id of object 2 (neq,)
+id of object of specific type (nworld, njmax)
+id of reference frame; -1: global frame (nsensor,)
+id of root above body (nbody,)
+id of sensorized object (nsensor,)
+id of site’s body (nsite,)
+id of targeted body; -1: none (ncam,)
+id of targeted body; -1: none (nlight,)
+if False, skips collision detection and allows user-populated contacts during the physics step (as opposed to DisableBit.CONTACT which explicitly zeros out the contacts at each step)
+implicit damping for Euler integration
+implicit in velocity, no rne derivative
+implicit in velocity, with rne derivative
+include if dist<includemargin=margin (naconmax,)
+include in solver if dist<margin-gap (nflex,)
+inclusion margin (contact) (nworld, njmax)
+index mapping from D to M (nC,)
+index mapping from M (legacy) to M (CSR) (nC)
+index mapping from M to D (nD,)
+index of each row in M (nv,)
+indices of awake dofs (nworld, nv)
+indices of awake/static bodies (nworld, nbody)
+initial enable/disable constraint state (neq,)
+integration mode (IntegratorType)
+integrator safety: make ref[0]>=2*timestep
+integrator: da/dt = u
+internal collision enabled (nflex,)
+interpolation order (0: vertex, 1+: nodes) (nflex,)
+inv. inertia for the edge (nflexedge,)
+is activation limited (nu,)
+is control limited (nu,)
+is force limited (nu,)
+is gravcomp force applied via actuators (njnt,)
+is tree awake; 0: asleep; 1: awake (nworld, ntree)
+island ID per DOF (-1 if unconstrained) (nworld, nv)
+island ID per constraint (nworld, njmax)
+island ID per island-DOF (nworld, nv)
+island ID per island-EFC (nworld, njmax)
+island ID per tree (-1 if unconstrained) (nworld, ntree)
+island start address in dof vector (nworld, ntree)
+island start address in efc vector (nworld, ntree)
+island start address in idof vector (nworld, ntree)
+island-local DOF -> global DOF (nworld, nv)
+island-local EFC -> global EFC (nworld, njmax)
+joint and tendon frictionloss constraints
+joint and tendon limit constraints
+joint tendon address
+light tracking mode (CamLightType) (nlight,)
+limited/ball jntadr
+limited/slide/hinge jntadr
+linear filter: da/dt = (u-a) / tau
+linear filter: da/dt = (u-a) / tau, with exact integration
+linear velocity of subtree com (nworld, nbody, 3)
+list of body ids by tree level
+lower bounds
+main solver tolerance
+map from flex geom ID to flex ID
+map from flex geom ID to flex edge ID
+map sensor adr to contact adr (nsensor,)
+map sensor id to collision id (nsensor,)
+map sensor id to rangefinder id (excluding touch sensors) (excluding limit force sensors)
+mapping of face index to flex and local element face indices
+mapping of interpolated bending edges to flex and (nflexbend_interp, 2) local edge indices
+maps each element index directly to its flexid (nflexelem,)
+maps each element-vertex pair directly to its flexid (nflexevpair,)
+maps each flex to its start face index (nflex,)
+maps each flex to its start shell index (nflex,)
+maps each shell index directly to its flexid (nflexshelldata,)
+maps each vertex index directly to its flexid (nflexvert,)
+max number of contacts considered by contact sensor matching criteria contacts matched after this value is exceded will be ignored
+max number of iterations for gradient descent
+maximum condim across geoms, pairs, and flexes
+maximum flex dimension in the model
+maximum number of CG/Newton linesearch iterations
+maximum number of constraints per world
+maximum number of contacts (shared across all worlds)
+maximum number of contacts for CCD (all worlds)
+maximum number of non-zeros in a tendon row
+maximum number of polygons per vert
+maximum number of pyramid directions
+maximum number of verts per polygon
+mean diagonal inertia (per-world)
+mesh BVH id to warp mesh mapping
+mesh BVH ids
+mesh bounds size
+mesh face texture coordinates
+mesh texture coordinate offsets
+mesh texture coordinates
+mixing coef for solref/imp in geom pair (nflex,)
+model statistics
+muscle FLV curve computed by muscle_gain
+muscle passive force computed by muscle_bias
+native convex collision detection (ignored in MJWarp)
+near plane distance
+net external force; should equal: (nworld, nv) qfrc_applied + J.T @ xfrc_applied \+ qfrc_actuator
+net unconstrained force (nworld, nv)
+njmax rounded up to the nearest multiple of TILE_SIZE_JTDAJ
+no bias
+no internal dynamics; ctrl specifies force
+node body ids (nflexnode,)
+node local positions (nflexnode, 3)
+non-zeros per row in D-structure (nv,)
+normal is in [0-2], points from geom[0] to geom[1] (naconmax, 3, 3)
+normals for all meshes (nmeshnormal, 3)
+number of JTDAJ blocks (nworld,)
+number of activation states
+number of activation variables (nu,)
+number of active (compacted) DOFs per world (nworld,)
+number of actively rendering cameras
+number of actuators with body transmission
+number of actuators/controls
+number of awake bodies (nworld,)
+number of awake dofs (nworld,)
+number of awake trees (nworld,)
+number of bending parameters in all flexes
+number of bodies
+number of bodies in tree (incl. root) (ntree,)
+number of branches (leaf-to-root paths)
+number of cameras
+number of columns in grid (nhfield,)
+number of constraint islands (nworld,)
+number of constraints (nworld,)
+number of contact sensors
+number of custom user parameters
+number of degrees of freedom
+number of degrees of freedom + padding
+number of detected contacts (across all worlds) (1,)
+number of dofs in tree (ntree,)
+number of edges (nflex,)
+number of edges in all flexes
+number of element edge ids in all flexes
+number of element vertex ids in all flexes
+number of element-vertex pairs (nflex,)
+number of element-vertex pairs in all flexes
+number of elements (nflex,)
+number of elements in all flexes
+number of elements in sensor data vector
+number of equality constraints
+number of equality constraints (nworld,)
+number of excluded geom pairs
+number of faces for all meshes
+number of flex geometries in the BVH
+number of flex strain equality constraints
+number of flexes
+number of friction constraints (nworld,)
+number of generalized coordinates
+number of geometries in the BVH
+number of geoms
+number of geoms (nbody,)
+number of heightfields
+number of history buffer entries
+number of interpolated bending edges
+number of interpolated flex shell faces
+number of ints in mesh auxiliary data
+number of iterations in convex collision detection
+number of joints
+number of joints for this body (nbody,)
+number of kinematic trees
+number of lights
+number of limit constraints (nworld,)
+number of main solver iterations
+number of materials
+number of meshes
+number of mocap bodies
+number of motion degrees of freedom (nbody,)
+number of nodes (nflex,)
+number of nodes in all flexes
+number of non-zeros in J row (nworld, 0) dense (nworld, njmax) sparse
+number of non-zeros in actuator_moment
+number of non-zeros in actuator_moment row (nworld, nu)
+number of non-zeros in constraint Jacobian
+number of non-zeros in each row of M (nv,)
+number of non-zeros in each tendon row (ntendon,)
+number of non-zeros in sparse body-dof matrix
+number of non-zeros in sparse derivative matrix
+number of non-zeros in sparse flex strain Jacobian
+number of non-zeros in sparse flexedge Jacobian
+number of non-zeros in sparse inertia matrix
+number of non-zeros in sparse tendon Jacobian
+number of nonzeros in Jacobian row (nflexedge,)
+number of nonzeros in flex strain Jacobian row (neq_flexstrain,)
+number of normals (nmesh,)
+number of normals in all meshes
+number of objects in tendon’s path (ntendon,)
+number of plugin instances
+number of polygons in all meshes
+number of polygons in vertex map
+number of polygons per mesh (nmesh,)
+number of polygons per vertex (nmeshvert,)
+number of predefined geom pairs
+number of rangefinder sensors
+number of rows in grid (nhfield,)
+number of scalar outputs (nsensor,)
+number of sensors
+number of shell fragment vertex ids in all flexes
+number of shells (nflex,)
+number of site wrap objects per tendon
+number of sites
+number of solver iterations (nworld,)
+number of starting points for gradient descent
+number of state elements
+number of stiffness parameters in all flexes
+number of taxels in all tactile sensors
+number of tendons
+number of total octree cells in all meshes
+number of unique collisions for geom distance sensors
+number of vertices (nflex,)
+number of vertices (nmesh,)
+number of vertices for all meshes
+number of vertices in all flexes
+number of vertices in all polygons
+number of vertices per polygon (nmeshpoly,)
+number of worlds
+number of wrap objects in all tendon paths
+number of wrap points in path (nworld, ntendon)
+numeric data type (DataType) (nsensor,)
+nvmax rounded up to the nearest multiple of TILE_SIZE_JTDAJ_DENSE
+object id: geom, site, joint (nwrap,)
+octree address for each mesh (nmesh,)
+octree axis-aligned bounding boxes (noct, 2, 3)
+octree children (noct, 8)
+octree interpolation coefficients (noct, 8)
+orientation (quat) relative to parent (4,)
+orientation of mocap bodies (nworld, nmocap, 4)
+orientations of mocap bodies
+overflow bitmask (OverflowType) (nworld,)
+packed factor offset; Q_LD_BLOCK_* sentinel otherwise (nv,)
+packed length of the dense region per world (also the offset of the LDL region)
+passive damper force (nworld, nv)
+passive damper forces
+passive fluid force (nworld, nv)
+passive gravity compensation force (nworld, nv)
+passive spring force (nworld, nv)
+passive spring forces
+per-camera RGB render flags
+per-camera depth render flags
+per-camera segmentation render flags
+per-flex BVH ids
+per-flex group roots (nworld x n_flex_bvh)
+per-flex mesh BVH registry (prevents garbage collection)
+per-world indices into textures of the skybox
+per-world pixel widths of the skybox cube face
+physics options
+piece-wise linear filter with two time constants
+polygon vertex start address (nmeshpoly,)
+position (nworld, nq)
+position of contact point: midpoint between geoms (naconmax, 3)
+position of mocap bodies (nworld, nmocap, 3)
+positions of mocap bodies
+potential, kinetic energy (nworld, 2)
+precomputed flex cell mapping (nflexintcell,)
+precomputed mask of which DOFs affect each body
+projection type (ProjectionType) (ncam,)
+pulley scaling (nwrap,)
+qpos0 | set_const_0
+qpos0, qpos_spring |
+radius around primitive element (nflex,)
+ratio of friction-to-normal contact impedance (stored as inverse square root)
+reciprocal diagonal for compact and sparse blocks (nworld, nv)
+reference node positions in qpos0 (nflexnode, 3)
+reference pseudo-acceleration (nworld, njmax)
+reference vertex positions in qpos0 (nflexvert, 3)
+resolution: pixels [width, height] (ncam, 2)
+rotation angle (rad) around body-fixed axis (1,)
+rotation applied to asset vertices (nmesh, 4)
+row index of compacted Hessian dof-pairs (nvmax_pad_sq,)
+row index of each CSR M entry; for densifying M into the dense Newton H (nC,)
+row start address for sparse ten_J (ntendon,)
+row start address in actuator_moment (nworld, nu)
+row start address in colind array (neq_flexstrain,)
+row start address in colind array (nflexedge,)
+row start address in colind array (nworld, 0) dense (nworld, njmax) sparse
+row start addresses in D-structure (nv,)
+scalar and tiled block-factorization groups
+scene BVH
+scene BVH id
+segmentation addresses
+segmentation data (per-pixel object ID/type pairs)
+self-collision mode (nflex,)
+semi-implicit Euler
+sensor data array (nworld, nsensordata,)
+sensor interval and phase (nsensor, 2)
+sensor parameters (nsensor, mjNSENS)
+sensor size: length [width, height] (ncam, 2)
+sensor type (SensorType) (nsensor,)
+shell fragment vertex ids (dim per frag) (nflexshelldata,)
+simulation time (nworld,)
+simulation timestep
+site pair tendon address
+size of elevation data
+sleep velocity tolerance
+sliding distance along body-fixed axis (1,)
+solver algorithm (SolverType)
+source elemid into M_fullm_i/M_fullm_j
+sparse LU factorization of (M - dt*qDeriv) (nworld, nD)
+sparse factor updates grouped by tree level
+sparse mass matrix addressing
+sparse matmul column indices
+sparse matmul matrix addresses
+sparse matmul row pointers
+start addr in ‘qpos’ for joint’s data (njnt,)
+start addr in ‘qvel’ for joint’s data (njnt,)
+start addr of dofs; -1: no dofs (nbody,)
+start addr of geoms; -1: no geoms (nbody,)
+start addr of joints; -1: no joints (nbody,)
+start address in hfield_data (nhfield,)
+start address of tendon’s path (nworld, ntendon)
+start address of tree’s dofs (ntree,)
+start index in body_branches for each branch (nbranch + 1,)
+step activation before force (nu,)
+stiffness matrix address (nflex,)
+tactile sensor vertex address (nsensortaxel,)
+tangent1, 2, spin, roll1, 2 (naconmax, 5)
+tendon Jacobian (nworld, nJten)
+tendon lengths (nworld, ntendon)
+tendon velocities (nworld, ntendon)
+tendon_stiffness, tendon_damping | Only if changing from/to zero.
+texture registry
+time-derivative of actuator activation (nworld, na)
+time-derivative of cdof (rot:lin) (nworld, nv, 6)
+top-level switch for ambient contributions
+total DOFs in islands (nworld,)
+total inertia, CSR (nworld, nC)
+total interp cells (non-strain) for passive forces
+total number of rays
+total passive force (nworld, nv)
+translation applied to asset vertices (nmesh, 3)
+transmission id: joint, tendon, site (nu, 2)
+transmission type (TrnType) (nu,)
+tree asleep counter; >=0: asleep cycle (nworld, ntree)
+tree sleep policy (SleepPolicy) (ntree,)
+tuple of GeomType int values present in the scene, used to statically eliminate unused intersection branches in the ray-cast kernels.
+tuple of all levels concatenated
+tuple of start offsets for each level
+tuple[int, …]
+type of both objects (ObjType) (neq,)
+type of friction cone (ConeType)
+type of joint (JointType) (njnt,)
+type of reference frame (ObjType) (nsensor,)
+type of sensorized object (ObjType) (nsensor,)
+unconstrained acceleration (nworld, nv)
+unknown object type
+upper bounds
+upper-triangle column indices for solver h seeding
+upper-triangle row indices for solver h seeding
+user-defined bias via act_bias_callback
+user-defined dynamics via act_dyn_callback
+user-defined gain via act_gain_callback
+valid collision pair geom ids [-1, ngeom - 1]
+velocity (nworld, nv)
+velocity in constraint space: J*qvel (nworld, njmax)
+vertex body ids (nflexvert,)
+vertex ids for flex/mesh contact (naconmax, 2)
+vertex local positions (nflexvert, 3)
+vertex positions for all meshes (nmeshvert, 3)
+vertex to polygon map (nmeshpolymap,)
+viscosity of medium
+warmstart constraint solver
+warn if overflow is encountered
+whether any flex has self-collision enabled
+whether the model contains 3D flexes
+whether the model contains SDF geoms
+whether the model contains ellipsoid geoms
+whether to enable fast math for the render kernel
+whether to render flex meshes smoothly
+whether to shade missed rays with a MuJoCo skybox texture
+whether to use precomputed rays
+whether to use shadows
+whether to use textures
+wind (for lift, drag, and viscosity)
+world id (naconmax,)
+wrap object starting address for sites
+wrap object type (WrapType) (nwrap,)
+TOTAL 935

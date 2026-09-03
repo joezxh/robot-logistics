@@ -40,6 +40,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/NotFoundView.vue'),
     meta: { public: true, hideChrome: true },
   },
+  {
+    path: '/landing',
+    name: 'RcsLanding',
+    component: () => import('@/views/RcsLandingView.vue'),
+    meta: { public: true },
+  },
 ]
 
 export const router = createRouter({
@@ -114,9 +120,11 @@ function firstAllowedPath(): string {
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
-  // 1. No session yet — send everything to the login page, remembering where
+  // 1. No session yet. Public routes (login, landing, not-found) are always
+  //    allowed; everything else detours to the login page, remembering where
   //    the user wanted to go so a deep link survives the detour.
   if (!auth.isAuthenticated) {
+    if (to.meta?.public) return true
     if (to.name === 'login') return true
     return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined }
   }

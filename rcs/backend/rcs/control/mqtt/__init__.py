@@ -21,7 +21,6 @@ from ..registry import registry
 from .client import MqttClient
 from .publisher import AlertPublisher, StatePublisher
 from .subscriber import CommandSubscriber
-from .twin_ingest import TelemetryIngest
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +54,6 @@ class MqttAdapter:
         )
         self._alerts = AlertPublisher(self._client, self._loop, topic_prefix=prefix)
         self._commands = CommandSubscriber(self._client, topic_prefix=prefix)
-        self._twin = TelemetryIngest(self._client, self._loop.stream, topic_prefix=prefix)
 
     @property
     def client(self) -> MqttClient:
@@ -66,7 +64,6 @@ class MqttAdapter:
         await self._commands.start()
         await self._state.start()
         await self._alerts.start()
-        await self._twin.start()
         logger.info(
             "MQTT adapter started (broker=%s:%s, devices=%d)",
             settings.mqtt_host,
@@ -78,7 +75,6 @@ class MqttAdapter:
         await self._alerts.stop()
         await self._state.stop()
         await self._commands.stop()
-        await self._twin.stop()
         await self._client.stop()
         logger.info("MQTT adapter stopped")
 
@@ -89,5 +85,4 @@ __all__ = [
     "StatePublisher",
     "AlertPublisher",
     "CommandSubscriber",
-    "TelemetryIngest",
 ]

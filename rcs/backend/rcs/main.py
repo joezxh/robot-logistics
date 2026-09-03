@@ -78,6 +78,12 @@ def create_app() -> FastAPI:
     app.include_router(sys_router, prefix="/api/sys", tags=["system"])
     # Opt-in JWT gate for /api/rcs/** (see Settings.auth_enabled).
     app.middleware("http")(auth_middleware)
+
+    # Real-time device telemetry over WebSocket (P3.4 digital-twin feed).
+    from rcs.control.service import ws_overview, ws_device
+
+    app.websocket("/api/rcs/control/ws/overview")(ws_overview)
+    app.websocket("/api/rcs/control/ws/device/{device_id}")(ws_device)
     return app
 
 

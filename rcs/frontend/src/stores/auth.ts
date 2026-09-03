@@ -15,8 +15,6 @@ const WILDCARD = '*:*'
 
 /** Codes that make a menu entry appear in the top-bar portal dropdown. */
 export const PORTAL_PERMISSIONS = [
-  'twin:sitemap:view',
-  'twin:warehouse:view',
   'sys:device:control',
 ] as const
 

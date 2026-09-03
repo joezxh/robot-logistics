@@ -1,0 +1,174 @@
+/*
+ * taste.css — Anti-Slop Frontend Guardrails (powered by design-taste-frontend)
+ *
+ * This file is the RCS-frontend integration point for the `design-taste-frontend`
+ * skill (installed at skills/taste-skill). It does NOT impose a look. It encodes
+ * the skill's discipline as reusable tokens + utility classes so any page built
+ * with the skill stays out of the LLM-default trap.
+ *
+ * ---------------------------------------------------------------------------
+ * THE SKILL'S THREE DIALS (set per page, conversationally or via a data attr)
+ * ---------------------------------------------------------------------------
+ *   DESIGN_VARIANCE : 1 perfect symmetry … 10 artsy chaos   (RCS default 8)
+ *   MOTION_INTENSITY: 1 static … 10 cinematic/physics       (RCS default 6)
+ *   VISUAL_DENSITY  : 1 art-gallery/airy … 10 cockpit/packed(RCS default 4)
+ * Override at the page root: <div class="taste" data-variance="9" data-motion="8">
+ *
+ * ---------------------------------------------------------------------------
+ * ANTI-SLOP BANNED LIST (do NOT ship these)
+ * ---------------------------------------------------------------------------
+ *   - AI-purple gradients + centered hero over dark mesh
+ *   - three identical feature cards in a row
+ *   - glassmorphism slapped on everything
+ *   - infinite-loop micro-animations everywhere
+ *   - Inter + slate-900 as the default type/colour pairing
+ *   - em-dashes (—) in copy — use a colon or period instead
+ *
+ * ---------------------------------------------------------------------------
+ * DESIGN READ PROTOCOL (declare before generating any page)
+ * ---------------------------------------------------------------------------
+ *   "Reading this as: <page kind> for <audience>, with a <vibe> language,
+ *    leaning toward <design system / aesthetic family>."
+ * RCS landing read:
+ *   "Reading this as: B2B SaaS landing for robotics engineers, with a
+ *    dark-tech / mission-control language, leaning toward native CSS tokens
+ *    + GSAP scroll motion (no new colour introduced beyond the blue/amber
+ *    accent family already in tokens.css)."
+ * ---------------------------------------------------------------------------
+ */
+
+.taste {
+  /* Dial-driven CSS variables. Defaults match the RCS design read above. */
+  --taste-variance: 8;
+  --taste-motion: 6;
+  --taste-density: 4;
+
+  /* Asymmetry helper: nudge sections off the centred axis based on variance. */
+  --taste-offset: calc((var(--taste-variance) - 5) * 0.6vw);
+}
+
+.taste[data-variance='9'],
+.taste[data-variance='10'] {
+  --taste-offset: 2.4vw;
+}
+
+.taste[data-variance='3'],
+.taste[data-variance='4'] {
+  --taste-offset: 0vw;
+}
+
+/* Motion gate: respect reduced-motion regardless of dial. */
+@media (prefers-reduced-motion: reduce) {
+  .taste * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Utility layer — honest, framework-agnostic primitives the skill endorses.
+ * --------------------------------------------------------------------------- */
+
+/* Frosted panel: the ONLY sanctioned use of backdrop-filter. Always pairs with
+ * a solid-fill fallback when prefers-reduced-transparency is set. */
+.taste .glass-panel {
+  background: var(--bg-surface);
+  background: var(--bg-surface);
+  -webkit-backdrop-filter: var(--glass);
+  backdrop-filter: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .taste .glass-panel {
+    background: var(--bg-elevated);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Asymmetric editorial grid cell — used to break the 3-equal-card trap. */
+.taste .bento {
+  display: grid;
+  gap: clamp(12px, 1.4vw, 22px);
+  grid-template-columns: repeat(12, 1fr);
+}
+
+.taste .bento > * {
+  grid-column: span 4;
+  min-width: 0;
+}
+
+/* Deliberately uneven spans (variance-gated) instead of equal cards. */
+.taste[data-variance='8'] .bento > :nth-child(1) { grid-column: span 7; }
+.taste[data-variance='8'] .bento > :nth-child(2) { grid-column: span 5; }
+.taste[data-variance='8'] .bento > :nth-child(3) { grid-column: span 5; }
+.taste[data-variance='8'] .bento > :nth-child(4) { grid-column: span 7; }
+
+/* Display heading using the existing HUD face, never Inter. */
+.taste .display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+}
+
+/* Tech label — uppercase, tracked-out, monospace readouts. */
+.taste .tech-label {
+  font-family: var(--font-tech);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 12px;
+  color: var(--fg-secondary);
+}
+
+/* Corner-tick: the HUD garnish that signals "instrument", not template. */
+.taste .corner-tick {
+  position: relative;
+}
+
+.taste .corner-tick::before,
+.taste .corner-tick::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: var(--corner-tick);
+  opacity: 0.7;
+}
+
+.taste .corner-tick::before {
+  top: -1px;
+  left: -1px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.taste .corner-tick::after {
+  bottom: -1px;
+  right: -1px;
+  border-left: none;
+  border-top: none;
+}
+
+/* Reveal: GSAP toggles .is-in; this is the static fallback so content is
+ * always visible if JS/scroll-trigger never fires. */
+.taste .reveal {
+  opacity: 1;
+  transform: none;
+}
+
+.taste .reveal:not(.is-in) {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.taste .reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
