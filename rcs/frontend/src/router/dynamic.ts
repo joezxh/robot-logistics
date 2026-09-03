@@ -54,6 +54,11 @@ const BUILT_IN_VIEWS: Record<string, BuiltInView> = {
     name: 'MapDetail',
     title: '地图详情',
   },
+  '/maps/:id/edit': {
+    component: 'views/maps/MapEditorView.vue',
+    name: 'MapEditor',
+    title: '地图编辑',
+  },
 }
 
 function resolveComponent(componentPath: string | null | undefined): RouteRecordRaw['component'] | undefined {

@@ -52,6 +52,7 @@ defineExpose({ reload: load })
         <span class="muted">{{ map?.map_id }} · {{ map?.kind }}</span>
       </div>
       <button class="btn btn-sm" :disabled="!map" @click="clone">克隆为可编辑地图</button>
+      <button class="btn btn-sm" :disabled="!map" @click="router.push(`/maps/${mapId}/edit`)">编辑布局</button>
     </header>
 
     <div v-if="loading" class="muted detail-msg">加载中…</div>

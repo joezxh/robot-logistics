@@ -17,7 +17,6 @@
 // plus a `dynamic` sub-resource for per-element runtime state
 // (`/maps/{id}/dynamic/{element_id}`).
 import { http } from './http'
-import type { FloorShell } from '@/types'
 
 /** Navigation graph carried by `topology`. Shapes are backend-defined. */
 export interface UnifiedTopology {
@@ -101,7 +100,7 @@ export interface DynamicStateDTO {
 /** POST /maps — matches the backend `UnifiedMapCreate` model. */
 export interface CreateMapBody {
   name: string
-  geometry?: FloorShell | null
+  geometry?: WtFloorShellGeometry | null
   topology?: Partial<UnifiedTopology> | null
   semantic?: Record<string, any> | null
   is_template?: boolean
@@ -114,7 +113,7 @@ export interface CreateMapBody {
 /** PUT /maps/{map_id} — matches the backend `UnifiedMapUpdate` model. */
 export interface UpdateMapBody {
   name?: string | null
-  geometry?: FloorShell | null
+  geometry?: WtFloorShellGeometry | null
   topology?: UnifiedTopology | null
   semantic?: Record<string, any> | null
 }

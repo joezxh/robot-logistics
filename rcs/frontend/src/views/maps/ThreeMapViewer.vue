@@ -12,7 +12,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { MjcfLoader, type MjcfRobot } from '@/views/simulation/three/MjcfLoader'
 import { getMapMjcfUrl } from '@/api/map'
 
-const props = withDefaults(defineProps<{ mapId: string }>(), {})
+const props = withDefaults(defineProps<{ mapId: string; reloadKey?: number }>(), {})
 const canvas = ref<HTMLCanvasElement | null>(null)
 const status = ref('loading…')
 let renderer: THREE.WebGLRenderer | null = null
@@ -66,7 +66,12 @@ function resize() {
   camera.updateProjectionMatrix()
 }
 
-const url = computed(() => getMapMjcfUrl(props.mapId))
+const url = computed(() => {
+  const base = getMapMjcfUrl(props.mapId)
+  // reloadKey busts the browser/HTTP cache after an edit so the 3D view
+  // reflects freshly-saved geometry without a manual refresh.
+  return props.reloadKey ? `${base}?t=${props.reloadKey}` : base
+})
 
 onMounted(() => {
   if (!canvas.value) return

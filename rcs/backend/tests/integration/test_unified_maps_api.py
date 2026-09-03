@@ -213,3 +213,44 @@ def test_get_map_mjcf_download_header(app_client):
 def test_get_map_mjcf_404(app_client):
     r = app_client.get("/api/rcs/maps/does-not-exist/mjcf")
     assert r.status_code == 404
+
+
+# ── 14. editor loop: PUT geometry → MJCF reflects the change ──────────────────
+
+
+def test_update_geometry_reflected_in_mjcf(app_client):
+    _seed(app_client)
+    # clone a template into an editable live map
+    cm = app_client.post(
+        "/api/rcs/maps/from-template",
+        json={"template_key": "train_unload", "name": "editable train"},
+    )
+    assert cm.status_code == 201
+    new_id = cm.json()["map_id"]
+
+    # baseline MJCF contains the seeded train cars
+    before = app_client.get(f"/api/rcs/maps/{new_id}/mjcf").text
+    assert "train_car_1" in before
+
+    # edit: add a brand-new zone and rename bounds, then PUT it back
+    upd = app_client.put(
+        f"/api/rcs/maps/{new_id}",
+        json={
+            "geometry": {
+                "bounds": {"w": 180, "d": 80},
+                "zones": [{"ref": "my_new_zone", "type": "staging",
+                           "x": 100, "z": 10, "w": 8, "d": 8, "h": 0.3, "y": 0,
+                           "rot": 0, "color": "#22c55e", "label": "新区域"}],
+                "docks": [],
+            }
+        },
+    )
+    assert upd.status_code == 200
+
+    # the freshly rendered MJCF must contain the new element and drop the old
+    after = app_client.get(f"/api/rcs/maps/{new_id}/mjcf").text
+    assert "my_new_zone" in after
+    assert "train_car_1" not in after
+
+    # cleanup
+    app_client.delete(f"/api/rcs/maps/{new_id}")
