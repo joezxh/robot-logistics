@@ -131,10 +131,17 @@ def policy_action_to_motor_targets(action: np.ndarray, action_scale: float = 0.5
 
 
 def home_pose_vector(joint_names: Sequence[str], variant: "VariantConfig") -> np.ndarray:
-    """Per-joint home angle in model joint order (skips the freejoint)."""
+    """Per-joint home angle in model joint order (skips the freejoint).
+
+    Passive/non-actuated joints (e.g. the rollers variant's ``passive_*_wheel``)
+    are not in :data:`HOME_POSE` and are skipped, so the returned vector always
+    covers the 14 controller joints regardless of variant.
+    """
     out = []
     for n in joint_names:
         if n == "trunk_base_freejoint":
+            continue
+        if n not in HOME_POSE:
             continue
         out.append(float(HOME_POSE[n]))
     return np.array(out, dtype=float)
