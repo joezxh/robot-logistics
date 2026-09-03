@@ -3,7 +3,7 @@ import type { ScenarioId, ZoneType } from '@/types'
 
 export default {
   app: {
-    title: 'RCS 站點地圖',
+    title: 'RCS 控制台',
     loading: '載入中…',
     error: '載入失敗',
     retry: '重試',
@@ -15,6 +15,36 @@ export default {
     legend: '圖例',
     zones: '區域',
     noData: '暫無資料，請選擇場景',
+  },
+  maps: {
+    title: '場景地圖',
+    list: '場景地圖模板',
+    resync: '重新播種模板',
+    refresh: '重新整理',
+    preview: '預覽',
+    clone: '複製',
+    template: '模板',
+    map: '地圖',
+    loading: '載入中…',
+    empty: '暫無模板，點擊「重新播種模板」。',
+    detail: '地圖詳情',
+    editLayout: '編輯佈局',
+    cloneEditable: '複製為可編輯地圖',
+    delete: '刪除',
+    view3d: '3D 預覽',
+    zones: '區域',
+    docks: '月台',
+    walls: '牆體',
+    facilities: '設施',
+    back: '返回',
+    save: '儲存到伺服器',
+    saving: '儲存中…',
+    savedAt: '已儲存',
+    elements: '元素',
+    apply: '套用修改',
+    deleteElement: '刪除此元素',
+    editHint: '點擊表格中的一列進行編輯。',
+    bounds: '畫布尺寸',
   },
   scenario: {
     label: '場景',
@@ -47,12 +77,7 @@ export default {
       homeJoints: 'Home joints', mode: '控制模式', modePlaceholder: '如 自動 / 手動',
       morphology: '形態', joints: '關節數', updatedAt: '更新時間', noDevices: '暫無設備',
     },
-    maps: {
-      title: '場景地圖', subtitle: '檢視站點拓樸並匯入 / 匯出地圖 JSON', create: '新增', import: '匯入', export: '匯出',
-      versions: '版本紀錄', restore: '還原', nodes: '節點', edges: '邊',
-      name: '地圖名稱', namePlaceholder: '如 電商倉一樓', version: '版本',
-      importPlaceholder: '貼上地圖 JSON（nodes / edges）',
-    },
+
     orders: {
       title: '訂單管理', subtitle: '追蹤訂單生命週期與 DAG 任務執行情況', all: '全部', start: '啟動', done: '完成',
       cancel: '取消', tasks: 'DAG 任務', noOrders: '暫無訂單', statusFilter: '依狀態篩選',
@@ -99,23 +124,7 @@ export default {
     lastCommand: '上次指令',
     none: '無',
   },
-  warehouse: {
-    title: '倉庫視圖',
-    import: '匯入倉庫資料',
-    importing: '匯入中…',
-    importOk: '匯入成功',
-    preview: '預覽',
-    info: '詳情',
-    noData: '暫無倉庫資料，請先匯入',
-    layout: '倉庫佈局',
-    bounds: '尺寸',
-    walls: '牆體段數',
-    zones: '區域',
-    facilities: '功能設施',
-    docks: '月台',
-    nodes: '節點',
-    edges: '邊',
-  },
+
 
   // --- 控制台外殼 ----------------------------------------------------------
   common: {

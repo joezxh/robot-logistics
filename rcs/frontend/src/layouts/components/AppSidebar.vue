@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import type { MenuNode } from '@/types'
+import type { AppLocale } from '@/i18n'
 import SidebarItem from './SidebarItem.vue'
 
 const router = useRouter()
@@ -20,11 +21,17 @@ const auth = useAuthStore()
  * authorisation behaviour is unchanged (built-in routes carry no permission).
  * IDs are negative to avoid colliding with real `sys_menu.id` values.
  */
-function leaf(id: number, name: string, path: string, icon: string): MenuNode {
+function leaf(
+  id: number,
+  name: string,
+  path: string,
+  icon: string,
+  i18n: Partial<Record<AppLocale, string>> = {},
+): MenuNode {
   return {
     id,
     name,
-    i18n: {},
+    i18n,
     path,
     icon,
     type: 2,
@@ -40,7 +47,12 @@ function leaf(id: number, name: string, path: string, icon: string): MenuNode {
 const SIMULATION_MENU: MenuNode = {
   id: -1000,
   name: '仿真中心',
-  i18n: {},
+  i18n: {
+    'zh-CN': '仿真中心',
+    'zh-TW': '仿真中心',
+    'en-US': 'Simulation',
+    'ja-JP': 'シミュレーション',
+  },
   path: '/simulation',
   icon: 'RobotOutlined',
   type: 1,
@@ -50,9 +62,18 @@ const SIMULATION_MENU: MenuNode = {
   keepAlive: 0,
   alwaysShow: 1,
   children: [
-    leaf(-1001, '仿真总览', '/simulation', 'DashboardOutlined'),
-    leaf(-1002, '场景仿真', '/simulation/scenes', 'ThunderboltOutlined'),
-    leaf(-1003, '仓储仿真', '/simulation/warehouse', 'ApartmentOutlined'),
+    leaf(-1001, '仿真总览', '/simulation', 'DashboardOutlined', {
+      'zh-CN': '仿真总览', 'zh-TW': '仿真總覽',
+      'en-US': 'Simulation Overview', 'ja-JP': 'シミュレーション概要',
+    }),
+    leaf(-1002, '场景仿真', '/simulation/scenes', 'ThunderboltOutlined', {
+      'zh-CN': '场景仿真', 'zh-TW': '場景仿真',
+      'en-US': 'Scene Simulation', 'ja-JP': 'シーンシミュレーション',
+    }),
+    leaf(-1003, '仓储仿真', '/simulation/warehouse', 'ApartmentOutlined', {
+      'zh-CN': '仓储仿真', 'zh-TW': '倉儲仿真',
+      'en-US': 'Warehouse Simulation', 'ja-JP': '倉庫シミュレーション',
+    }),
   ],
 }
 
@@ -65,7 +86,12 @@ const SIMULATION_MENU: MenuNode = {
 const MAPS_MENU: MenuNode = {
   id: -2000,
   name: '场景地图',
-  i18n: {},
+  i18n: {
+    'zh-CN': '场景地图',
+    'zh-TW': '場景地圖',
+    'en-US': 'Scene Maps',
+    'ja-JP': 'シーンマップ',
+  },
   path: '/maps',
   icon: 'GlobalOutlined',
   type: 1,
@@ -74,7 +100,10 @@ const MAPS_MENU: MenuNode = {
   visible: 1,
   keepAlive: 0,
   alwaysShow: 1,
-  children: [leaf(-2001, '场景地图', '/maps', 'GlobalOutlined')],
+  children: [leaf(-2001, '场景地图', '/maps', 'GlobalOutlined', {
+    'zh-CN': '场景地图', 'zh-TW': '場景地圖',
+    'en-US': 'Scene Maps', 'ja-JP': 'シーンマップ',
+  })],
 }
 
 const menus = computed(() => [...auth.menus, SIMULATION_MENU, MAPS_MENU])

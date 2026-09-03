@@ -3,7 +3,7 @@ import type { ScenarioId, ZoneType } from '@/types'
 
 export default {
   app: {
-    title: 'RCS サイトマップ',
+    title: 'RCS コンソール',
     loading: '読み込み中…',
     error: '読み込みに失敗しました',
     retry: '再試行',
@@ -15,6 +15,36 @@ export default {
     legend: '凡例',
     zones: 'ゾーン',
     noData: 'データがありません。シナリオを選択してください',
+  },
+  maps: {
+    title: 'シーンマップ',
+    list: 'シーンマップテンプレート',
+    resync: 'テンプレート再投入',
+    refresh: '更新',
+    preview: 'プレビュー',
+    clone: '複製',
+    template: 'テンプレート',
+    map: 'マップ',
+    loading: '読み込み中…',
+    empty: 'テンプレートがありません。「テンプレート再投入」をクリック。',
+    detail: 'マップ詳細',
+    editLayout: 'レイアウト編集',
+    cloneEditable: '編集可能なマップとして複製',
+    delete: '削除',
+    view3d: '3D プレビュー',
+    zones: 'ゾーン',
+    docks: 'ドック',
+    walls: '壁',
+    facilities: '設備',
+    back: '戻る',
+    save: 'サーバーに保存',
+    saving: '保存中…',
+    savedAt: '保存済み',
+    elements: '要素',
+    apply: '変更を適用',
+    deleteElement: 'この要素を削除',
+    editHint: '表の行をクリックして編集します。',
+    bounds: 'キャンバスサイズ',
   },
   scenario: {
     label: 'シナリオ',
@@ -47,12 +77,7 @@ export default {
       homeJoints: 'Home joints', mode: '制御モード', modePlaceholder: '例: 自動 / 手動',
       morphology: '形態', joints: '関節数', updatedAt: '更新日時', noDevices: 'デバイスがありません',
     },
-    maps: {
-      title: 'サイトマップ', subtitle: 'サイトトポロジーを表示し、マップ JSON を読み書き', create: '新規', import: 'インポート', export: 'エクスポート',
-      versions: 'バージョン履歴', restore: '復元', nodes: 'ノード', edges: 'エッジ',
-      name: 'マップ名', namePlaceholder: '例: EC 倉庫 1F', version: 'バージョン',
-      importPlaceholder: 'マップ JSON（nodes / edges）を貼り付け',
-    },
+
     orders: {
       title: 'オーダー管理', subtitle: 'オーダーの進行状況と DAG タスクを追跡', all: 'すべて', start: '開始', done: '完了',
       cancel: 'キャンセル', tasks: 'DAG タスク', noOrders: 'オーダーがありません', statusFilter: 'ステータスで絞り込み',
@@ -99,23 +124,7 @@ export default {
     lastCommand: '直前コマンド',
     none: 'なし',
   },
-  warehouse: {
-    title: '倉庫ビュー',
-    import: '倉庫データ取込',
-    importing: '取込中…',
-    importOk: '取込完了',
-    preview: 'プレビュー',
-    info: '詳細',
-    noData: '倉庫データがありません。先に取り込んでください',
-    layout: 'レイアウト',
-    bounds: '寸法',
-    walls: '壁セグメント',
-    zones: 'ゾーン',
-    facilities: '設備',
-    docks: 'ドック',
-    nodes: 'ノード',
-    edges: 'エッジ',
-  },
+
 
   // --- コンソールシェル ----------------------------------------------------
   common: {

@@ -9,11 +9,19 @@
  */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { getMap, updateMap, type WtFloorShellGeometry } from '@/api/map'
 import ThreeMapViewer from './ThreeMapViewer.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
+const catLabels: Record<string, string> = {
+  zones: t('maps.zones'),
+  docks: t('maps.docks'),
+  walls: t('maps.walls'),
+  facilities: t('maps.facilities'),
+}
 const mapId = computed(() => String(route.params.id))
 const loading = ref(false)
 const error = ref('')
@@ -136,17 +144,17 @@ function back() {
 <template>
   <div class="editor">
     <header class="editor-head">
-      <button class="btn" @click="back">← 返回</button>
-      <h2>地图编辑器 · {{ mapId }}</h2>
+      <button class="btn" @click="back">← {{ t('maps.back') }}</button>
+      <h2>{{ t('maps.title') }} · {{ mapId }}</h2>
       <div class="spacer" />
-      <span v-if="savedAt" class="saved">已保存 {{ savedAt }}</span>
+      <span v-if="savedAt" class="saved">{{ t('maps.savedAt') }} {{ savedAt }}</span>
       <button class="btn primary" :disabled="saving || !draft" @click="save">
-        {{ saving ? '保存中…' : '保存到服务器' }}
+        {{ saving ? t('maps.saving') : t('maps.save') }}
       </button>
     </header>
 
     <p v-if="error" class="err">{{ error }}</p>
-    <p v-if="loading" class="muted">加载中…</p>
+    <p v-if="loading" class="muted">{{ t('maps.loading') }}</p>
 
     <div v-if="draft" class="editor-body">
       <!-- 3D preview -->
@@ -157,23 +165,23 @@ function back() {
       <!-- element CRUD -->
       <section class="panel">
         <div class="bounds">
-          <label>画布尺寸 w</label>
+          <label>{{ t('maps.bounds') }} w</label>
           <input type="number" v-model.number="draft.bounds.w" />
           <label>d</label>
           <input type="number" v-model.number="draft.bounds.d" />
         </div>
 
         <div class="cat-actions">
-          <span class="muted">元素（{{ elements.length }}）</span>
+          <span class="muted">{{ t('maps.elements') }}（{{ elements.length }}）</span>
           <span v-for="c in CATEGORIES" :key="c">
-            <button class="btn sm" @click="addRow(c)">+ {{ c }}</button>
+            <button class="btn sm" @click="addRow(c)">+ {{ catLabels[c] }}</button>
           </span>
         </div>
 
         <table class="grid">
           <thead>
             <tr>
-              <th>类别</th><th>ref</th><th>type</th><th>x</th><th>z</th>
+              <th>{{ t('maps.category') }}</th><th>ref</th><th>type</th><th>x</th><th>z</th>
               <th>w</th><th>d</th><th>h</th><th>color</th>
             </tr>
           </thead>
@@ -184,7 +192,7 @@ function back() {
               :class="{ active: selected.cat === row.cat && selected.idx === row.idx }"
               @click="selectRow(row.cat, row.idx)"
             >
-              <td>{{ row.cat }}</td>
+              <td>{{ catLabels[row.cat] }}</td>
               <td>{{ row.el.ref }}</td>
               <td>{{ row.el.type }}</td>
               <td>{{ row.el.x }}</td>
@@ -198,7 +206,7 @@ function back() {
         </table>
 
         <div v-if="editing" class="form">
-          <h4>编辑：{{ editing.ref }}</h4>
+          <h4>{{ t('common.edit') }}：{{ editing.ref }}</h4>
           <div class="form-grid">
             <label>ref<input v-model="editing.ref" /></label>
             <label>type<input v-model="editing.type" /></label>
@@ -213,11 +221,11 @@ function back() {
             <label>label<input v-model="editing.label" /></label>
           </div>
           <div class="form-actions">
-            <button class="btn" @click="applyEdit">应用修改</button>
-            <button class="btn danger" @click="deleteRow">删除此元素</button>
+            <button class="btn" @click="applyEdit">{{ t('maps.apply') }}</button>
+            <button class="btn danger" @click="deleteRow">{{ t('maps.deleteElement') }}</button>
           </div>
         </div>
-        <p v-else class="muted">点击表格中的一行进行编辑。</p>
+        <p v-else class="muted">{{ t('maps.editHint') }}</p>
       </section>
     </div>
   </div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   listTemplates,
   seedTemplates,
@@ -8,6 +9,8 @@ import {
   templateDisplayName,
   type MapTemplateInfo,
 } from '@/api/map'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const templates = ref<MapTemplateInfo[]>([])
@@ -51,36 +54,36 @@ defineExpose({ reload: load })
   <div class="maps-page">
     <header class="maps-head">
       <div>
-        <h2>场景地图模板</h2>
+        <h2>{{ t('maps.list') }}</h2>
         <p class="muted">
           统一地图表（robot_unified_maps）中的场景 / 仓储模板，可 3D 预览并从模板克隆为可编辑地图。
         </p>
       </div>
       <div class="maps-actions">
         <button class="btn" :disabled="seeding" @click="seed">
-          {{ seeding ? '播种中…' : '重新播种模板' }}
+          {{ seeding ? t('maps.loading') : t('maps.resync') }}
         </button>
-        <button class="btn btn-primary" :disabled="loading" @click="load">刷新</button>
+        <button class="btn btn-primary" :disabled="loading" @click="load">{{ t('maps.refresh') }}</button>
       </div>
     </header>
 
-    <div v-if="loading" class="muted">加载中…</div>
-    <div v-else-if="!templates.length" class="muted">暂无模板，点击「重新播种模板」。</div>
+    <div v-if="loading" class="muted">{{ t('maps.loading') }}</div>
+    <div v-else-if="!templates.length" class="muted">{{ t('maps.empty') }}</div>
     <div v-else class="cards">
       <article
-        v-for="t in templates"
-        :key="t.map_id"
+        v-for="tpl in templates"
+        :key="tpl.map_id"
         class="card"
-        @click="open(t)"
+        @click="open(tpl)"
       >
-        <div class="card-badge" :class="{ 'card-badge--tpl': t.is_template }">
-          {{ t.is_template ? '模板' : '地图' }}
+        <div class="card-badge" :class="{ 'card-badge--tpl': tpl.is_template }">
+          {{ tpl.is_template ? t('maps.template') : t('maps.map') }}
         </div>
-        <div class="card-title">{{ templateDisplayName(t, locale) }}</div>
-        <div class="card-sub muted">{{ t.map_id }} · {{ t.kind }}</div>
+        <div class="card-title">{{ templateDisplayName(tpl, locale) }}</div>
+        <div class="card-sub muted">{{ tpl.map_id }} · {{ tpl.kind }}</div>
         <div class="card-actions">
-          <button class="btn btn-sm" @click.stop="open(t)">预览</button>
-          <button class="btn btn-sm" @click.stop="clone(t)">克隆</button>
+          <button class="btn btn-sm" @click.stop="open(tpl)">{{ t('maps.preview') }}</button>
+          <button class="btn btn-sm" @click.stop="clone(tpl)">{{ t('maps.clone') }}</button>
         </div>
       </article>
     </div>

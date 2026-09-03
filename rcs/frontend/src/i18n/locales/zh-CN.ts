@@ -3,7 +3,7 @@ import type { ScenarioId, ZoneType } from '@/types'
 
 export default {
   app: {
-    title: 'RCS 站点地图',
+    title: 'RCS 控制台',
     loading: '加载中…',
     error: '加载失败',
     retry: '重试',
@@ -15,6 +15,36 @@ export default {
     legend: '图例',
     zones: '区域',
     noData: '暂无数据，请选择场景',
+  },
+  maps: {
+    title: '场景地图',
+    list: '场景地图模板',
+    resync: '重新播种模板',
+    refresh: '刷新',
+    preview: '预览',
+    clone: '克隆',
+    template: '模板',
+    map: '地图',
+    loading: '加载中…',
+    empty: '暂无模板，点击「重新播种模板」。',
+    detail: '地图详情',
+    editLayout: '编辑布局',
+    cloneEditable: '克隆为可编辑地图',
+    delete: '删除',
+    view3d: '3D 预览',
+    zones: '区域',
+    docks: '月台',
+    walls: '墙体',
+    facilities: '设施',
+    back: '返回',
+    save: '保存到服务器',
+    saving: '保存中…',
+    savedAt: '已保存',
+    elements: '元素',
+    apply: '应用修改',
+    deleteElement: '删除此元素',
+    editHint: '点击表格中的一行进行编辑。',
+    bounds: '画布尺寸',
   },
   scenario: {
     label: '场景',
@@ -47,12 +77,7 @@ export default {
       homeJoints: 'Home joints', mode: '控制模式', modePlaceholder: '如 自动 / 手动',
       morphology: '形态', joints: '关节数', updatedAt: '更新时间', noDevices: '暂无设备',
     },
-    maps: {
-      title: '场景地图', subtitle: '查看站点拓扑并导入 / 导出地图 JSON', create: '新建', import: '导入', export: '导出',
-      versions: '版本历史', restore: '恢复', nodes: '节点', edges: '边',
-      name: '地图名称', namePlaceholder: '如 电商仓一层', version: '版本',
-      importPlaceholder: '粘贴地图 JSON（nodes / edges）',
-    },
+
     orders: {
       title: '订单管理', subtitle: '跟踪订单生命周期与 DAG 任务执行情况', all: '全部', start: '启动', done: '完成',
       cancel: '取消', tasks: 'DAG 任务', noOrders: '暂无订单', statusFilter: '按状态筛选',
@@ -99,23 +124,7 @@ export default {
     lastCommand: '上次指令',
     none: '无',
   },
-  warehouse: {
-    title: '仓库视图',
-    import: '导入仓库数据',
-    importing: '导入中…',
-    importOk: '导入成功',
-    preview: '预览',
-    info: '详情',
-    noData: '暂无仓库数据，请先导入',
-    layout: '仓库布局',
-    bounds: '尺寸',
-    walls: '墙体段数',
-    zones: '区域',
-    facilities: '功能设施',
-    docks: '月台',
-    nodes: '节点',
-    edges: '边',
-  },
+
 
   // --- 控制台外壳 ----------------------------------------------------------
   common: {

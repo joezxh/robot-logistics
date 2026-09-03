@@ -3,7 +3,7 @@ import type { ScenarioId, ZoneType } from '@/types'
 
 export default {
   app: {
-    title: 'RCS Site Map',
+    title: 'RCS Console',
     loading: 'Loading…',
     error: 'Failed to load',
     retry: 'Retry',
@@ -15,6 +15,36 @@ export default {
     legend: 'Legend',
     zones: 'Zones',
     noData: 'No data — please select a scenario',
+  },
+  maps: {
+    title: 'Scene Maps',
+    list: 'Scene Map Templates',
+    resync: 'Reseed Templates',
+    refresh: 'Refresh',
+    preview: 'Preview',
+    clone: 'Clone',
+    template: 'Template',
+    map: 'Map',
+    loading: 'Loading…',
+    empty: 'No templates yet — click “Reseed Templates”.',
+    detail: 'Map Detail',
+    editLayout: 'Edit Layout',
+    cloneEditable: 'Clone as Editable Map',
+    delete: 'Delete',
+    view3d: '3D Preview',
+    zones: 'Zones',
+    docks: 'Docks',
+    walls: 'Walls',
+    facilities: 'Facilities',
+    back: 'Back',
+    save: 'Save to Server',
+    saving: 'Saving…',
+    savedAt: 'Saved',
+    elements: 'Elements',
+    apply: 'Apply Changes',
+    deleteElement: 'Delete Element',
+    editHint: 'Click a row in the table to edit it.',
+    bounds: 'Canvas Size',
   },
   scenario: {
     label: 'Scenario',
@@ -47,12 +77,7 @@ export default {
       homeJoints: 'Home joints', mode: 'Control mode', modePlaceholder: 'e.g. auto / manual',
       morphology: 'Morphology', joints: 'Joints', updatedAt: 'Updated', noDevices: 'No devices',
     },
-    maps: {
-      title: 'Site Maps', subtitle: 'View site topology and import / export map JSON', create: 'New', import: 'Import', export: 'Export',
-      versions: 'Version history', restore: 'Restore', nodes: 'Nodes', edges: 'Edges',
-      name: 'Map name', namePlaceholder: 'e.g. Ecommerce L1', version: 'Version',
-      importPlaceholder: 'Paste map JSON (nodes / edges)',
-    },
+
     orders: {
       title: 'Orders', subtitle: 'Track order lifecycle and DAG task progress', all: 'All', start: 'Start', done: 'Complete',
       cancel: 'Cancel', tasks: 'DAG tasks', noOrders: 'No orders', statusFilter: 'Filter by status',
@@ -99,23 +124,7 @@ export default {
     lastCommand: 'Last Command',
     none: 'None',
   },
-  warehouse: {
-    title: 'Warehouse View',
-    import: 'Import Warehouse',
-    importing: 'Importing…',
-    importOk: 'Import OK',
-    preview: 'Preview',
-    info: 'Details',
-    noData: 'No warehouse data — please import first',
-    layout: 'Layout',
-    bounds: 'Bounds',
-    walls: 'Walls',
-    zones: 'Zones',
-    facilities: 'Facilities',
-    docks: 'Docks',
-    nodes: 'Nodes',
-    edges: 'Edges',
-  },
+
 
   // --- Console shell (new) -------------------------------------------------
   common: {

@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { getMap, cloneMap, type UnifiedMapDTO } from '@/api/map'
 import ThreeMapViewer from './ThreeMapViewer.vue'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -46,29 +49,29 @@ defineExpose({ reload: load })
 <template>
   <div class="map-detail">
     <header class="detail-head">
-      <button class="btn btn-sm" @click="router.push('/maps')">← 返回</button>
+      <button class="btn btn-sm" @click="router.push('/maps')">← {{ t('maps.back') }}</button>
       <div class="detail-title">
         <h2>{{ map?.name ?? mapId }}</h2>
         <span class="muted">{{ map?.map_id }} · {{ map?.kind }}</span>
       </div>
-      <button class="btn btn-sm" :disabled="!map" @click="clone">克隆为可编辑地图</button>
-      <button class="btn btn-sm" :disabled="!map" @click="router.push(`/maps/${mapId}/edit`)">编辑布局</button>
+      <button class="btn btn-sm" :disabled="!map" @click="clone">{{ t('maps.cloneEditable') }}</button>
+      <button class="btn btn-sm" :disabled="!map" @click="router.push(`/maps/${mapId}/edit`)">{{ t('maps.editLayout') }}</button>
     </header>
 
-    <div v-if="loading" class="muted detail-msg">加载中…</div>
-    <div v-else-if="error" class="detail-msg err">加载失败：{{ error }}</div>
+    <div v-if="loading" class="muted detail-msg">{{ t('maps.loading') }}</div>
+    <div v-else-if="error" class="detail-msg err">{{ t('common.failed') }}：{{ error }}</div>
     <div v-else-if="map" class="detail-body">
       <div class="viewer">
         <ThreeMapViewer :map-id="map.map_id" />
       </div>
       <aside class="meta">
         <section v-if="bounds">
-          <h4>尺寸 (m)</h4>
+          <h4>{{ t('maps.bounds') }} (m)</h4>
           <p class="muted">W={{ bounds.w }} · D={{ bounds.d }}<template v-if="bounds.h"> · H={{ bounds.h }}</template></p>
         </section>
         <section>
-          <h4>布局元素</h4>
-          <p class="muted">{{ zoneCount }} 个 (zones + docks)</p>
+          <h4>{{ t('maps.view3d') }}</h4>
+          <p class="muted">{{ zoneCount }} ({{ t('maps.zones') }} + {{ t('maps.docks') }})</p>
         </section>
         <section v-if="map.semantic">
           <h4>语义</h4>
