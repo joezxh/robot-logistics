@@ -29,6 +29,11 @@ class RobotType(str, Enum):
     XARM7 = "xarm7"
     SO101 = "so101"
     YAM = "yam"
+    MICRODUCK = "Microduck"
+
+    @classmethod
+    def get_all(cls) -> list["RobotType"]:
+        return [rt for rt in cls]
 
 
 @dataclass
