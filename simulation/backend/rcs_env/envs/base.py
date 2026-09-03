@@ -204,6 +204,15 @@ def register_envs() -> None:
             entry_point="rcs_env.envs.base:_scene_entry",
             kwargs={"scene_name": scene_name},
         )
+
+    from .microduck_cfg import VARIANTS
+
+    for variant_name in VARIANTS:
+        gym.register(
+            id=f"rcs/microduck-{variant_name}-v0",
+            entry_point="rcs_env.envs.microduck:MicroduckEnv",
+            kwargs={"variant": variant_name},
+        )
     _REGISTERED = True
 
 

@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from .base import SimEnv
 from .creator import SimEnvCreator, SimEnvCreatorConfig
+from .microduck import MicroduckEnv
+from .microduck_cfg import VARIANTS as MICRODUCK_VARIANTS
 from .wrappers import (
     DigitalTwinWrapper,
     GripperWrapper,
@@ -24,6 +26,8 @@ __all__ = [
     "SimEnv",
     "SimEnvCreator",
     "SimEnvCreatorConfig",
+    "MicroduckEnv",
+    "MICRODUCK_VARIANTS",
     "GripperWrapper",
     "HandWrapper",
     "StorageWrapper",
