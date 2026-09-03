@@ -1,3 +1,59 @@
+# Microduck SDD Progress Ledger
+
+Tracks per-task review state for the three Microduck plans:
+- `docs/superpowers/plans/2026-09-03-microduck-p1-p2-backend.md` (8 tasks)
+- `docs/superpowers/plans/2026-09-03-microduck-p3-frontend.md` (7 tasks)
+- `docs/superpowers/plans/2026-09-03-microduck-p4-p5-training.md` (6 tasks)
+
+Spec: `docs/superpowers/specs/2026-09-03-microduck-design.md` (commit `db58cb7`).
+Branch: `feat/scene-map-management` (feature branch, not main/master).
+
+## Pre-Flight Findings (recorded before Task 1)
+
+- **PF-1 (conflict, resolved)**: plans specify regression checks with
+  `pytest rcs_env/tests/...`, but `simulation/backend/pytest.ini` also collects
+  `simulation/backend/tests/`. Measured: **no single env runs both suites** —
+  * `rcs_sim_core/.venv` (mujoco 3.12.0 / gymnasium 1.3.0 / SB3 2.9.0 / pytest 9.1.1,
+    **no fastapi**) → runs `rcs_env/tests/` only.
+  * root `.venv` (fastapi 0.141.1, **no mujoco**) → runs `simulation/backend/tests/` only.
+  Attempting the combined run in `rcs_sim_core/.venv` dies at collection:
+  `services/security.py:13 ModuleNotFoundError: No module named 'fastapi'`
+  (3 collection errors, exit 2).
+  Resolution: regression baseline for Microduck = `rcs_env/tests/` under
+  `rcs_sim_core/.venv` (**11 passed**). The API suite under `simulation/backend/tests/`
+  is unrelated to Microduck (no API changes until the P3 SSE server, which is a new
+  file) — verify it with the root venv only if a task touches `services/` or `api/`.
+- **PF-2 (environment)**: `onnxruntime` is not installed — P5 Task 4 installs it.
+  `pytest` was missing and has been installed into `rcs_sim_core/.venv`.
+- **PF-3 (carried over from earlier ledgers)**: `httpx` must stay `<0.28` or
+  `TestClient`-based tests break; stale `__pycache__` can produce ghost failures.
+- **PF-4 (spec deviation)**: the approved spec §3 says "reuse MuJoCoEngine".
+  Measured: `MuJoCoEngine.step()` writes `data.qpos` directly (teleport, not ctrl)
+  and `_detect_robot_config()` injects a TCP site and reloads the MJCF — unusable
+  for a freejoint biped. Plans add `FreeBaseMuJoCoEngine` instead (additive).
+
+## Baselines (captured 2026-09-03)
+
+- `python -m pytest rcs_env/tests/test_envs.py -q` → **11 passed**
+- Full suite: `cd simulation/backend && python -m pytest -q` → (to capture at Task 1)
+
+## Completed Tasks (1/21)
+
+| # | Plan | Task | Commit(s) | Status |
+|---|------|------|-----------|--------|
+| 1 | P1+P2 | vendor 7 MJCF variants + 43 STL meshes + asset test | (this commit) | ✅ assets present, `test_microduck.py::test_all_variants_present_and_load` pass, joint-order test skips until T3; baseline 11 still pass |
+
+## Pending Tasks (21)
+
+P1+P2 backend: 1 vendor assets · 2 RobotType · 3 contract registry · 4 slot mapping ·
+5 FreeBaseMuJoCoEngine · 6 MicroduckEnv · 7 gym registration · 8 vec+twin smoke
+P3 frontend: 1 STL loader · 2 freejoint · 3 qpos mapping · 4 SceneMicroduck.vue ·
+5 scene registration · 6 SSE telemetry · 7 browser verification
+P4+P5 training: 1 command sampling · 2 PPO script · 3 training record ·
+4 onnxruntime · 5 OnnxPolicy · 6 ONNX playback
+
+---
+
 # Top 3 Simulation SDD Progress Ledger
 
 Tracks per-task review state for plan `docs/superpowers/plans/2026-08-14-top3-simulation-plan.md`.
