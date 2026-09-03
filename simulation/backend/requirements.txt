@@ -14,7 +14,10 @@ pydantic-settings==2.1.0
 paho-mqtt==1.6.1
 # RCS-aligned simulation layer (mirrors robot-control-stack python/rcs)
 gymnasium==0.29.1
-# Optional high-fidelity engine (RCS parity). Install to enable MuJoCo dynamics:
-# mujoco==3.1.6
+# High-fidelity physics engine — official MuJoCo Python binding (no C++ rcs_sim_core needed).
+mujoco>=3.1.6
 # Shared data contract (robot_contracts) must be installed from ../shared/python
+# RL training + ONNX inference bridge (P4 / P5)
+stable-baselines3>=2.3.0
+onnxruntime>=1.17.0
 

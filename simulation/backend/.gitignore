@@ -1,0 +1,7 @@
+# injected TCP-site patched MJCF (generated at runtime, now written to temp dir)
+rcs_tcp_patched.xml
+**/rcs_tcp_patched.xml
+
+# verification / demo outputs
+loader_demo_out/
+_verify_*.py

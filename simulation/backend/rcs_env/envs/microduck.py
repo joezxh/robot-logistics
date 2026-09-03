@@ -10,10 +10,12 @@ arm-oriented (EE-pose observation, gripper, OMPL planner).
 """
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 import gymnasium as gym
 import numpy as np
+from robot_contracts import RobotType
 
 from ..freebase_engine import FreeBaseMuJoCoEngine
 from .microduck_cfg import (
@@ -62,6 +64,11 @@ class MicroduckEnv(gym.Env):
         action_scale: float = 0.5,
         render_mode: str | None = None,
         seed: int = 0,
+        hz: float = 100.0,
+        cmd_vx_range: tuple[float, float] = (0.0, 0.4),
+        cmd_vy_range: tuple[float, float] = (-0.1, 0.1),
+        cmd_vyaw_range: tuple[float, float] = (-0.3, 0.3),
+        cmd_period: float = 5.0,
     ) -> None:
         super().__init__()
         if variant not in VARIANTS:
@@ -70,6 +77,9 @@ class MicroduckEnv(gym.Env):
         self.variant = VARIANTS[variant]
         self.action_scale = float(action_scale)
         self.render_mode = render_mode
+        # Telemetry identity (read by DigitalTwinWrapper; MicroduckEnv is a bare
+        # gym.Env, not SimEnv, so it carries its own lightweight config).
+        self.config = SimpleNamespace(robot_type=RobotType.MICRODUCK)
 
         self.engine = FreeBaseMuJoCoEngine.from_variant(variant, dt=dt)
         self._control_steps = max(1, int(round(control_dt / dt)))
@@ -95,9 +105,17 @@ class MicroduckEnv(gym.Env):
 
         self._last_action = np.zeros(N_ACTION, dtype=float)
         self._command = np.zeros(13, dtype=float)
-        self._steps = 0
+        self._n_steps = 0
         self._rng = np.random.default_rng(seed)
         self._base_z = self._compute_standing_height()
+        # Velocity-command sampling (spec §7.1): twist command re-sampled every
+        # ``cmd_period`` seconds; head/body-pose slots stay pinned at zero.
+        self.hz = float(hz)
+        self.cmd_vx_range = tuple(cmd_vx_range)
+        self.cmd_vy_range = tuple(cmd_vy_range)
+        self.cmd_vyaw_range = tuple(cmd_vyaw_range)
+        self.cmd_period = float(cmd_period)
+        self._cmd_timer = float(cmd_period)
 
     # ---- helpers ---------------------------------------------------------- #
     def _compute_standing_height(self) -> float:
@@ -125,6 +143,29 @@ class MicroduckEnv(gym.Env):
         q = self.engine.qpos().copy()
         q[2] = float(z)
         self.engine.reset(qpos=q, qvel=np.zeros(self.engine.nv))
+
+    def _sample_command(self) -> np.ndarray:
+        """Sample a 13-dim velocity command: twist(3) + head_pose(4) + body_pose(6).
+
+        Only the forward/strafe/yaw twist is randomized; head and body-pose slots
+        stay zero per spec §7.1 (the trunk is the reference frame).
+        """
+        rng = self._rng
+        vx = float(rng.uniform(*self.cmd_vx_range))
+        vy = float(rng.uniform(*self.cmd_vy_range))
+        vyaw = float(rng.uniform(*self.cmd_vyaw_range))
+        cmd = np.zeros(13, dtype=float)
+        cmd[0] = vx
+        cmd[1] = vy
+        cmd[2] = vyaw
+        return cmd
+
+    def _step_command(self) -> None:
+        """Re-sample the velocity command every ``cmd_period`` seconds."""
+        self._cmd_timer -= 1.0 / self.hz
+        if self._cmd_timer <= 0.0:
+            self._command = self._sample_command()
+            self._cmd_timer = self.cmd_period
 
     # ---- observation ------------------------------------------------------ #
     def _get_obs(self) -> np.ndarray:
@@ -197,8 +238,9 @@ class MicroduckEnv(gym.Env):
             q[addr] = HOME_POSE[name]
         self.engine.reset(qpos=q, qvel=np.zeros(self.engine.nv))
         self._last_action = np.zeros(N_ACTION, dtype=float)
-        self._command = np.zeros(13, dtype=float)
-        self._steps = 0
+        self._command = self._sample_command()
+        self._cmd_timer = self.cmd_period
+        self._n_steps = 1
         return self._get_obs(), {}
 
     def step(self, action: np.ndarray):
@@ -214,15 +256,16 @@ class MicroduckEnv(gym.Env):
             self.engine.step_ctrl(targets)
 
         self._last_action = a.copy()
-        self._steps += 1
+        self._n_steps += 1
+        self._step_command()
 
         obs = self._get_obs()
         reward = self._reward()
         terminated = self._terminated()
-        truncated = self._steps >= MAX_EPISODE_STEPS
+        truncated = self._n_steps >= MAX_EPISODE_STEPS
         info: dict[str, Any] = {
             "trunk_height": float(self.engine.data.qpos[2]),
-            "steps": self._steps,
+            "steps": self._n_steps,
         }
         return obs, reward, bool(terminated), bool(truncated), info
 

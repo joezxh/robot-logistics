@@ -217,7 +217,7 @@ class DigitalTwinWrapper(_SimEnvWrapper):
         if robot_type is not None:
             rt = getattr(robot_type, "robot_type", RobotType.ARM)
         record = {
-            "robot_type": rt.value if hasattr(rt, "value") else str(rt),
+            "robot_type": (rt.value if hasattr(rt, "value") else str(rt)).lower(),
             "qpos": engine.qpos().tolist() if engine is not None else [],
             "ee_pose": None,
         }

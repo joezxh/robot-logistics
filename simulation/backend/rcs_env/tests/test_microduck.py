@@ -125,7 +125,10 @@ def test_env_observation_blocks_are_correct():
     assert np.allclose(obs[6:20], 0.0, atol=1e-6)          # joint pos == home at reset
     assert np.allclose(obs[20:34], 0.0, atol=1e-6)         # zero velocity
     assert np.allclose(obs[34:48], 0.0)                    # no previous action
-    assert np.allclose(obs[48:61], 0.0)                    # zero command
+    # command block (last 13 = 61-48); body-pose stays pinned at 0 per spec §7.1
+    assert obs[48:61].shape == (13,)
+    assert obs[55] == 0.0 and obs[56] == 0.0 and obs[60] == 0.0
+    assert -0.5 <= obs[48] <= 0.5                         # sampled forward twist in range
 
 
 def test_env_step_returns_five_tuple_and_terminates_on_fall():
@@ -157,3 +160,31 @@ def test_microduck_gym_ids_registered():
         obs, _ = env.reset(seed=0)
         assert obs.shape == (61,)
         env.close()
+
+
+def test_reset_samples_a_nonzero_velocity_command():
+    """P4 T1: reset() samples a forward velocity command (spec §7.1)."""
+    from rcs_env.envs.microduck import MicroduckEnv
+
+    env = MicroduckEnv(variant="walk")
+    seen = set()
+    for seed in range(5):
+        obs, _ = env.reset(seed=seed)
+        assert obs.shape == (61,)
+        vx = float(obs[48])
+        assert 0.0 <= vx <= 0.4, f"cmd vx out of range at seed {seed}: {vx}"
+        seen.add(round(vx, 6))
+    # different seeds must produce different commands (non-degenerate sampling)
+    assert len(seen) >= 2, f"command sampling looks degenerate: {seen}"
+    env.close()
+
+
+def test_command_block_keeps_13_slots():
+    """P4 T1: command block occupies exactly 13 slots; body pose pinned at 0."""
+    from rcs_env.envs.microduck import MicroduckEnv
+
+    env = MicroduckEnv(variant="walk")
+    obs, _ = env.reset(seed=1)
+    assert obs[48:61].shape == (13,)
+    assert obs[55] == 0.0 and obs[56] == 0.0 and obs[60] == 0.0
+    env.close()
