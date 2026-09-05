@@ -4,12 +4,19 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getMap, cloneMap, type UnifiedMapDTO } from '@/api/map'
 import ThreeMapViewer from './ThreeMapViewer.vue'
+// Reuse the existing warehouse-theatre prototype (ported from wt3d-vue.js) so the
+// `tpl-theatre_ecommerce` map renders the ecommerce warehouse exactly like the
+// github `warehouse_theatre_3d` demo at http://localhost:3002.
+import WarehouseView from '@/views/simulation/warehouse/WarehouseView.vue'
 
 const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
 const mapId = computed(() => String(route.params.id))
+// warehouse-theatre ecommerce warehouse prototype lives here, rendered by the
+// ported WarehouseView instead of the generic MuJoCo map viewer.
+const isWarehouseTheatre = computed(() => /theatre[-_]?ecommerce|theatre_ecommerce/.test(mapId.value))
 const map = ref<UnifiedMapDTO | null>(null)
 const loading = ref(false)
 const error = ref('')
@@ -42,12 +49,18 @@ async function clone() {
   router.push(`/maps/${encodeURIComponent(m.map_id)}`)
 }
 
-onMounted(load)
+onMounted(() => {
+  if (!isWarehouseTheatre.value) load()
+})
 defineExpose({ reload: load })
 </script>
 
 <template>
   <div class="map-detail">
+    <!-- warehouse-theatre ecommerce warehouse prototype (ported wt3d-vue.js) -->
+    <WarehouseView v-if="isWarehouseTheatre" class="wt-fill" />
+
+    <template v-else>
     <header class="detail-head">
       <button class="btn btn-sm" @click="router.push('/maps')">← {{ t('maps.back') }}</button>
       <div class="detail-title">
@@ -83,6 +96,7 @@ defineExpose({ reload: load })
         </section>
       </aside>
     </div>
+    </template>
   </div>
 </template>
 
@@ -91,6 +105,11 @@ defineExpose({ reload: load })
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+/* warehouse-theatre prototype fills the whole page (no map-detail chrome) */
+.wt-fill {
+  flex: 1;
+  min-height: 0;
 }
 .detail-head {
   display: flex;

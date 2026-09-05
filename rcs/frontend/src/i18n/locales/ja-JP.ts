@@ -45,6 +45,9 @@ export default {
     deleteElement: 'この要素を削除',
     editHint: '表の行をクリックして編集します。',
     bounds: 'キャンバスサイズ',
+    modeStatic: '静的',
+    modePhysics: '物理エンジン',
+    physicsLoading: '物理エンジン読み込み中…',
   },
   scenario: {
     label: 'シナリオ',

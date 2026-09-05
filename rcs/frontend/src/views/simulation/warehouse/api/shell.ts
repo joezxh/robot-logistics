@@ -1,9 +1,12 @@
 // Where the warehouse *geometry* comes from.
 //
 // Split by layer (see ../adapters/floorShell.ts for the data mapping):
-//   geometry  -> RCS topology API (FloorShell), single source of truth
+//   geometry  -> RCS unified-maps import blueprint (FloorShell)
 //   inventory -> simulation backend, until RCS gains an inventory domain
-import { getShell } from '@/api/topologyShell'
+//
+// NOTE: the legacy `topology/shell` router was removed (see
+// rcs/backend/rcs/api/__init__.py) in favour of the unified-maps import API, so
+// geometry is now produced by the import blueprint preview endpoint.
 import { previewWarehouseTheatre } from '@/api/warehouse'
 import type { FloorShell } from '@/types'
 
@@ -18,27 +21,21 @@ export interface ShellSource {
 }
 
 /**
- * Resolve the floor shell, best source first:
+ * Resolve the floor shell from the unified-maps import blueprint preview:
  *
- *  1. `GET /api/rcs/topology/shell/{site}` — persisted shell; survives edits made
- *     through the RCS topology editors.
- *  2. `GET /api/rcs/import/warehouse-theatre/preview` — converts the built-in
- *     blueprint on the fly, for sites that were never imported.
- *  3. `null` — caller keeps the simulation backend's geometry, so the page
- *     still renders when the RCS backend is unreachable.
+ *   `GET /api/rcs/import/warehouse-theatre/preview` — converts the built-in
+ *   blueprint on the fly. This is the single source of truth since the legacy
+ *   `topology/shell` router was removed (it 404s).
+ *
+ * Returns `null` when the RCS backend is unreachable, so the caller falls back
+ * to the simulation backend's geometry and the page still renders.
  */
 export async function fetchWarehouseShell(): Promise<ShellSource | null> {
-  try {
-    const shell = await getShell(WAREHOUSE_SITE_ID)
-    if (shell) return { shell, origin: 'rcs' }
-  } catch {
-    // Site not imported yet, or RCS unreachable — try the converter below.
-  }
   try {
     const preview = await previewWarehouseTheatre()
     if (preview?.shell) return { shell: preview.shell, origin: 'preview' }
   } catch {
-    // Fall through: the simulation backend's own geometry is the last resort.
+    // RCS backend unreachable — caller keeps the simulation backend's geometry.
   }
   return null
 }

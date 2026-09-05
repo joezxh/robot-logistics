@@ -21,6 +21,12 @@ const MIME: Record<string, string> = {
 
 export default defineConfig({
   plugins: [vue()],
+  // `@mujoco/mujoco` is an Emscripten WASM module; letting Vite pre-bundle it
+  // breaks its relative wasm lookup. Exclude it so it is loaded as-is and the
+  // browser fetches mujoco.wasm from node_modules at runtime.
+  optimizeDeps: {
+    exclude: ['@mujoco/mujoco'],
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

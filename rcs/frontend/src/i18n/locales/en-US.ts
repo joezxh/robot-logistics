@@ -45,6 +45,9 @@ export default {
     deleteElement: 'Delete Element',
     editHint: 'Click a row in the table to edit it.',
     bounds: 'Canvas Size',
+    modeStatic: 'Static',
+    modePhysics: 'Physics (MuJoCo)',
+    physicsLoading: 'Loading physics engine…',
   },
   scenario: {
     label: 'Scenario',

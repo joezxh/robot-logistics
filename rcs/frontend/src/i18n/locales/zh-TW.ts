@@ -45,6 +45,9 @@ export default {
     deleteElement: '刪除此元素',
     editHint: '點擊表格中的一列進行編輯。',
     bounds: '畫布尺寸',
+    modeStatic: '靜態',
+    modePhysics: '物理引擎',
+    physicsLoading: '物理引擎載入中…',
   },
   scenario: {
     label: '場景',

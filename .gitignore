@@ -64,3 +64,4 @@ docs/logitics/
 # Brainstorming visual companion session scratch (root only; note that
 # docs/superpowers/ holds committed design specs and must stay tracked).
 /.superpowers/
+/skills/
